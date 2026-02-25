@@ -1,28 +1,45 @@
 "use client";
 
-import { hasPermission, hasRole } from "@/lib/auth/rbac";
-import type { Role } from "@/lib/auth/session";
+import { ReactNode, useEffect, useMemo, useState } from "react";
+import { getRole, Role, isStaff } from "@/lib/auth/session";
 
-type Props = {
-  role?: Role;
-  permissions?: string[];
-  allowRoles?: Role[];
-  allowPermission?: string;
-  children: React.ReactNode;
-  fallback?: React.ReactNode;
-};
+type Allow = ("ADMIN" | "STAFF" | "FUNCIONARIO" | "CLIENTE")[];
 
-export function RoleGate({
-  role,
-  permissions,
-  allowRoles,
-  allowPermission,
-  children,
-  fallback = null,
-}: Props) {
-  const okRole = allowRoles ? (role ? hasRole(role, allowRoles) : false) : true;
-  const okPerm = allowPermission ? hasPermission(permissions, allowPermission) : true;
+export default function RoleGate({ allow, children }: { allow: Allow; children: ReactNode }) {
+  const [ready, setReady] = useState(false);
+  const [role, setRole] = useState<Role | null>(null);
 
-  if (!okRole || !okPerm) return <>{fallback}</>;
+  const allowKey = useMemo(() => allow.join("|"), [allow]);
+  const allowedSet = useMemo(() => new Set(allow), [allowKey]);
+
+  useEffect(() => {
+    const r = getRole();
+    setRole(r);
+    setReady(true);
+
+    if (!r) {
+      location.replace("/auth/login");
+      return;
+    }
+
+    // STAFF e FUNCIONARIO são equivalentes: se allow tiver STAFF, aceita FUNCIONARIO também
+    const ok =
+      allowedSet.has(r) ||
+      (allowedSet.has("STAFF") && isStaff(r)) ||
+      (allowedSet.has("FUNCIONARIO") && isStaff(r));
+
+    if (!ok) location.replace("/forbidden");
+  }, [allowedSet]);
+
+  if (!ready) return null;
+
+  const ok =
+    role &&
+    (allowedSet.has(role) ||
+      (allowedSet.has("STAFF") && isStaff(role)) ||
+      (allowedSet.has("FUNCIONARIO") && isStaff(role)));
+
+  if (!ok) return null;
+
   return <>{children}</>;
 }

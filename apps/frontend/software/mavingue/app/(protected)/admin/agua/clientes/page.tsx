@@ -1,7 +1,3 @@
-export default function Page() {
-  return (
-    <main>
-      <h1>Admin — Água — Clientes</h1>
-    </main>
-  );
+export default function AguaClientes() {
+  return <div>Água clientes (placeholder)</div>;
 }

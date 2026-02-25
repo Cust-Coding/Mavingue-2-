@@ -2,47 +2,47 @@ package com.custcoding.estaleiromavingue.App.models;
 
 import com.custcoding.estaleiromavingue.App.models.status.FormaPagamento;
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
+import lombok.*;
 
+import java.math.BigDecimal;
+import java.time.Instant;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Entity
 @Table(name = "venda")
 public class Venda {
-     @Id
+
+    @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "data_venda", nullable = false)
-    private LocalDateTime dataVenda;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "id_produto", nullable = false)
+    private Product produto;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "id_cliente", nullable = false)
+    private CustomerProduct cliente;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "id_funcionario", nullable = false)
+    private Funcionario funcionario;
 
     @Column(nullable = false)
-    private double valor;
-
-    @Column(nullable = false)
-    private int quantidade;
-
-    @Column(name = "preco_unitario", nullable = false)
-    private double precoUnitario;
+    private Integer quantidade;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "forma_pagamento", nullable = false)
     private FormaPagamento formaPagamento;
 
-    
-    @Column(nullable = false)
-    private double subtotal;
+    // opcional (se quiseres guardar o total calculado)
+    @Column(name = "total", precision = 18, scale = 2)
+    private BigDecimal total;
 
-    
-    @ManyToOne
-    @JoinColumn(name = "id_produto", nullable = false)
-    private Product produto;
-
-    
-    @ManyToOne
-    @JoinColumn(name = "id_cliente", nullable = false)
-    private CustomerProduct cliente;
-
-    
-    @ManyToOne
-    @JoinColumn(name = "id_funcionario", nullable = false)
-    private Funcionario funcionario;
+    @Column(name = "criado_em", nullable = false)
+    private Instant criadoEm = Instant.now();
 }

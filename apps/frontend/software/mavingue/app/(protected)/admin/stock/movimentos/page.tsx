@@ -1,7 +1,7 @@
-export default function Page() {
+export default function Mov() {
   return (
-    <main>
-      <h1>Admin — Stock — Movimentos</h1>
-    </main>
+    <div style={{ padding: 16, background: "white", border: "1px solid #ddd", borderRadius: 10 }}>
+      Movimentos: backend sem endpoint de listagem ainda.
+    </div>
   );
 }

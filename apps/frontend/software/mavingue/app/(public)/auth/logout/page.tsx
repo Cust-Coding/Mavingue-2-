@@ -1,7 +1,11 @@
-export default function Page() {
-  return (
-    <main>
-      <h1>Logout</h1>
-    </main>
-  );
+"use client";
+import { useEffect } from "react";
+import { clearSession } from "@/lib/auth/session";
+
+export default function LogoutPage() {
+  useEffect(() => {
+    clearSession();
+    location.href = "/";
+  }, []);
+  return null;
 }

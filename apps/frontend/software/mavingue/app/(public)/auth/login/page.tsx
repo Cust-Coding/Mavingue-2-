@@ -1,84 +1,143 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import Input from "@/components/ui/Input";
-import { http } from "@/lib/http/client";
-import { endpoints } from "@/lib/http/endpoints";
+import { useSearchParams } from "next/navigation";
+import { setSession } from "@/lib/auth/session";
+
+function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
+  return (
+    <div style={{ display: "grid", gap: 6 }}>
+      <label style={{ fontSize: 14 }}>{label}</label>
+      {children}
+      {error && <div style={{ color: "crimson", fontSize: 13 }}>{error}</div>}
+    </div>
+  );
+}
+
+function dashboardForRole(role: string) {
+  if (role === "ADMIN") return "/admin";
+  if (role === "FUNCIONARIO" || role === "STAFF") return "/staff";
+  if (role === "CLIENTE") return "/cliente";
+  return "/";
+}
 
 export default function LoginPage() {
-  const [username, setUsername] = useState("");
-  const [senha, setSenha] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [fieldErrors, setFieldErrors] = useState<{ username?: string; senha?: string }>({});
-  const [loading, setLoading] = useState(false);
-  const router = useRouter();
   const sp = useSearchParams();
-  const next = sp.get("next") || "/";
+  const nextParam = sp.get("next"); 
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState("");
+  const [fe, setFe] = useState<Record<string, string>>({});
 
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setFieldErrors({});
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-    const errors: { username?: string; senha?: string } = {};
-    if (username.trim().length < 3) errors.username = "Informe um utilizador válido.";
-    if (senha.trim().length < 4) errors.senha = "A senha deve ter no mínimo 4 caracteres.";
-    if (Object.keys(errors).length) {
-      setFieldErrors(errors);
-      return;
-    }
+  function validate() {
+    const e: Record<string, string> = {};
+    if (!email.trim()) e.email = "Email é obrigatório";
+    if (!password.trim()) e.password = "Senha é obrigatória";
+    setFe(e);
+    return Object.keys(e).length === 0;
+  }
+
+  async function submit(ev: React.FormEvent) {
+    ev.preventDefault();
+    setErr("");
+    setFe({});
+
+    if (!validate()) return;
 
     setLoading(true);
     try {
-      await http(`/api/proxy${endpoints.auth.login}`, {
+      // 1) login -> token
+      const res = await fetch("/api/proxy/api/auth/login", {
         method: "POST",
-        body: { username, senha },
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), password }),
       });
-      router.push(next);
+
+      if (!res.ok) {
+        const txt = await res.text().catch(() => "");
+        try {
+          const j = JSON.parse(txt);
+          if (j && typeof j === "object" && !Array.isArray(j) && !j.message) {
+            setFe(j);
+            setErr("Campos inválidos.");
+            return;
+          }
+          if (j?.message) {
+            setErr(String(j.message));
+            return;
+          }
+        } catch {}
+        setErr(txt || `Erro HTTP ${res.status}`);
+        return;
+      }
+
+      const data = await res.json();
+      const token = data?.token ?? data;
+
+      // 2) guarda token temporário
+      setSession(token, "CLIENTE");
+
+      // 3) busca /me -> role e nome
+      let role = "CLIENTE";
+      try {
+        const meRes = await fetch("/api/proxy/api/auth/me", { method: "GET", credentials: "include" });
+        if (meRes.ok) {
+          const me = await meRes.json();
+          role = me?.role ?? "CLIENTE";
+          setSession(token, role);
+
+          const nome = me?.nome ?? "";
+          if (nome) localStorage.setItem("me_name", nome);
+        }
+      } catch {
+        // se falhar, fica CLIENTE
+      }
+
+      // 4) redirect correto
+      const defaultDash = dashboardForRole(role);
+
+      // se next vier vazio ou for "/" ou for página pública -> ignora e manda pro dashboard
+      const next =
+        nextParam && nextParam.startsWith("/") && nextParam !== "/" && !nextParam.startsWith("/auth")
+          ? nextParam
+          : defaultDash;
+
+      location.href = next;
     } catch (e: any) {
-      setError(e?.message || "Falha no login");
+      setErr(e?.message ?? "Falha ao comunicar com o servidor");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 p-6">
-      <motion.form
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        onSubmit={onSubmit}
-        className="w-full max-w-sm rounded-2xl bg-white p-6 shadow"
-      >
-        <h1 className="text-xl font-bold text-slate-900">Entrar</h1>
-        <p className="mt-1 text-sm text-slate-500">Use as suas credenciais para continuar.</p>
+    <div style={{ maxWidth: 420, margin: "40px auto", border: "1px solid #ddd", borderRadius: 10, padding: 16, background: "white" }}>
+      <h2 style={{ margin: 0 }}>Login</h2>
 
-        <div className="mt-4 space-y-4">
-          <Input
-            label="Utilizador"
-            value={username}
-            onChange={(event) => setUsername(event.target.value)}
-            error={fieldErrors.username}
-          />
-          <Input
-            label="Senha"
-            type="password"
-            value={senha}
-            onChange={(event) => setSenha(event.target.value)}
-            error={fieldErrors.senha}
-          />
+      {err && (
+        <div style={{ marginTop: 10, padding: 10, border: "1px solid #f5b5b5", background: "#fff2f2", color: "#b00020", borderRadius: 8 }}>
+          {err}
         </div>
+      )}
 
-        {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
+      <form onSubmit={submit} style={{ display: "grid", gap: 12, marginTop: 12 }}>
+        <Field label="Email" error={fe.email}>
+          <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="ex: cliente@mail.com" autoComplete="email" />
+        </Field>
 
-        <Button disabled={loading} className="mt-5 w-full">
+        <Field label="Senha" error={fe.password}>
+          <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
+        </Field>
+
+        <Button type="submit" disabled={loading}>
           {loading ? "A entrar..." : "Entrar"}
         </Button>
-      </motion.form>
+      </form>
     </div>
   );
 }

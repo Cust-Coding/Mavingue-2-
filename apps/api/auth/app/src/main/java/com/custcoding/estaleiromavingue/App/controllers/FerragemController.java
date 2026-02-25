@@ -12,7 +12,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Service
+@RestController
+@CrossOrigin("*")
 @AllArgsConstructor
 @RequestMapping("/api/ferragem")
 public class FerragemController {

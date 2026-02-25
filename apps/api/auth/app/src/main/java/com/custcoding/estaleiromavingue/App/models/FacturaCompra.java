@@ -1,33 +1,41 @@
 package com.custcoding.estaleiromavingue.App.models;
 
-import com.custcoding.estaleiromavingue.App.models.status.FormaPagamento;
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
+import lombok.*;
 
+import java.math.BigDecimal;
+import java.time.Instant;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Entity
 @Table(name = "factura_compra")
 public class FacturaCompra {
-   @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
 
-    @Column(nullable = false, unique = true)
-    private String numero;
+ @Id
+ @GeneratedValue(strategy = GenerationType.IDENTITY)
+ private Long id;
 
-    @Column(name = "data_emissao", nullable = false)
-    private LocalDateTime dataEmissao;
+ @ManyToOne(fetch = FetchType.LAZY, optional = false)
+ @JoinColumn(name = "id_produto", nullable = false)
+ private Product produto;
 
-    @ManyToOne
-    @JoinColumn(name = "id_produto", nullable = false)
-    private Product produto;
+ @ManyToOne(fetch = FetchType.LAZY, optional = false)
+ @JoinColumn(name = "id_funcionario", nullable = false)
+ private Funcionario funcionario;
 
-    @Column(nullable = false)
-    private int quantidade; 
+ @Column(nullable = false)
+ private Integer quantidade;
 
-     @Column(name = "preco_unitario", nullable = false)
-    private double precoUnitario;
+ @Column(name = "preco_unit", precision = 18, scale = 2)
+ private BigDecimal precoUnit;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "forma_pagamento", nullable = false)
-    private FormaPagamento formaPagamento;
+ @Column(name = "total", precision = 18, scale = 2)
+ private BigDecimal total;
+
+ @Column(name = "criado_em", nullable = false)
+ private Instant criadoEm = Instant.now();
 }

@@ -1,11 +1,13 @@
-import { ReactNode } from "react";
-import { getMe } from "@/lib/auth/session";
-import { redirect } from "next/navigation";
+import RoleGate from "@/components/layout/RoleGate";
+import Sidebar from "@/components/layout/Sidebar";
 
-export default async function AdminLayout({ children }: { children: ReactNode }) {
-  const me = await getMe().catch(() => null);
-  if (!me) redirect("/auth/login");
-  if (me.role !== "ADMIN") redirect("/forbidden");
-
-  return <>{children}</>;
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <RoleGate allow={["ADMIN"]}>
+      <div style={{ display: "flex", minHeight: "calc(100vh - 55px)" }}>
+        <Sidebar />
+        <div style={{ flex: 1, padding: 16 }}>{children}</div>
+      </div>
+    </RoleGate>
+  );
 }

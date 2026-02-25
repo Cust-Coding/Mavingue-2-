@@ -1,20 +1,7 @@
-export interface Sale {
-  id: string;
-  customerId?: string | null;
-  ferragemId: string;
-  total: number;
-  status: "CONFIRMED" | "PENDING_PICKUP";
-  createdAt: string;
-}
-
-export interface SaleItemCreate {
-  productId: string;
-  quantity: number;
-  unitPrice: number;
-}
-
-export interface SaleCreate {
-  customerId?: string;
-  ferragemId: string;
-  items: SaleItemCreate[];
-}
+export type VendaCreate = {
+  produtoId: number;
+  clienteId: number;
+  funcionarioId: number;
+  quantidade: number;
+  formaPagamento: string;
+};

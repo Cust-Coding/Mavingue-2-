@@ -1,1 +1,3 @@
-export type User = { id: string; name: string; roles?: string[] };
+export type Role = "ADMIN" | "STAFF" | "CLIENTE";
+export type LoginRequest = { username: string; password: string };
+export type LoginResponse = { token: string; role: Role };

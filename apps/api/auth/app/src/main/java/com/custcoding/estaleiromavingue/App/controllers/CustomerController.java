@@ -1,6 +1,5 @@
 package com.custcoding.estaleiromavingue.App.controllers;
 
-
 import com.custcoding.estaleiromavingue.App.dtos.customer.CustomerCreateDTO;
 import com.custcoding.estaleiromavingue.App.dtos.customer.CustomerResponseDTO;
 import com.custcoding.estaleiromavingue.App.services.CustomerService;
@@ -21,60 +20,41 @@ import java.util.Map;
 @RequestMapping("/api/customer")
 public class CustomerController {
 
-
     private final CustomerService customerService;
 
-    @GetMapping("/")
-    public List<CustomerResponseDTO> getCustomers(){
-        return this.customerService.getCustomers() ;
+    @GetMapping({ "", "/" })
+    public List<CustomerResponseDTO> getCustomers() {
+        return this.customerService.getCustomers();
     }
 
     @GetMapping("/{id}")
-    public CustomerResponseDTO getCustomerById(
-            @PathVariable("id") Long id
-    ){
+    public CustomerResponseDTO getCustomerById(@PathVariable("id") Long id) {
         return this.customerService.getCustomerById(id);
     }
 
-    @PostMapping("/")
-    public CustomerResponseDTO postCustomer(
-           @Valid @RequestBody CustomerCreateDTO customer
-    ){
+    @PostMapping({ "", "/" })
+    public CustomerResponseDTO postCustomer(@Valid @RequestBody CustomerCreateDTO customer) {
         return this.customerService.postCustomer(customer);
     }
 
-    /*
     @PutMapping("/{id}")
-    public CustomerResponseDTO updateCustomer(
-            @PathVariable("id") Long id
-    ){
-        return ;
-    }*/
+    public CustomerResponseDTO updateCustomer(@PathVariable("id") Long id, @Valid @RequestBody CustomerCreateDTO customer) {
+        return this.customerService.updateCustomer(id, customer);
+    }
 
     @DeleteMapping("/{id}")
-    public void deleteCustomer(
-            @PathVariable("id") Long id
-    ){
+    public void deleteCustomer(@PathVariable("id") Long id) {
         this.customerService.deleteCustomer(id);
     }
 
-
-
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<?> handleValidationException(
-            MethodArgumentNotValidException exception
-    ){
+    public ResponseEntity<?> handleValidationException(MethodArgumentNotValidException exception) {
         Map<String, String> errors = new HashMap<>();
-        exception.getBindingResult().getAllErrors()
-                .forEach(error -> {
-                    var fieldName = ((FieldError) error).getField();
-                    var errorMessage = error.getDefaultMessage();
-                    errors.put(fieldName, errorMessage);
-                });
-
+        exception.getBindingResult().getAllErrors().forEach(error -> {
+            var fieldName = ((FieldError) error).getField();
+            var errorMessage = error.getDefaultMessage();
+            errors.put(fieldName, errorMessage);
+        });
         return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
     }
-
-
-
 }

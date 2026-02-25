@@ -1,33 +1,35 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 
-const TOKEN_COOKIE = "access_token";
+function c(req: NextRequest, name: string) {
+  return req.cookies.get(name)?.value ?? null;
+}
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // públicas
-  if (
-    pathname.startsWith("/auth") ||
-    pathname === "/" ||
-    pathname.startsWith("/catalogo") ||
-    pathname.startsWith("/_next") ||
-    pathname.startsWith("/api")
-  ) {
-    return NextResponse.next();
-  }
+  if (pathname.startsWith("/admin") || pathname.startsWith("/staff") || pathname.startsWith("/cliente")) {
+    const token = c(req, "token");
+    const role = c(req, "role");
 
-  // protegidas: precisa cookie
-  const token = req.cookies.get(TOKEN_COOKIE)?.value;
-  if (!token) {
-    const url = req.nextUrl.clone();
-    url.pathname = "/auth/login";
-    url.searchParams.set("next", pathname);
-    return NextResponse.redirect(url);
+    if (!token || !role) {
+      const url = req.nextUrl.clone();
+      url.pathname = "/auth/login";
+      url.searchParams.set("next", pathname);
+      return NextResponse.redirect(url);
+    }
+
+    if (pathname.startsWith("/admin") && role !== "ADMIN") return NextResponse.redirect(new URL("/forbidden", req.url));
+
+    if (pathname.startsWith("/staff") && !(role === "ADMIN" || role === "FUNCIONARIO" || role === "STAFF"))
+      return NextResponse.redirect(new URL("/forbidden", req.url));
+
+    if (pathname.startsWith("/cliente") && role !== "CLIENTE") return NextResponse.redirect(new URL("/forbidden", req.url));
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/admin/:path*", "/staff/:path*", "/cliente/:path*", "/forbidden"],
 };

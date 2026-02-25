@@ -1,7 +1,1 @@
-export default function Page() {
-  return (
-    <main>
-      <h1>Staff — Nova venda</h1>
-    </main>
-  );
-}
+export { default } from "@/app/(protected)/admin/vendas/nova/page";

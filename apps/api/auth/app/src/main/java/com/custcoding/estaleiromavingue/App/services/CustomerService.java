@@ -1,6 +1,5 @@
 package com.custcoding.estaleiromavingue.App.services;
 
-
 import com.custcoding.estaleiromavingue.App.dtos.customer.CustomerCreateDTO;
 import com.custcoding.estaleiromavingue.App.dtos.customer.CustomerResponseDTO;
 import com.custcoding.estaleiromavingue.App.mappers.CustomerMapper;
@@ -22,46 +21,59 @@ public class CustomerService {
     private final CustomerRepository customerRepository;
     private final CustomerMapper customerMapper;
 
-
-    public List<CustomerResponseDTO> getCustomers(){
+    public List<CustomerResponseDTO> getCustomers() {
         return customerRepository.findAll()
                 .stream()
                 .map(customerMapper::toCustomerResponseDTO)
                 .collect(Collectors.toList());
     }
 
-
-    public CustomerResponseDTO getCustomerById(
-            Long id
-    ){
+    public CustomerResponseDTO getCustomerById(Long id) {
         return customerRepository.findById(id)
                 .map(customerMapper::toCustomerResponseDTO)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND
-                ));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Cliente não encontrado"));
     }
 
-    public CustomerResponseDTO postCustomer(
-            CustomerCreateDTO request
-    ){
+    public CustomerResponseDTO postCustomer(CustomerCreateDTO request) {
+
+        if (customerRepository.existsByEmail(request.email())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email já existe");
+        }
+        if (request.nuit() != null && !request.nuit().isBlank() && customerRepository.existsByNuit(request.nuit())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "NUIT já existe");
+        }
+
         var customer = customerMapper.toCustomerDTO(request);
-        var savedCustomer = customerRepository.save(customer);
-        return customerMapper.toCustomerResponseDTO(savedCustomer);
+        var saved = customerRepository.save(customer);
+        return customerMapper.toCustomerResponseDTO(saved);
     }
 
-    /*public CustomerResponseDTO updateCustomer(
-            Long id
-    ){
-        return customerRepository.
-    }
-    */
+    public CustomerResponseDTO updateCustomer(Long id, CustomerCreateDTO request) {
+        var existing = customerRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Cliente não encontrado"));
 
-    public void deleteCustomer(
-            Long id
-    ){
+        // atualiza tudo (se quiseres bloquear email, diz e eu ajusto)
+        existing.setName(request.name());
+        existing.setSex(request.sex());
+        existing.setPhone(request.phone());
+        existing.setEmail(request.email());
+        existing.setBirthDate(request.birthDate());
+        existing.setProvincia(request.provincia());
+        existing.setCidade(request.cidade());
+        existing.setBairro(request.bairro());
+        existing.setEndereco(request.endereco());
+        existing.setNuit(request.nuit());
+        existing.setNumeroDocumento(request.numeroDocumento());
+        existing.setTipoDocumento(request.tipoDocumento());
+
+        var saved = customerRepository.save(existing);
+        return customerMapper.toCustomerResponseDTO(saved);
+    }
+
+    public void deleteCustomer(Long id) {
+        if (!customerRepository.existsById(id)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Cliente não encontrado");
+        }
         customerRepository.deleteById(id);
     }
-
-
-
 }

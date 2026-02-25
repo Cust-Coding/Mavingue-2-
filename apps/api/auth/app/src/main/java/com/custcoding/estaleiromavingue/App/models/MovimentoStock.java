@@ -2,27 +2,41 @@ package com.custcoding.estaleiromavingue.App.models;
 
 import com.custcoding.estaleiromavingue.App.models.status.TipoMovimento;
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
+import lombok.*;
 
+import java.time.Instant;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @Entity
 @Table(name = "movimento_stock")
 public class MovimentoStock {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "id_produto", nullable = false)
+    private Product produto;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "id_ferragem", nullable = false)
+    private Ferragem ferragem;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private TipoMovimento tipo;
+    private TipoMovimento tipo; // ENTRADA / SAIDA
 
     @Column(nullable = false)
-    private int quantidade;
-     @Column(name = "data_movimento", nullable = false)
-    private LocalDateTime dataMovimento;
+    private Integer quantidade;
 
-   
-    @ManyToOne
-    @JoinColumn(name = "id_stock", nullable = false)
-    private Stock stock;
-    
+    @Column(length = 255)
+    private String motivo;
+
+    @Column(name = "criado_em", nullable = false)
+    private Instant criadoEm = Instant.now();
 }

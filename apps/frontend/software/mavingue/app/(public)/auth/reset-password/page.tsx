@@ -1,7 +1,3 @@
-export default function Page() {
-  return (
-    <main>
-      <h1>Reset password</h1>
-    </main>
-  );
+export default function Reset() {
+  return <div style={{ padding: 16 }}>Reset password: backend sem endpoint ainda.</div>;
 }

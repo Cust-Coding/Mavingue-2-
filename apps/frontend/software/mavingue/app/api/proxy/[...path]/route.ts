@@ -1,79 +1,43 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const BASE = process.env.SPRING_API_BASE_URL!;
+const BACKEND = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
-// cookies
-const TOKEN_COOKIE = "access_token";
-
-export async function GET(req: NextRequest, ctx: { params: { path: string[] } }) {
-  return forward(req, ctx);
-}
-export async function POST(req: NextRequest, ctx: { params: { path: string[] } }) {
-  return forward(req, ctx);
-}
-export async function PUT(req: NextRequest, ctx: { params: { path: string[] } }) {
-  return forward(req, ctx);
-}
-export async function PATCH(req: NextRequest, ctx: { params: { path: string[] } }) {
-  return forward(req, ctx);
-}
-export async function DELETE(req: NextRequest, ctx: { params: { path: string[] } }) {
-  return forward(req, ctx);
+function urlFor(parts: string[]) {
+  return `${BACKEND}/${parts.join("/")}`;
 }
 
-async function forward(req: NextRequest, ctx: { params: { path: string[] } }) {
-  const path = ctx.params.path.join("/");
-  const url = new URL(req.url);
-  const target = `${BASE}/${path}${url.search}`;
+async function handler(req: NextRequest, ctx: { params: Promise<{ path: string[] }> }) {
+  const { path } = await ctx.params;
+  const url = urlFor(path);
 
-  const token = req.cookies.get(TOKEN_COOKIE)?.value;
+  const headers = new Headers();
+  const ct = req.headers.get("content-type");
+  if (ct) headers.set("content-type", ct);
 
-  const headers = new Headers(req.headers);
-  headers.delete("host");
+  // JWT do cookie -> Authorization Bearer
+  const token = req.cookies.get("token")?.value;
+  if (token) headers.set("authorization", `Bearer ${token}`);
 
-  if (token) headers.set("Authorization", `Bearer ${token}`);
+  const method = req.method.toUpperCase();
+  const init: RequestInit = { method, headers };
 
-  const body =
-    req.method === "GET" || req.method === "HEAD"
-      ? undefined
-      : await req.text().catch(() => undefined);
-
-  const upstream = await fetch(target, {
-    method: req.method,
-    headers,
-    body,
-  });
-
-
-  if (path.endsWith("auth/login") && upstream.ok) {
-    const data = await upstream.json();
-    const res = NextResponse.json(data);
-
-    if (data?.accessToken) {
-      res.cookies.set(TOKEN_COOKIE, data.accessToken, {
-        httpOnly: true,
-        sameSite: "lax",
-        secure: false, // muda p/ true em produção https
-        path: "/",
-      });
-    }
-    return res;
+  if (method !== "GET" && method !== "HEAD") {
+    const body = await req.arrayBuffer();
+    if (body.byteLength) init.body = body;
   }
 
+  const upstream = await fetch(url, init);
 
-  if (path.endsWith("auth/logout")) {
-    const res = NextResponse.json({ ok: true });
-    res.cookies.delete(TOKEN_COOKIE);
-    return res;
-  }
+  const outHeaders = new Headers();
+  const uct = upstream.headers.get("content-type");
+  if (uct) outHeaders.set("content-type", uct);
+  outHeaders.set("cache-control", "no-store");
 
-  const contentType = upstream.headers.get("content-type") || "";
-  const raw = await upstream.text();
-
-  return new NextResponse(raw, {
-    status: upstream.status,
-    headers: {
-      "content-type": contentType,
-    },
-  });
+  const data = await upstream.arrayBuffer();
+  return new NextResponse(data, { status: upstream.status, headers: outHeaders });
 }
+
+export const GET = handler;
+export const POST = handler;
+export const PUT = handler;
+export const DELETE = handler;

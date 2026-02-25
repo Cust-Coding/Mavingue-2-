@@ -1,30 +1,22 @@
-import { forwardRef } from "react";
-import clsx from "clsx";
+import * as React from "react"
 
-type Props = React.InputHTMLAttributes<HTMLInputElement> & {
-  error?: string;
-  label?: string;
-};
+import { cn } from "@/lib/utils/index"
 
-const Input = forwardRef<HTMLInputElement, Props>(function Input({ className, error, label, id, ...props }, ref) {
-  const inputId = id ?? props.name;
-
-  return (
-    <label className="block w-full" htmlFor={inputId}>
-      {label ? <span className="mb-1.5 block text-sm font-medium text-slate-700">{label}</span> : null}
+const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
+  ({ className, type, ...props }, ref) => {
+    return (
       <input
-        {...props}
-        id={inputId}
-        ref={ref}
-        className={clsx(
-          "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100",
-          error && "border-red-500 focus:border-red-500 focus:ring-red-100",
-          className,
+        type={type}
+        className={cn(
+          "flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+          className
         )}
+        ref={ref}
+        {...props}
       />
-      {error ? <span className="mt-1 block text-xs text-red-600">{error}</span> : null}
-    </label>
-  );
-});
+    )
+  }
+)
+Input.displayName = "Input"
 
-export default Input;
+export { Input }

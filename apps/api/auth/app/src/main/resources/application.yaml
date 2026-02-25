@@ -1,13 +1,21 @@
+server:
+  port: 8080
+
 spring:
   datasource:
-    url: jdbc:mariadb://localhost:3306/mavingue
-    username: root
-    password: 070239
-    driver-class-name: org.mariadb.jdbc.Driver
+    url: jdbc:postgresql://localhost:5432/mavingue
+    username: postgres
+    password: 852654
+    driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: update
     properties:
       hibernate:
-        format-sql: true
-    database: mysql
+        format_sql: true
+    open-in-view: false
+
+app:
+  jwt:
+    secret: "fjsadahdhasiu23423%&^%FSD4342ASHjfaT*&sayfsafjsa5435"
+    expirationSeconds: 7200

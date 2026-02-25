@@ -1,7 +1,8 @@
-export default function Page() {
+export default function AdminHome() {
   return (
-    <main>
-      <h1>Admin — Dashboard</h1>
-    </main>
+    <div style={{ background: "white", border: "1px solid #ddd", borderRadius: 10, padding: 16 }}>
+      <h2>Admin</h2>
+      <p>CRUD: produtos, ferragem, clientes, stock, compras, vendas.</p>
+    </div>
   );
 }

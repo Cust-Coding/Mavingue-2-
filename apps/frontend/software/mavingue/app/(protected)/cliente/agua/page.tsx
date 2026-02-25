@@ -1,7 +1,3 @@
-export default function Page() {
-  return (
-    <main>
-      <h1>Cliente — Água (consumo / estado)</h1>
-    </main>
-  );
+export default function Agua() {
+  return <div>Água (placeholder)</div>;
 }

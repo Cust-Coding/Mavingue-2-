@@ -1,47 +1,18 @@
 export const endpoints = {
   auth: {
-    login: "/auth/login",
-    logout: "/auth/logout",
-    me: "/auth/me",
-    resetPassword: "/auth/reset-password",
+    login: "/api/auth/login",
+    me: "/api/auth/me",
   },
-  users: {
-    list: "/users",
-    create: "/users",
-    byId: (id: string) => `/users/${id}`,
-    update: (id: string) => `/users/${id}`,
-    remove: (id: string) => `/users/${id}`,
-  },
-  products: {
-    list: "/products",
-    create: "/products",
-    byId: (id: string) => `/products/${id}`,
-    update: (id: string) => `/products/${id}`,
-    remove: (id: string) => `/products/${id}`,
-  },
-  stock: {
-    list: "/stock",
-    alerts: "/stock/alerts",
-    movements: "/stock/movements",
-    createMovement: "/stock/movements",
-  },
-  sales: {
-    list: "/sales",
-    create: "/sales",
-    byId: (id: string) => `/sales/${id}`,
-    invoice: (id: string) => `/sales/${id}/invoice`,
-  },
-  water: {
-    customers: "/water/customers",
-    contracts: "/water/contracts",
-    readings: "/water/readings",
-    bills: "/water/bills",
-    billById: (id: string) => `/water/bills/${id}`,
-    payments: "/water/payments",
-  },
-  reports: {
-    sales: "/reports/sales",
-    stock: "/reports/stock",
-    water: "/reports/water",
-  },
-} as const;
+
+  products: "/api/products",
+  ferragem: "/api/ferragem",
+  customer: "/api/customer",
+  stock: "/api/stock",
+  stockAdjust: "/api/stock/adjust",
+  vendas: "/api/vendas",
+  compras: "/api/facturas-compra",
+  address: "/api/address",
+
+  // existe no backend, mas o controller não expõe CRUD no momento (tu confirmaste via findstr)
+  customerWater: "/api/customer-water",
+};

@@ -1,10 +1,6 @@
-import type { Role } from "@/lib/auth/session";
+export type Role = "ADMIN" | "STAFF" | "CLIENTE";
 
-export function hasRole(userRole: Role, allowed: Role[]) {
+export function hasRole(userRole: Role | null, allowed: Role[]) {
+  if (!userRole) return false;
   return allowed.includes(userRole);
-}
-
-export function hasPermission(perms: string[] | undefined, required: string) {
-  if (!perms) return false;
-  return perms.includes(required);
 }

@@ -1,45 +1,54 @@
-type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
-
-export class HttpError extends Error {
-  status: number;
-  data?: any;
-  constructor(status: number, message: string, data?: any) {
-    super(message);
-    this.status = status;
-    this.data = data;
-  }
+function proxy(path: string) {
+  const p = path.startsWith("/") ? path : `/${path}`;
+  return `/api/proxy${p}`;
 }
 
-export async function http<T>(
-  url: string,
-  opts: { method?: HttpMethod; body?: any; headers?: Record<string, string> } = {}
-): Promise<T> {
-  const res = await fetch(url, {
-    method: opts.method ?? "GET",
-    headers: {
-      "Content-Type": "application/json",
-      ...(opts.headers ?? {}),
-    },
-    body: opts.body ? JSON.stringify(opts.body) : undefined,
-    // importante: cookies funcionarem com o proxy
-    credentials: "include",
-  });
-
-  const text = await res.text().catch(() => "");
-  const data = text ? safeJson(text) : null;
-
-  if (!res.ok) {
-    const msg = (data && (data.message || data.error)) || `Erro HTTP ${res.status}`;
-    throw new HttpError(res.status, msg, data);
-  }
-
-  return data as T;
-}
-
-function safeJson(text: string) {
+async function toErr(res: Response): Promise<Error> {
+  let msg = `HTTP ${res.status}`;
   try {
-    return JSON.parse(text);
-  } catch {
-    return { raw: text };
-  }
+    const t = await res.text();
+    if (t) {
+      try {
+        const j = JSON.parse(t);
+        msg = j.message || j.error || msg;
+      } catch {
+        msg = t;
+      }
+    }
+  } catch {}
+  return new Error(msg);
+}
+
+export async function apiGet<T>(path: string): Promise<T> {
+  const res = await fetch(proxy(path), { method: "GET", credentials: "include" });
+  if (!res.ok) throw await toErr(res);
+  return res.json();
+}
+
+export async function apiPost<T>(path: string, body?: any): Promise<T> {
+  const res = await fetch(proxy(path), {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  if (!res.ok) throw await toErr(res);
+  return res.status === 204 ? (null as any) : res.json();
+}
+
+export async function apiPut<T>(path: string, body?: any): Promise<T> {
+  const res = await fetch(proxy(path), {
+    method: "PUT",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
+  if (!res.ok) throw await toErr(res);
+  return res.status === 204 ? (null as any) : res.json();
+}
+
+export async function apiDelete<T>(path: string): Promise<T> {
+  const res = await fetch(proxy(path), { method: "DELETE", credentials: "include" });
+  if (!res.ok) throw await toErr(res);
+  return res.status === 204 ? (null as any) : res.json();
 }

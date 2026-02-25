@@ -1,22 +1,15 @@
-export interface StockItem {
-  productId: string;
-  productName: string;
-  quantity: number;
-  minStock: number;
-}
+export type StockItem = {
+  id: number;
+  quantidade: number;
+  stockMinimo: number;
+  produto?: any;
+  ferragem?: any;
+};
 
-export interface StockMovement {
-  id: string;
-  productId: string;
-  type: "IN" | "OUT" | "ADJUST";
-  quantity: number;
-  reason?: string;
-  createdAt: string;
-}
-
-export interface StockMovementCreate {
-  productId: string;
-  type: "IN" | "OUT" | "ADJUST";
-  quantity: number;
-  reason?: string;
-}
+export type StockAdjust = {
+  produtoId: number;
+  quantidade: number;
+  tipo: "ENTRADA" | "SAIDA" | "AJUSTE";
+  motivo?: string;
+  ferragemId?: number;
+};
