@@ -4,37 +4,46 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { clearSession, getRole } from "@/lib/auth/session";
 
-function firstName(full?: string) {
+interface MeResponse {
+  nome?: string;
+  name?: string;
+  email?: string;
+  id?: string | number;
+}
+
+function firstName(full?: string): string {
   if (!full) return "";
   const t = full.trim().split(/\s+/);
   return t[0] ?? "";
 }
 
-function PersonIcon({ size = 18 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
-      <path
-        fill="currentColor"
-        d="M12 12c2.76 0 5-2.46 5-5.5S14.76 1 12 1 7 3.46 7 6.5 9.24 12 12 12Zm0 2c-4.42 0-8 2.24-8 5v2h16v-2c0-2.76-3.58-5-8-5Z"
-      />
-    </svg>
-  );
-}
+// Ícones Modernos
+const Icons = {
+  User: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+  Cart: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>,
+  Sun: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>,
+  Moon: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>,
+  Menu: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>,
+  X: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>,
+  ChevronDown: () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+};
 
 export default function Topbar() {
   const role = getRole();
   const [meName, setMeName] = useState<string>("");
   const [open, setOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [darkMode, setDarkMode] = useState(false); // Lógica local, integrável com next-themes
   const boxRef = useRef<HTMLDivElement | null>(null);
 
-  // buscar /me só se estiver logado
-  useEffect(() => {
-    if (!role) {
-      setMeName("");
-      return;
-    }
+  // Toggle Dark Mode (Exemplo de funcionamento)
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+    document.documentElement.classList.toggle("dark");
+  };
 
-    // cache rápido (evita flicker)
+  useEffect(() => {
+    if (!role) return;
     const cached = localStorage.getItem("me_name");
     if (cached) setMeName(cached);
 
@@ -42,130 +51,109 @@ export default function Topbar() {
       try {
         const res = await fetch("/api/proxy/api/auth/me", { method: "GET", credentials: "include" });
         if (!res.ok) return;
-        const me = await res.json();
-
-        // teu MeResponse: (id, nome, email, role)
+        const me: MeResponse = await res.json();
         const nome = me?.nome ?? me?.name ?? "";
         if (nome) {
           setMeName(nome);
           localStorage.setItem("me_name", nome);
         }
-      } catch {
-        // ignora
-      }
+      } catch (err) { console.error(err); }
     })();
   }, [role]);
 
-  // fechar dropdown ao clicar fora
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
-      if (!boxRef.current) return;
-      if (!boxRef.current.contains(e.target as Node)) setOpen(false);
+      if (boxRef.current && !boxRef.current.contains(e.target as Node)) setOpen(false);
     }
     document.addEventListener("mousedown", onDocClick);
     return () => document.removeEventListener("mousedown", onDocClick);
   }, []);
 
   const displayName = firstName(meName) || (role ? "Conta" : "");
-
-  const profileHref =
-    role === "ADMIN"
-      ? "/admin"
-      : role === "CLIENTE"
-      ? "/cliente/perfil"
-      : role === "FUNCIONARIO" || role === "STAFF"
-      ? "/staff"
-      : "/";
+  const profileHref = role === "ADMIN" ? "/admin" : role === "CLIENTE" ? "/cliente/perfil" : "/staff";
 
   return (
-    <div style={{ borderBottom: "1px solid #ddd", background: "white" }}>
-      <div
-        style={{
-          maxWidth: 1100,
-          margin: "0 auto",
-          padding: 12,
-          display: "flex",
-          justifyContent: "space-between",
-          gap: 12,
-          alignItems: "center",
-        }}
-      >
-        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-          <Link href="/" style={{ fontWeight: 700 }}>
-            Mavingue
+    <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white/80 backdrop-blur-md dark:border-slate-800 dark:bg-slate-950/80">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        
+        {/* Lado Esquerdo: Logo e Nav Desktop */}
+        <div className="flex items-center gap-6">
+          <button 
+            className="text-slate-600 hover:text-orange-500 md:hidden dark:text-slate-300"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          >
+            {mobileMenuOpen ? <Icons.X /> : <Icons.Menu />}
+          </button>
+
+          <Link href="/" className="text-2xl font-black tracking-tighter text-orange-600 dark:text-orange-500">
+            M
           </Link>
-          <Link href="/catalogo">Catálogo</Link>
+
+          <nav className="hidden space-x-1 md:flex">
+            <Link href="/catalogo" className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-orange-50 hover:text-orange-600 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-orange-400">
+              Catálogo
+            </Link>
+            <Link href="/novidades" className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-orange-50 hover:text-orange-600 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-orange-400">
+              Novidades
+            </Link>
+          </nav>
         </div>
 
-        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-          {!role ? (
-            <>
-              <Link href="/auth/register">Criar conta</Link>
-              <Link href="/auth/login">Login</Link>
-            </>
-          ) : (
-            <div ref={boxRef} style={{ position: "relative", display: "flex", alignItems: "center", gap: 10 }}>
-              <span style={{ fontSize: 14, color: "#111" }}>{displayName}</span>
+        {/* Lado Direito: Ações */}
+        <div className="flex items-center gap-2 sm:gap-4">
+          
+          {/* Dark Mode Toggle */}
+          <button 
+            onClick={toggleDarkMode}
+            className="flex h-10 w-10 items-center justify-center rounded-full text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-900"
+            title="Alternar Tema"
+          >
+            {darkMode ? <Icons.Sun /> : <Icons.Moon />}
+          </button>
 
+          {/* Carrinho */}
+          <Link 
+            href="/carrinho" 
+            className="relative flex h-10 w-10 items-center justify-center rounded-full text-slate-600 transition hover:bg-orange-50 hover:text-orange-600 dark:text-slate-300 dark:hover:bg-slate-900"
+          >
+            <Icons.Cart />
+            <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-orange-600 text-[10px] font-bold text-white ring-2 ring-white dark:ring-slate-950">
+              2
+            </span>
+          </Link>
+
+          {!role ? (
+            <div className="flex items-center gap-2">
+              <Link href="/auth/login" className="hidden text-sm font-semibold text-slate-600 hover:text-orange-600 sm:block dark:text-slate-300">
+                Entrar
+              </Link>
+              <Link href="/auth/register" className="rounded-full bg-orange-600 px-4 py-2 text-sm font-bold text-white shadow-lg shadow-orange-200 transition hover:bg-orange-700 active:scale-95 dark:shadow-none">
+                Criar Conta
+              </Link>
+            </div>
+          ) : (
+            <div ref={boxRef} className="relative">
               <button
-                type="button"
-                onClick={() => setOpen((v) => !v)}
-                aria-label="Conta"
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  width: 36,
-                  height: 36,
-                  borderRadius: 10,
-                  border: open ? "1px solid #111" : "1px solid #ddd",
-                  background: open ? "#f5f5f5" : "white",
-                  cursor: "pointer",
-                }}
+                onClick={() => setOpen(!open)}
+                className={`flex items-center gap-2 rounded-full border p-1 pr-3 transition-all ${
+                  open ? "border-orange-600 bg-orange-50 dark:bg-orange-950/30" : "border-slate-200 hover:border-orange-300 dark:border-slate-800"
+                }`}
               >
-                <PersonIcon />
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-600 text-white">
+                  <Icons.User />
+                </div>
+                <span className="hidden text-sm font-bold text-slate-700 sm:block dark:text-slate-200">{displayName}</span>
+                <Icons.ChevronDown />
               </button>
 
               {open && (
-                <div
-                  style={{
-                    position: "absolute",
-                    right: 0,
-                    top: 44,
-                    width: 190,
-                    border: "1px solid #ddd",
-                    borderRadius: 10,
-                    background: "white",
-                    boxShadow: "0 10px 30px rgba(0,0,0,.08)",
-                    overflow: "hidden",
-                  }}
-                >
-                  <Link
-                    href={profileHref}
-                    onClick={() => setOpen(false)}
-                    style={{ display: "block", padding: "10px 12px", fontSize: 14 }}
-                  >
-                    Perfil
+                <div className="absolute right-0 mt-2 w-52 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl animate-in fade-in slide-in-from-top-2 dark:border-slate-800 dark:bg-slate-900">
+                  <Link href={profileHref} onClick={() => setOpen(false)} className="flex items-center gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-orange-50 dark:text-slate-200 dark:hover:bg-slate-800">
+                    Meu Perfil
                   </Link>
-
                   <button
-                    type="button"
-                    onClick={() => {
-                      setOpen(false);
-                      clearSession();
-                      localStorage.removeItem("me_name");
-                      location.href = "/";
-                    }}
-                    style={{
-                      width: "100%",
-                      textAlign: "left",
-                      padding: "10px 12px",
-                      fontSize: 14,
-                      border: "0",
-                      background: "white",
-                      cursor: "pointer",
-                      borderTop: "1px solid #eee",
-                    }}
+                    onClick={() => { clearSession(); window.location.href = "/"; }}
+                    className="flex w-full items-center gap-3 border-t border-slate-100 px-4 py-3 text-sm font-medium text-red-500 hover:bg-red-50 dark:border-slate-800 dark:hover:bg-red-950/20"
                   >
                     Sair
                   </button>
@@ -175,6 +163,16 @@ export default function Topbar() {
           )}
         </div>
       </div>
-    </div>
+
+      {/* Menu Mobile */}
+      {mobileMenuOpen && (
+        <div className="border-t border-slate-100 bg-white p-4 animate-in slide-in-from-top md:hidden dark:border-slate-800 dark:bg-slate-950">
+          <nav className="flex flex-col gap-2">
+            <Link href="/catalogo" className="rounded-xl p-3 text-base font-medium text-slate-700 hover:bg-orange-50 dark:text-slate-200 dark:hover:bg-slate-900">Catálogo</Link>
+            <Link href="/novidades" className="rounded-xl p-3 text-base font-medium text-slate-700 hover:bg-orange-50 dark:text-slate-200 dark:hover:bg-slate-900">Novidades</Link>
+          </nav>
+        </div>
+      )}
+    </header>
   );
 }

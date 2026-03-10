@@ -4,9 +4,18 @@ import Sidebar from "@/components/layout/Sidebar";
 export default function StaffLayout({ children }: { children: React.ReactNode }) {
   return (
     <RoleGate allow={["ADMIN", "FUNCIONARIO"]}>
-      <div style={{ display: "flex", minHeight: "calc(100vh - 55px)" }}>
+      <div style={{ minHeight: "calc(100vh - 55px)" }}>
         <Sidebar />
-        <div style={{ flex: 1, padding: 16 }}>{children}</div>
+
+        <div
+          style={{
+            marginLeft: "var(--sidebar-offset, 80px)",
+            transition: "margin-left 300ms",
+            padding: 16,
+          }}
+        >
+          {children}
+        </div>
       </div>
     </RoleGate>
   );
