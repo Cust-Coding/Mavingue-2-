@@ -116,28 +116,44 @@ export default function LoginPage() {
   }
 
   return (
-    <div style={{ maxWidth: 420, margin: "40px auto", border: "1px solid #ddd", borderRadius: 10, padding: 16, background: "white" }}>
-      <h2 style={{ margin: 0 }}>Login</h2>
+<div  style={{ maxWidth: 420, margin: "40px auto", border: "1px solid #ddd", borderRadius: 10, padding: 16, background: "white" }}>
+   
 
       {err && (
         <div style={{ marginTop: 10, padding: 10, border: "1px solid #f5b5b5", background: "#fff2f2", color: "#b00020", borderRadius: 8 }}>
           {err}
         </div>
       )}
+      {/* Card lateral */}
 
-      <form onSubmit={submit} style={{ display: "grid", gap: 12, marginTop: 12 }}>
+      <div> 
+        <h2 style={{ color: "black", fontSize: "24px", fontWeight: "bold", marginBottom: "30px", letterSpacing: "-0.5px", textAlign: "center" }}>Login</h2>
+        <form onSubmit={submit} style={{ display: "grid", gap: 12, marginTop: 12 }}>
         <Field label="Email" error={fe.email}>
-          <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="ex: cliente@mail.com" autoComplete="email" />
+          <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="ex: cliente@mail.com" autoComplete="email"
+          className="outline-none " />
         </Field>
 
         <Field label="Senha" error={fe.password}>
-          <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
+          <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" style={{ 
+  color: "white", 
+  fontSize: "24px", 
+  fontWeight: "bold", 
+  marginBottom: "30px", 
+  letterSpacing: "-0.5px",
+  outline: "none" 
+}}/>
         </Field>
 
-        <Button type="submit" disabled={loading}>
+        <Button type="submit" disabled={loading} style={{background:"orangered"}}>
           {loading ? "A entrar..." : "Entrar"}
         </Button>
       </form>
+      </div>
+
+      
     </div>
   );
 }
+
+
