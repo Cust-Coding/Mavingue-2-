@@ -136,7 +136,7 @@ export default function LoginPage() {
 
         <Field label="Senha" error={fe.password}>
           <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" style={{ 
-  color: "white", 
+  color: "gray", 
   fontSize: "24px", 
   fontWeight: "bold", 
   marginBottom: "30px", 

@@ -73,7 +73,7 @@ export default function Topbar() {
   const profileHref = role === "ADMIN" ? "/admin" : role === "CLIENTE" ? "/cliente/perfil" : "/staff";
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white/80 backdrop-blur-md dark:border-slate-800 dark:bg-slate-950/80">
+    <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-gray-100/80 backdrop-blur-md dark:border-slate-800 dark:bg-slate-950/80">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         
         {/* Lado Esquerdo: Logo e Nav Desktop */}
@@ -89,12 +89,15 @@ export default function Topbar() {
             M
           </Link>
 
-          <nav className="hidden space-x-1 md:flex">
+          <nav className="hidden mx-20 space-x-1 md:flex">
             <Link href="/catalogo" className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-orange-50 hover:text-orange-600 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-orange-400">
               Catálogo
             </Link>
             <Link href="/novidades" className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-orange-50 hover:text-orange-600 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-orange-400">
               Novidades
+            </Link>
+              <Link href="/cliente/perfil" className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-orange-50 hover:text-orange-600 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-orange-400">
+                Minha area
             </Link>
           </nav>
         </div>
@@ -170,6 +173,8 @@ export default function Topbar() {
           <nav className="flex flex-col gap-2">
             <Link href="/catalogo" className="rounded-xl p-3 text-base font-medium text-slate-700 hover:bg-orange-50 dark:text-slate-200 dark:hover:bg-slate-900">Catálogo</Link>
             <Link href="/novidades" className="rounded-xl p-3 text-base font-medium text-slate-700 hover:bg-orange-50 dark:text-slate-200 dark:hover:bg-slate-900">Novidades</Link>
+            <Link href="/cliente/perfil" className="rounded-xl p-3 text-base font-medium text-slate-700 hover:bg-orange-50 dark:text-slate-200 dark:hover:bg-slate-900">Minha area</Link>
+             
           </nav>
         </div>
       )}

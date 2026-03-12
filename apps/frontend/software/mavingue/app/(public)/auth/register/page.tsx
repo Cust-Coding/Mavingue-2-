@@ -137,14 +137,15 @@ export default function RegisterPage() {
   }
 
   return (
-    <div style={{ maxWidth: 760, margin: "0 auto", padding: 16 }}>
+    <div style={{ maxWidth: 760, margin: "10px auto", padding: 16, fontFamily: "sans-serif", background: "white"}} className="rounded-lg bg-gray-100">
       <h2>Criar Conta (Cliente)</h2>
 
       {err && <div style={{ padding: 10, border: "1px solid #f5b", borderRadius: 8, color: "crimson" }}>{err}</div>}
       {ok && <div style={{ padding: 10, border: "1px solid #9f9", borderRadius: 8, color: "green" }}>{ok}</div>}
 
-      <form onSubmit={submit} style={{ display: "grid", gap: 12, marginTop: 12 }}>
-        <Field label="Nome completo *" error={fe.nome}>
+      <form onSubmit={submit} style={{ display: "grid", gap: 12, marginTop: 12, fontFamily: "sans-serif" }}>
+        
+        <Field label="Nome completo *" error={fe.nome} >
           <Input value={form.nome} onChange={(e) => set("nome", e.target.value)} />
         </Field>
 
@@ -211,7 +212,7 @@ export default function RegisterPage() {
           <Input value={form.numeroDocumento} onChange={(e) => set("numeroDocumento", e.target.value)} />
         </Field>
 
-        <Button type="submit" disabled={loading}>
+        <Button type="submit" disabled={loading} style={{background: "orangered"}}>
           {loading ? "A criar..." : "Criar conta"}
         </Button>
       </form>
