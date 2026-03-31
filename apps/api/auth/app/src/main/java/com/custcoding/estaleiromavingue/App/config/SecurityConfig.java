@@ -46,12 +46,12 @@ public class SecurityConfig {
                         // Meta (ex: sexos) - público para cadastro
                         .requestMatchers(HttpMethod.GET, "/api/meta/**").permitAll()
 
-                        // Cadastro de cliente (perfil) sem login (aceita / e sem /)
+                        // Cadastro de cliente restrito a admin/funcionario (aceita / e sem /)
                         .requestMatchers(HttpMethod.POST,
                                 "/api/customer",
                                 "/api/customer/",
                                 "/api/customer/**"
-                        ).permitAll()
+                        ).hasAnyRole("ADMIN", "FUNCIONARIO")
 
                         // --------------------
                         // USERS (ADMIN)
@@ -79,6 +79,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/stock/**").hasAnyRole("ADMIN", "FUNCIONARIO")
                         .requestMatchers("/api/vendas/**").hasAnyRole("ADMIN", "FUNCIONARIO")
                         .requestMatchers("/api/facturas-compra/**").hasAnyRole("ADMIN", "FUNCIONARIO")
+                        .requestMatchers("/api/customer-water/**").hasAnyRole("ADMIN", "FUNCIONARIO")
+                        .requestMatchers("/api/ligacoes-agua/**").hasAnyRole("ADMIN", "FUNCIONARIO")
+                        .requestMatchers("/api/leituras-agua/**").hasAnyRole("ADMIN", "FUNCIONARIO")
 
                         // Endereços: admin/staff
                         .requestMatchers("/api/address/**").hasAnyRole("ADMIN", "FUNCIONARIO")
