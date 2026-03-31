@@ -49,6 +49,7 @@ public class StockService {
             Stock s = new Stock();
             s.setProduto(p);
             s.setQuantidade(0);
+            s.setStockMinimo(0);
             return s;
         });
 
@@ -64,11 +65,16 @@ public class StockService {
             }
         }
 
+        if (stock.getFerragem() == null) {
+            throw new IllegalStateException("Stock sem ferragem associada para o produto: " + p.getId());
+        }
+
         stock.setQuantidade(novo);
         stock = stockRepo.save(stock);
 
         MovimentoStock mov = new MovimentoStock();
         mov.setProduto(p);
+        mov.setFerragem(stock.getFerragem());
         mov.setTipo(dto.tipo());
         mov.setQuantidade(dto.quantidade());
         mov.setMotivo(dto.motivo());
