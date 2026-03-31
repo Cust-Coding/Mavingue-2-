@@ -21,6 +21,7 @@ public class ProductService {
         p.setName(req.name());
         p.setDescription(req.description());
         p.setPrice(req.price());
+        p.setUrlImg(req.urlImg());
         return repo.save(p);
     }
 
@@ -39,6 +40,7 @@ public class ProductService {
         if (req.name() != null) p.setName(req.name());
         if (req.description() != null) p.setDescription(req.description());
         if (req.price() != null) p.setPrice(req.price());
+        if (req.urlImg() != null) p.setUrlImg(req.urlImg());
 
         return repo.save(p);
     }

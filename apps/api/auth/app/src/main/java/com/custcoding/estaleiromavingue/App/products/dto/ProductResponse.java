@@ -8,14 +8,16 @@ public record ProductResponse(
         Long id,
         String name,
         String description,
-        BigDecimal price
+        BigDecimal price,
+        String urlImg
 ) {
     public static ProductResponse from(Product p) {
         return new ProductResponse(
                 p.getId(),
                 p.getName(),
                 p.getDescription(),
-                p.getPrice()
+                p.getPrice(),
+                p.getUrlImg()
         );
     }
 }

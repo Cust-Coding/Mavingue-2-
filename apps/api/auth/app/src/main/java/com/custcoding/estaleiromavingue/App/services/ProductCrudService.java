@@ -22,6 +22,7 @@ public class ProductCrudService {
         p.setName(dto.name());
         p.setDescription(dto.description());
         p.setPrice(dto.price());
+        p.setUrlImg(dto.urlImg());
         p = repo.save(p);
         return toDTO(p);
     }
@@ -39,6 +40,7 @@ public class ProductCrudService {
         p.setName(dto.name());
         p.setDescription(dto.description());
         p.setPrice(dto.price());
+        p.setUrlImg(dto.urlImg());
         p = repo.save(p);
         return toDTO(p);
     }
@@ -49,6 +51,6 @@ public class ProductCrudService {
     }
 
     private ProductResponseDTO toDTO(Product p) {
-        return new ProductResponseDTO(p.getId(), p.getName(), p.getDescription(), p.getPrice());
+        return new ProductResponseDTO(p.getId(), p.getName(), p.getDescription(), p.getPrice(), p.getUrlImg());
     }
 }
