@@ -29,14 +29,21 @@ const Icons = {
 };
 
 export default function Topbar() {
+
+  const [mounted, setMounted] = useState(false);
+  
   const role = getRole();
   const [meName, setMeName] = useState<string>("");
   const [open, setOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [darkMode, setDarkMode] = useState(false); // Lógica local, integrável com next-themes
+  const [darkMode, setDarkMode] = useState(false);
   const boxRef = useRef<HTMLDivElement | null>(null);
 
-  // Toggle Dark Mode (Exemplo de funcionamento)
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
     document.documentElement.classList.toggle("dark");
@@ -72,6 +79,19 @@ export default function Topbar() {
   const displayName = firstName(meName) || (role ? "Conta" : "");
   const profileHref = role === "ADMIN" ? "/admin" : role === "CLIENTE" ? "/cliente/perfil" : "/staff";
 
+  
+  if (!mounted) {
+    return (
+      <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-gray-100/80 backdrop-blur-md dark:border-slate-800 dark:bg-slate-950/80">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+          <div className="h-8 w-24 bg-orange-200 animate-pulse rounded dark:bg-orange-900/30"></div>
+          <div className="h-8 w-32 bg-slate-200 animate-pulse rounded dark:bg-slate-800"></div>
+        </div>
+      </header>
+    );
+  }
+
+ 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-gray-100/80 backdrop-blur-md dark:border-slate-800 dark:bg-slate-950/80">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -96,8 +116,8 @@ export default function Topbar() {
             <Link href="/novidades" className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-orange-50 hover:text-orange-600 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-orange-400">
               Novidades
             </Link>
-              <Link href="/cliente/perfil" className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-orange-50 hover:text-orange-600 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-orange-400">
-                Minha area
+            <Link href="/cliente/perfil" className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-orange-50 hover:text-orange-600 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-orange-400">
+              Minha area
             </Link>
           </nav>
         </div>
@@ -174,10 +194,9 @@ export default function Topbar() {
             <Link href="/catalogo" className="rounded-xl p-3 text-base font-medium text-slate-700 hover:bg-orange-50 dark:text-slate-200 dark:hover:bg-slate-900">Catálogo</Link>
             <Link href="/novidades" className="rounded-xl p-3 text-base font-medium text-slate-700 hover:bg-orange-50 dark:text-slate-200 dark:hover:bg-slate-900">Novidades</Link>
             <Link href="/cliente/perfil" className="rounded-xl p-3 text-base font-medium text-slate-700 hover:bg-orange-50 dark:text-slate-200 dark:hover:bg-slate-900">Minha area</Link>
-             
           </nav>
         </div>
       )}
     </header>
- );
+  );
 }
