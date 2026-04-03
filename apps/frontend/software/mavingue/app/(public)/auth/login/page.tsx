@@ -1,17 +1,73 @@
 "use client";
 
 import { useState } from "react";
-import { Input } from "@/components/ui/Input";
-import { Button } from "@/components/ui/Button";
 import { useSearchParams } from "next/navigation";
 import { setSession } from "@/lib/auth/session";
+import { Mail, Lock, Eye, EyeOff, AlertCircle } from "lucide-react";
 
-function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
+// Componente Input reutilizável com estilo premium
+function PremiumInput({
+  icon: Icon,
+  type = "text",
+  value,
+  onChange,
+  placeholder,
+  error,
+  ...props
+}: {
+  icon?: React.ElementType;
+  type?: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  placeholder?: string;
+  error?: string;
+  [key: string]: any;
+}) {
+  const [showPassword, setShowPassword] = useState(false);
+  const isPassword = type === "password";
+  const inputType = isPassword ? (showPassword ? "text" : "password") : type;
+
   return (
-    <div style={{ display: "grid", gap: 6 }}>
-      <label style={{ fontSize: 14 }}>{label}</label>
-      {children}
-      {error && <div style={{ color: "crimson", fontSize: 13 }}>{error}</div>}
+    <div className="relative">
+      {Icon && (
+        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+          <Icon size={18} />
+        </div>
+      )}
+      <input
+        type={inputType}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        className={`
+          w-full px-4 py-3 rounded-xl border bg-white text-gray-900 
+          placeholder:text-gray-400 transition-all duration-200 
+          focus:outline-none focus:ring-2 
+          ${error 
+            ? "border-red-500 focus:ring-red-200 focus:border-red-500" 
+            : "border-gray-200 focus:ring-[#FF4500]/20 focus:border-[#FF4500]"
+          }
+          hover:border-gray-300
+          ${Icon ? "pl-10" : "pl-4"}
+          ${isPassword ? "pr-10" : "pr-4"}
+        `}
+        {...props}
+      />
+      {isPassword && (
+        <button
+          type="button"
+          onClick={() => setShowPassword(!showPassword)}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+        >
+          {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+        </button>
+      )}
+      {error && (
+        <div className="flex items-center gap-1 mt-1 text-xs text-red-500 animate-pulse">
+          <AlertCircle size={12} />
+          <span>{error}</span>
+        </div>
+      )}
     </div>
   );
 }
@@ -25,7 +81,8 @@ function dashboardForRole(role: string) {
 
 export default function LoginPage() {
   const sp = useSearchParams();
-  const nextParam = sp.get("next"); 
+  const nextParam = sp.get("next");
+
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
   const [fe, setFe] = useState<Record<string, string>>({});
@@ -50,12 +107,14 @@ export default function LoginPage() {
 
     setLoading(true);
     try {
-      // 1) login -> token
       const res = await fetch("/api/proxy/api/auth/login", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim(), password }),
+        body: JSON.stringify({
+          email: email.trim(),
+          password,
+        }),
       });
 
       if (!res.ok) {
@@ -79,13 +138,15 @@ export default function LoginPage() {
       const data = await res.json();
       const token = data?.token ?? data;
 
-      // 2) guarda token temporário
       setSession(token, "CLIENTE");
 
-      // 3) busca /me -> role e nome
       let role = "CLIENTE";
       try {
-        const meRes = await fetch("/api/proxy/api/auth/me", { method: "GET", credentials: "include" });
+        const meRes = await fetch("/api/proxy/api/auth/me", {
+          method: "GET",
+          credentials: "include",
+        });
+
         if (meRes.ok) {
           const me = await meRes.json();
           role = me?.role ?? "CLIENTE";
@@ -94,66 +155,116 @@ export default function LoginPage() {
           const nome = me?.nome ?? "";
           if (nome) localStorage.setItem("me_name", nome);
         }
-      } catch {
-        // se falhar, fica CLIENTE
-      }
+      } catch {}
 
-      // 4) redirect correto
       const defaultDash = dashboardForRole(role);
 
-      // se next vier vazio ou for "/" ou for página pública -> ignora e manda pro dashboard
       const next =
-        nextParam && nextParam.startsWith("/") && nextParam !== "/" && !nextParam.startsWith("/auth")
+        nextParam &&
+        nextParam.startsWith("/") &&
+        nextParam !== "/" &&
+        !nextParam.startsWith("/auth")
           ? nextParam
           : defaultDash;
 
       location.href = next;
     } catch (e: any) {
-      setErr(e?.message ?? "Falha ao comunicar com o servidor");
+      setErr(e?.message ?? "Erro no servidor");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-<div  style={{ maxWidth: 420, margin: "40px auto", border: "1px solid #ddd", borderRadius: 10, padding: 16, background: "white" }}>
-   
-
-      {err && (
-        <div style={{ marginTop: 10, padding: 10, border: "1px solid #f5b5b5", background: "#fff2f2", color: "#b00020", borderRadius: 8 }}>
-          {err}
+    <div className="min-h-screen flex">
+      {/* LADO ESQUERDO - ILUSTRAÇÃO */}
+      <div className="hidden lg:flex w-1/2 bg-gradient-to-br from-gray-50 to-gray-100 flex-col justify-between p-12 relative">
+        <div className="flex justify-center items-center flex-1">
+          <img
+            src="https://cdni.iconscout.com/illustration/premium/thumb/business-growth-4489159-3723273.png"
+            alt="illustration"
+            className="max-w-[400px] opacity-90 drop-shadow-2xl"
+          />
         </div>
-      )}
-      {/* Card lateral */}
-
-      <div> 
-        <h2 style={{ color: "black", fontSize: "24px", fontWeight: "bold", marginBottom: "30px", letterSpacing: "-0.5px", textAlign: "center" }}>Login</h2>
-        <form onSubmit={submit} style={{ display: "grid", gap: 12, marginTop: 12 }}>
-        <Field label="Email" error={fe.email}>
-          <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="ex: cliente@mail.com" autoComplete="email"
-          className="outline-none " />
-        </Field>
-
-        <Field label="Senha" error={fe.password}>
-          <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" style={{ 
-  color: "gray", 
-  fontSize: "24px", 
-  fontWeight: "bold", 
-  marginBottom: "30px", 
-  letterSpacing: "-0.5px",
-  outline: "none" 
-}}/>
-        </Field>
-
-        <Button type="submit" disabled={loading} style={{background:"orangered"}}>
-          {loading ? "A entrar..." : "Entrar"}
-        </Button>
-      </form>
       </div>
 
-      
+      {/* LADO DIREITO - FORMULÁRIO */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center bg-white px-6">
+        <div className="w-full max-w-md">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">
+              Bem‑vindo de volta!
+            </h2>
+            <p className="text-gray-400">
+              Introduza os seus dados para aceder à conta
+            </p>
+          </div>
+
+          {err && (
+            <div className="mb-6 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm flex items-center gap-2">
+              <AlertCircle size={16} />
+              {err}
+            </div>
+          )}
+
+          <form onSubmit={submit} className="flex flex-col gap-6">
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-1 block">
+                Endereço de email
+              </label>
+              <PremiumInput
+                icon={Mail}
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="seu@email.com"
+                error={fe.email}
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-1 block">
+                Palavra‑passe
+              </label>
+              <PremiumInput
+                icon={Lock}
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                error={fe.password}
+              />
+            </div>
+
+            <div className="text-right">
+              <a
+                href="/auth/reset-password"
+                className="text-sm text-gray-400 hover:text-[#FF4500] transition"
+              >
+                Esqueceu a senha?
+              </a>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="h-12 rounded-xl bg-[#FF4500] text-white font-semibold hover:bg-[#e03e00] transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
+            >
+              {loading ? "A entrar..." : "Entrar"}
+            </button>
+          </form>
+
+          <p className="text-center text-sm text-gray-400 mt-8">
+            Não tem uma conta?{" "}
+            <a
+              href="/auth/register"
+              className="text-[#FF4500] font-medium hover:underline"
+            >
+              Registre‑se
+            </a>
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
-
-
