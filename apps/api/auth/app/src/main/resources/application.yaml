@@ -9,16 +9,21 @@ server:
 #     driver-class-name: org.postgresql.Driver
 
 
+#
+#spring:
+#  datasource:
+#    url: jdbc:postgresql://localhost:5432/mavingue
+#    username: postgres
+#    password: "000#"
+#    driver-class-name: org.postgresql.Driver
+#
 
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/mavingue
     username: postgres
-    password: "000#"
+    password: 070239
     driver-class-name: org.postgresql.Driver
-
-
-
 
 
   jpa:
@@ -34,3 +39,9 @@ app:
   jwt:
     secret: "fjsadahdhasiu23423%&^%FSD4342ASHjfaT*&sayfsafjsa5435"
     expirationSeconds: 7200
+
+resend:
+  api:
+    key: ${RESEND_API_KEY}
+email:
+  from: ${EMAIL_FROM}
