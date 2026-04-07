@@ -1,10 +1,45 @@
+'use client';
+
 import Link from "next/link";
+import { useEffect, useRef } from 'react';
+import gsap from 'gsap';
 
 export default function Landing() {
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const textRef = useRef<HTMLDivElement>(null);
+  const buttonsRef = useRef<HTMLDivElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Animação do título
+    gsap.fromTo(titleRef.current,
+      { opacity: 0, x: -50 },
+      { opacity: 1, x: 0, duration: 0.8, ease: "power2.out" }
+    );
+    
+    // Animação do texto (todas as frases vêm da esquerda)
+    gsap.fromTo(textRef.current?.children,
+      { opacity: 0, x: -50 },
+      { opacity: 1, x: 0, duration: 0.6, stagger: 0.2, ease: "power2.out" }
+    );
+    
+    // Animação dos botões
+    gsap.fromTo(buttonsRef.current?.children,
+      { opacity: 0, scale: 0.8 },
+      { opacity: 1, scale: 1, duration: 0.5, stagger: 0.1, ease: "back.out(0.5)" }
+    );
+    
+    // Animação da secção inferior
+    gsap.fromTo(bottomRef.current,
+      { opacity: 0, y: 30 },
+      { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }
+    );
+  }, []);
+
   return (
     <main className="bg-white">
       
-      {/* HERO PREMIUM */}
+      {/* HERO */}
       <div
         className="w-screen min-h-[85vh] flex items-center justify-start relative px-6 lg:px-20 py-20 overflow-hidden"
         style={{
@@ -15,18 +50,19 @@ export default function Landing() {
           backgroundAttachment: "fixed",
         }}
       >
-        {/* glow decor */}
-        <div className="absolute top-[-10%] right-[-10%] w-96 h-96 bg-[#FF4500]/20 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-96 h-96 bg-[#10afd3]/20 rounded-full blur-[120px]" />
-
         <div className="max-w-4xl relative z-10">
-          <h1 className="text-[#FF4500] text-5xl lg:text-7xl font-black mb-6 tracking-tight leading-[1.05]">
+          {/* Título */}
+          <h1 
+            ref={titleRef}
+            className="text-[#FF4500] text-5xl lg:text-7xl font-black mb-6 tracking-tight leading-[1.05]"
+          >
             Estaleiro <br />
             <span className="text-white">Mavingue</span>
           </h1>
 
-          <div className="text-white text-xl lg:text-2xl leading-relaxed font-medium max-w-2xl">
-            <p className="mb-6 opacity-90">
+          {/* Texto com animação da esquerda */}
+          <div ref={textRef} className="text-white text-xl lg:text-2xl leading-relaxed font-medium max-w-2xl">
+            <p className="mb-6">
               Seja para equipar a sua obra com os melhores materiais de
               construção ou para gerir o consumo de{" "}
               <span className="bg-[#10afd3] text-transparent bg-clip-text font-semibold">
@@ -35,14 +71,17 @@ export default function Landing() {
               da sua residência, estamos aqui para facilitar o seu dia a dia.
             </p>
 
-            <div className="border-l-4 border-[#FF4500] pl-6 text-orange-100 text-lg lg:text-xl italic backdrop-blur-sm">
+            <div className="border-l-4 border-[#FF4500] pl-6 text-orange-100 text-lg lg:text-xl italic">
               Através desta plataforma, terá total transparência e controlo
               sobre as suas compras e faturas, tudo a partir de um único lugar.
             </div>
           </div>
 
-          {/* CTA PREMIUM */}
-          <div className="mt-10 flex flex-wrap gap-4">
+          {/* Botões */}
+          <div 
+            ref={buttonsRef}
+            className="mt-10 flex flex-wrap gap-4"
+          >
             <Link
               href="/catalogo"
               className="px-6 h-14 flex items-center justify-center rounded-2xl bg-[#FF4500] text-white font-bold shadow-xl shadow-[#FF4500]/30 hover:shadow-[#FF4500]/50 hover:-translate-y-1 transition-all duration-300"
@@ -52,14 +91,14 @@ export default function Landing() {
 
             <Link
               href="/auth/register"
-              className="px-6 h-14 flex items-center justify-center rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 text-white font-bold hover:bg-white/20 transition-all duration-300"
+              className="px-6 h-14 flex items-center justify-center rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 text-white font-bold hover:bg-white/20 hover:-translate-y-1 transition-all duration-300"
             >
               Criar Conta
             </Link>
 
             <Link
               href="/auth/login"
-              className="px-6 h-14 flex items-center justify-center rounded-2xl text-white/80 font-bold hover:text-white transition-all duration-300"
+              className="px-6 h-14 flex items-center justify-center rounded-2xl text-white/80 font-bold hover:text-white hover:-translate-y-1 transition-all duration-300"
             >
               Já tenho conta
             </Link>
@@ -67,8 +106,11 @@ export default function Landing() {
         </div>
       </div>
 
-      {/* SECÇÃO INFERIOR PREMIUM */}
-      <div className="py-16 px-6 lg:px-20 bg-gradient-to-b from-white to-gray-50">
+      {/* SECÇÃO INFERIOR */}
+      <div 
+        ref={bottomRef}
+        className="py-16 px-6 lg:px-20 bg-gradient-to-b from-white to-gray-50"
+      >
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-2xl lg:text-3xl font-extrabold text-gray-900 mb-4">
             Catálogo público disponível
@@ -82,21 +124,21 @@ export default function Landing() {
           <div className="flex flex-wrap justify-center gap-4">
             <Link
               href="/catalogo"
-              className="px-6 h-12 flex items-center rounded-xl bg-gray-900 text-white font-bold hover:bg-black transition"
+              className="px-6 h-12 flex items-center rounded-xl bg-gray-900 text-white font-bold hover:bg-black hover:-translate-y-1 transition-all duration-300"
             >
               Explorar
             </Link>
 
             <Link
               href="/auth/register"
-              className="px-6 h-12 flex items-center rounded-xl border border-gray-200 font-bold text-gray-700 hover:bg-gray-100 transition"
+              className="px-6 h-12 flex items-center rounded-xl border border-gray-200 font-bold text-gray-700 hover:bg-gray-100 hover:-translate-y-1 transition-all duration-300"
             >
               Registar
             </Link>
 
             <Link
               href="/auth/login"
-              className="px-6 h-12 flex items-center rounded-xl text-gray-500 font-bold hover:text-gray-900 transition"
+              className="px-6 h-12 flex items-center rounded-xl text-gray-500 font-bold hover:text-gray-900 hover:-translate-y-1 transition-all duration-300"
             >
               Login
             </Link>

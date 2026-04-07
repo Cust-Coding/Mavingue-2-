@@ -17,7 +17,7 @@ function firstName(full?: string): string {
   return t[0] ?? "";
 }
 
-// Ícones Modernos
+// 1cones
 const Icons = {
   User: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
   Cart: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>,
@@ -29,8 +29,8 @@ const Icons = {
 };
 
 export default function Topbar() {
-
   const [mounted, setMounted] = useState(false);
+  const [visible, setVisible] = useState(false);
   
   const role = getRole();
   const [meName, setMeName] = useState<string>("");
@@ -39,9 +39,15 @@ export default function Topbar() {
   const [darkMode, setDarkMode] = useState(false);
   const boxRef = useRef<HTMLDivElement | null>(null);
 
-
   useEffect(() => {
     setMounted(true);
+    
+    // Timer 2 segundos
+    const timer = setTimeout(() => {
+      setVisible(true);
+    }, 400);
+
+    return () => clearTimeout(timer);
   }, []);
 
   const toggleDarkMode = () => {
@@ -79,7 +85,6 @@ export default function Topbar() {
   const displayName = firstName(meName) || (role ? "Conta" : "");
   const profileHref = role === "ADMIN" ? "/admin" : role === "CLIENTE" ? "/cliente/perfil" : "/staff";
 
-  
   if (!mounted) {
     return (
       <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-gray-100/80 backdrop-blur-md dark:border-slate-800 dark:bg-slate-950/80">
@@ -91,10 +96,13 @@ export default function Topbar() {
     );
   }
 
- 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-gray-100/80 backdrop-blur-md dark:border-slate-800 dark:bg-slate-950/80">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <div 
+        className={`mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8 transition-all duration-700 ${
+          visible ? "opacity-100" : "opacity-0"
+        }`}
+      >
         
         {/* Lado Esquerdo: Logo e Nav Desktop */}
         <div className="flex items-center gap-6">
@@ -122,7 +130,7 @@ export default function Topbar() {
           </nav>
         </div>
 
-        {/* Lado Direito: Ações */}
+        {/* Lado Direito*/}
         <div className="flex items-center gap-2 sm:gap-4">
           
           {/* Dark Mode Toggle */}
@@ -134,7 +142,7 @@ export default function Topbar() {
             {darkMode ? <Icons.Sun /> : <Icons.Moon />}
           </button>
 
-          {/* Carrinho */}
+          {/* Carrinh */}
           <Link 
             href="/carrinho" 
             className="relative flex h-10 w-10 items-center justify-center rounded-full text-slate-600 transition hover:bg-orange-50 hover:text-orange-600 dark:text-slate-300 dark:hover:bg-slate-900"
@@ -187,7 +195,7 @@ export default function Topbar() {
         </div>
       </div>
 
-      {/* Menu Mobile */}
+      {/* Menu Mbile */}
       {mobileMenuOpen && (
         <div className="border-t border-slate-100 bg-white p-4 animate-in slide-in-from-top md:hidden dark:border-slate-800 dark:bg-slate-950">
           <nav className="flex flex-col gap-2">
