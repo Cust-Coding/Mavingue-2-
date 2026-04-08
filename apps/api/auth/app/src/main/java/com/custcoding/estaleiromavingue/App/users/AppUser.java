@@ -27,4 +27,9 @@ public class AppUser {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private Role role;
+
+    @Column(
+            nullable = false
+    )
+    private boolean enabled = false;
 }

@@ -4,12 +4,19 @@ import com.custcoding.estaleiromavingue.App.auth.dto.*;
 import com.custcoding.estaleiromavingue.App.models.CustomerProduct;
 import com.custcoding.estaleiromavingue.App.repositories.CustomerRepository;
 import com.custcoding.estaleiromavingue.App.security.JwtService;
+import com.custcoding.estaleiromavingue.App.security.VerificationToken;
+import com.custcoding.estaleiromavingue.App.security.VerificationTokenRepository;
+import com.custcoding.estaleiromavingue.App.services.EmailValidatorService;
 import com.custcoding.estaleiromavingue.App.users.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -19,6 +26,14 @@ public class AuthService {
     private final CustomerRepository customerRepo;
     private final PasswordEncoder encoder;
     private final JwtService jwt;
+
+    private final VerificationTokenRepository tokenRepository;
+    private final EmailValidatorService emailValidatorService;
+
+
+    @Value("${app.base-url}")
+    private String baseUrl;
+
 
     public LoginResponse login(LoginRequest req) {
         AppUser u = userRepo.findByEmail(req.email())
@@ -82,4 +97,47 @@ public class AuthService {
         // 3) devolve token já logado
         return new LoginResponse(jwt.generate(u));
     }
+
+    private void sendVerification(AppUser user){
+        tokenRepository.findByUser(user).ifPresent(tokenRepository::delete);
+
+        String tokenValue = UUID.randomUUID().toString();
+
+        VerificationToken token = new VerificationToken();
+        token.setToken(tokenValue);
+        token.setUser(user);
+        token.setExpiryDate(LocalDateTime.now().plusHours(24));
+        tokenRepository.save(token);
+
+        String verificationUrl = baseUrl + "/auth/verify?token=" + tokenValue;
+        emailValidatorService.sendVerificationEmail(user.getEmail(),  verificationUrl);
+
+   }
+
+   public void verifyAccount(String tokenValue){
+        VerificationToken token = tokenRepository.findByToken(tokenValue)
+                .orElseThrow(() -> new RuntimeException("Token Invalido"));
+        if (token.isExpired()){
+            throw new RuntimeException("Token Expirado");
+        }
+        AppUser user  = token.getUser();
+        user.setEnabled(true);
+        userRepo.save(user);
+
+        tokenRepository.delete(token);
+   }
+
+
+    public void resendVerificationToken(String email) {
+        AppUser user = userRepo.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Utilizador não encontrado"));
+
+        if (user.isEnabled()) {
+            throw new RuntimeException("Conta já verificada");
+        }
+
+        sendVerification(user);
+    }
+
+
 }

@@ -39,7 +39,7 @@ app:
   jwt:
     secret: "fjsadahdhasiu23423%&^%FSD4342ASHjfaT*&sayfsafjsa5435"
     expirationSeconds: 7200
-
+  base-url: http://localhost:8080
 resend:
   api:
     key: ${RESEND_API_KEY}

@@ -3,6 +3,7 @@ package com.custcoding.estaleiromavingue.App.auth;
 import com.custcoding.estaleiromavingue.App.auth.dto.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,4 +28,12 @@ public class AuthController {
     public LoginResponse register(@Valid @RequestBody RegisterClientRequest req) {
         return service.registerClient(req);
     }
+
+    @GetMapping("/verify")
+    public ResponseEntity<String> verify (@RequestParam String token){
+        service.verifyAccount(token);
+        return ResponseEntity.ok("Conta Activada com Sucesso");
+    }
+
+
 }
