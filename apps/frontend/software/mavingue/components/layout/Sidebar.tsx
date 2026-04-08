@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { getRole, type Role } from "@/lib/auth/session";
@@ -91,7 +91,6 @@ const menuItems: NavItem[] = [
       { label: "Nova Venda", href: "/admin/vendas/nova" },
     ],
   },
-
   {
     label: "Funcionário",
     roles: ["FUNCIONARIO", "ADMIN"],
@@ -105,7 +104,6 @@ const menuItems: NavItem[] = [
       { label: "Nova Venda", href: "/staff/vendas/nova" },
     ],
   },
-
   {
     label: "Cliente",
     roles: ["CLIENTE"],
@@ -119,17 +117,59 @@ const menuItems: NavItem[] = [
 ];
 
 export default function Sidebar() {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
   const [activeSubmenu, setActiveSubmenu] = useState<string | null>(null);
+  const [hasInitialAnimation, setHasInitialAnimation] = useState(false);
+  const autoCloseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const initialSubmenuTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const role = getRole();
   const pathname = usePathname();
 
   const filteredItems = role ? menuItems.filter((item) => item.roles.includes(role as Role)) : [];
 
-  // ✅ FIX REAL: só mexe numa CSS variable (o layout usa isso no conteúdo)
+  // Abrir todos os submenus um por um durante a animação inicial
   useEffect(() => {
-    document.documentElement.style.setProperty("--sidebar-offset", isOpen ? "256px" : "80px"); // w-64 / w-20
+    if (!hasInitialAnimation && isOpen && filteredItems.length > 0) {
+      // Abrir submenus sequencialmente
+      filteredItems.forEach((item, index) => {
+        if (item.sublinks && item.sublinks.length > 0) {
+          const timeoutId = setTimeout(() => {
+            setActiveSubmenu(prev => {
+              // Se já tiver um submenu aberto, adiciona o novo (pode abrir múltiplos)
+              if (prev === item.label) return prev;
+              if (prev === null) return item.label;
+              // Para múltiplos submenus, você pode armazenar como array ou string
+              // Aqui vamos apenas mostrar o último, mas você pode modificar
+              return item.label;
+            });
+          }, index * 300); // Abre cada submenu com 300ms de intervalo
+          
+          initialSubmenuTimeoutRef.current = timeoutId;
+        }
+      });
+
+      // Fechar a sidebar após 2 segundos
+      autoCloseTimeoutRef.current = setTimeout(() => {
+        setIsOpen(false);
+        setActiveSubmenu(null);
+        setHasInitialAnimation(true);
+      }, 2000);
+    }
+
+    return () => {
+      if (autoCloseTimeoutRef.current) {
+        clearTimeout(autoCloseTimeoutRef.current);
+      }
+      if (initialSubmenuTimeoutRef.current) {
+        clearTimeout(initialSubmenuTimeoutRef.current);
+      }
+    };
+  }, [hasInitialAnimation, isOpen, filteredItems]);
+
+  // Efeito para o offset do conteúdo principal
+  useEffect(() => {
+    document.documentElement.style.setProperty("--sidebar-offset", isOpen ? "256px" : "80px");
     return () => {
       document.documentElement.style.removeProperty("--sidebar-offset");
     };
@@ -140,6 +180,18 @@ export default function Sidebar() {
     setActiveSubmenu(activeSubmenu === label ? null : label);
   };
 
+  const handleMenuClick = () => {
+    setIsOpen(!isOpen);
+    setActiveSubmenu(null);
+    if (autoCloseTimeoutRef.current) {
+      clearTimeout(autoCloseTimeoutRef.current);
+      setHasInitialAnimation(true);
+    }
+    if (initialSubmenuTimeoutRef.current) {
+      clearTimeout(initialSubmenuTimeoutRef.current);
+    }
+  };
+
   return (
     <aside
       className={`fixed left-0 top-16 z-40 h-[calc(100vh-4rem)] border-r border-slate-200 bg-white/90 backdrop-blur-md transition-all duration-300 dark:border-slate-800 dark:bg-slate-950/90 ${
@@ -148,10 +200,7 @@ export default function Sidebar() {
     >
       <div className="flex h-full flex-col p-3">
         <button
-          onClick={() => {
-            setIsOpen(!isOpen);
-            setActiveSubmenu(null);
-          }}
+          onClick={handleMenuClick}
           className="mb-6 flex h-12 w-full items-center justify-center rounded-xl text-slate-500 transition-colors hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-900"
         >
           <Icons.Menu />

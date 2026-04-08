@@ -29,6 +29,8 @@ public class SecurityConfig {
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
 
+
+                        .requestMatchers("/swagger-ui/index.html").permitAll()
                         // --------------------
                         // AUTH (PÚBLICO)
                         // --------------------
@@ -93,6 +95,8 @@ public class SecurityConfig {
                         // --------------------
                         // Default
                         // --------------------
+
+
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
