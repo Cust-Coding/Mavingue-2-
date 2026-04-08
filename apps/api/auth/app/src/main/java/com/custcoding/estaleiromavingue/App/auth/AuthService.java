@@ -43,6 +43,10 @@ public class AuthService {
             throw new IllegalArgumentException("Credenciais inválidas");
         }
 
+        if(u.getEnabled()){
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Conta não verificada. Verifique o seu email.");
+        }
+
         return new LoginResponse(jwt.generate(u));
     }
 
@@ -76,6 +80,7 @@ public class AuthService {
         u.setEmail(req.email());
         u.setPasswordHash(encoder.encode(req.password()));
         u.setRole(Role.CLIENTE);
+        u.setEnabled(false);
         u = userRepo.save(u);
 
         // 2) cria perfil do cliente (CustomerProduct)
@@ -94,7 +99,10 @@ public class AuthService {
         c.setNumeroDocumento(req.numeroDocumento());
         customerRepo.save(c);
 
-        // 3) devolve token já logado
+        // 3) Envia email de verificacao
+        sendVerification(u);
+
+        // 4) devolve token já logado
         return new LoginResponse(jwt.generate(u));
     }
 
@@ -132,7 +140,7 @@ public class AuthService {
         AppUser user = userRepo.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Utilizador não encontrado"));
 
-        if (user.isEnabled()) {
+        if (user.getEnabled()) {
             throw new RuntimeException("Conta já verificada");
         }
 

@@ -38,7 +38,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/auth/register").permitAll()
                         .requestMatchers(HttpMethod.GET,  "/api/auth/me").authenticated()
 
-                        // --------------------
+                        // --------------------89
                         // PÚBLICO (sem login)
                         // --------------------
                         // Catálogo

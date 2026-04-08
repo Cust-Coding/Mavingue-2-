@@ -7,6 +7,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -35,5 +37,9 @@ public class AuthController {
         return ResponseEntity.ok("Conta Activada com Sucesso");
     }
 
-
+    @PostMapping("/resend-token")
+    public ResponseEntity<String> resendToken(@RequestBody Map<String, String> body) {
+        service.resendVerificationToken(body.get("email"));
+        return ResponseEntity.ok("Email de verificação reenviado.");
+    }
 }
