@@ -1,27 +1,27 @@
 server:
   port: 8080
 
-# spring:
-#   datasource:
-#     url: jdbc:postgresql://localhost:5432/mavingue
-#     username: postgres
-#     password: 852654
-#     driver-class-name: org.postgresql.Driver
-
-
-
 spring:
-  datasource:
-    url: jdbc:postgresql://localhost:5432/mavingue
-    username: postgres
-    password: "000#"
-    driver-class-name: org.postgresql.Driver
+   datasource:
+     url: jdbc:postgresql://localhost:5432/mavingue
+     username: postgres
+     password: 852654
+     driver-class-name: org.postgresql.Driver
+
+
+
+#spring:
+#  datasource:
+#    url: jdbc:postgresql://localhost:5432/mavingue
+#    username: postgres
+#    password: "000#"
+#    driver-class-name: org.postgresql.Driver
 
 
 
 
 
-  jpa:
+jpa:
 
     hibernate:
       ddl-auto: update
