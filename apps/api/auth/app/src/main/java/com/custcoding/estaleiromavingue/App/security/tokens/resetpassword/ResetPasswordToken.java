@@ -1,4 +1,4 @@
-package com.custcoding.estaleiromavingue.App.security;
+package com.custcoding.estaleiromavingue.App.security.tokens.resetpassword;
 
 
 import com.custcoding.estaleiromavingue.App.users.AppUser;
@@ -11,7 +11,8 @@ import java.time.LocalDateTime;
 @Entity
 @Table
 @Data
-public class VerificationToken {
+public class ResetPasswordToken {
+
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,13 +25,11 @@ public class VerificationToken {
     private AppUser user;
 
     @CreationTimestamp
-    @Column(nullable = false, updatable = false)
     private LocalDateTime expiryDate;
 
     public Boolean isExpired() {
         return LocalDateTime.now().isAfter(expiryDate);
     }
-
 
 
 

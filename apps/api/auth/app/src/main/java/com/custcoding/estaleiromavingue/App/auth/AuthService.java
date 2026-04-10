@@ -4,8 +4,10 @@ import com.custcoding.estaleiromavingue.App.auth.dto.*;
 import com.custcoding.estaleiromavingue.App.models.CustomerProduct;
 import com.custcoding.estaleiromavingue.App.repositories.CustomerRepository;
 import com.custcoding.estaleiromavingue.App.security.JwtService;
-import com.custcoding.estaleiromavingue.App.security.VerificationToken;
-import com.custcoding.estaleiromavingue.App.security.VerificationTokenRepository;
+import com.custcoding.estaleiromavingue.App.security.tokens.resetpassword.ResetPassowordTokenRepository;
+import com.custcoding.estaleiromavingue.App.security.tokens.resetpassword.ResetPasswordToken;
+import com.custcoding.estaleiromavingue.App.security.tokens.verification.VerificationToken;
+import com.custcoding.estaleiromavingue.App.security.tokens.verification.VerificationTokenRepository;
 import com.custcoding.estaleiromavingue.App.services.EmailValidatorService;
 import com.custcoding.estaleiromavingue.App.users.*;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +32,7 @@ public class AuthService {
     private final VerificationTokenRepository tokenRepository;
     private final EmailValidatorService emailValidatorService;
 
+    private final ResetPassowordTokenRepository resetPassowordTokenRepository;
 
     @Value("${app.base-url}")
     private String baseUrl;
@@ -43,7 +46,7 @@ public class AuthService {
             throw new IllegalArgumentException("Credenciais inválidas");
         }
 
-        if(u.getEnabled()){
+        if(!u.getEnabled()){
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Conta não verificada. Verifique o seu email.");
         }
 
@@ -146,6 +149,44 @@ public class AuthService {
 
         sendVerification(user);
     }
+
+    public void requestPasswordReset(ForgotPasswordRequest request)
+    {
+        AppUser user = userRepo.findByEmail(request.email())
+                .orElseThrow(() -> new RuntimeException("Utilizador não encontrado"));
+
+        resetPassowordTokenRepository.findByUser(user).ifPresent(resetPassowordTokenRepository::delete);
+
+        String tokenValue = UUID.randomUUID().toString();
+
+
+        ResetPasswordToken token = new ResetPasswordToken();
+        token.setToken(tokenValue);
+        token.setUser(user);
+        token.setExpiryDate(LocalDateTime.now().plusHours(1));
+
+        resetPassowordTokenRepository.save(token);
+
+        String retetUrl = baseUrl + "/auth/reset-password?token=" + tokenValue;
+        emailValidatorService.sendPasswordResetEmail(user.getEmail(), retetUrl);
+
+
+    }
+
+    public void resetPassword(ResetPasswordRequest request){
+
+        ResetPasswordToken token = resetPassowordTokenRepository.findByToken(request.token())
+                .orElseThrow(() -> new RuntimeException("Token Invalido"));
+        if(token.isExpired()){
+            throw new RuntimeException("Token Expirado");
+        }
+        AppUser user = token.getUser();
+        user.setPasswordHash(encoder.encode(request.newPassword()));
+        userRepo.save(user);
+        resetPassowordTokenRepository.delete(token);
+
+    }
+
 
 
 }

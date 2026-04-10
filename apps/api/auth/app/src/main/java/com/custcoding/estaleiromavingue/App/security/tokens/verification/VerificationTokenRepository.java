@@ -1,4 +1,4 @@
-package com.custcoding.estaleiromavingue.App.security;
+package com.custcoding.estaleiromavingue.App.security.tokens.verification;
 
 import com.custcoding.estaleiromavingue.App.users.AppUser;
 import org.springframework.data.jpa.repository.JpaRepository;

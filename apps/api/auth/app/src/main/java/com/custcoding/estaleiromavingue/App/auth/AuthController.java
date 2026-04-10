@@ -42,4 +42,20 @@ public class AuthController {
         service.resendVerificationToken(body.get("email"));
         return ResponseEntity.ok("Email de verificação reenviado.");
     }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<String> forgotPassword(
+            @Valid @RequestBody ForgotPasswordRequest request
+    ){
+        service.requestPasswordReset(request);
+        return ResponseEntity.ok("Email de Redifinição enviado");
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<String> resetPassword(
+            @RequestBody ResetPasswordRequest request
+    ){
+        service.resetPassword(request);
+        return ResponseEntity.ok("Senha redefinida com sucesso.");
+    }
 }
