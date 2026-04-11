@@ -1,11 +1,39 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { setSession } from "@/lib/auth/session";
 import { Mail, Lock, Eye, EyeOff, AlertCircle } from "lucide-react";
 
-// Componente Input reutilizável com estilo premium
+type UnsplashPhoto = {
+  id: string;
+  urls?: {
+    regular?: string;
+    full?: string;
+  };
+  user?: {
+    name?: string;
+  };
+};
+
+const UNSPLASH_KEY = "chev9GnfrEnrjUqH2453c_WzTsPgKmgKViPk6bCYY4A";
+const RECENT_BG_KEY = "login_recent_unsplash_bg_ids";
+
+const FALLBACK_BG =
+  "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1600&q=80";
+  
+
+const BG_QUERIES = [
+  "construction site africa",
+  "construction workers africa",
+  "modern construction site",
+  "engineering project construction",
+  "steel beams construction",
+  "industrial building construction",
+  "workers with hard hats",
+  "commercial construction site",
+];
+
 function PremiumInput({
   icon: Icon,
   type = "text",
@@ -43,9 +71,10 @@ function PremiumInput({
           w-full px-4 py-3 rounded-xl border bg-white text-gray-900 
           placeholder:text-gray-400 transition-all duration-200 
           focus:outline-none focus:ring-2 
-          ${error 
-            ? "border-red-500 focus:ring-red-200 focus:border-red-500" 
-            : "border-gray-200 focus:ring-[#FF4500]/20 focus:border-[#FF4500]"
+          ${
+            error
+              ? "border-red-500 focus:ring-red-200 focus:border-red-500"
+              : "border-gray-200 focus:ring-[#FF4500]/20 focus:border-[#FF4500]"
           }
           hover:border-gray-300
           ${Icon ? "pl-10" : "pl-4"}
@@ -79,6 +108,50 @@ function dashboardForRole(role: string) {
   return "/";
 }
 
+function readRecentIds(): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(RECENT_BG_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeRecentIds(ids: string[]) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(RECENT_BG_KEY, JSON.stringify(ids.slice(0, 50)));
+  } catch {}
+}
+
+async function fetchConstructionPhotos(
+  accessKey: string,
+  query: string
+): Promise<UnsplashPhoto[]> {
+  const res = await fetch(
+    `https://api.unsplash.com/photos/random?query=${encodeURIComponent(
+      query
+    )}&orientation=landscape&content_filter=high&count=10&sig=${Date.now()}`,
+    {
+      cache: "no-store",
+      headers: {
+        Authorization: `Client-ID ${accessKey}`,
+        "Accept-Version": "v1",
+      },
+    }
+  );
+
+  if (!res.ok) {
+    throw new Error(`Erro API ${res.status}`);
+  }
+
+  const data = await res.json();
+  return Array.isArray(data) ? data : [data];
+}
+
 export default function LoginPage() {
   const sp = useSearchParams();
   const nextParam = sp.get("next");
@@ -90,6 +163,9 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  const [bgUrl, setBgUrl] = useState("");
+  const [bgAuthor, setBgAuthor] = useState("");
+
   function validate() {
     const e: Record<string, string> = {};
     if (!email.trim()) e.email = "Email é obrigatório";
@@ -97,6 +173,61 @@ export default function LoginPage() {
     setFe(e);
     return Object.keys(e).length === 0;
   }
+
+  useEffect(() => {
+    let mounted = true;
+    let timer: ReturnType<typeof setInterval> | null = null;
+
+    async function carregarImagem() {
+      try {
+        const recentIds = readRecentIds();
+        const query = BG_QUERIES[Math.floor(Math.random() * BG_QUERIES.length)];
+
+        const photos = await fetchConstructionPhotos(UNSPLASH_KEY, query);
+
+        if (!mounted) return;
+
+        const filtered = photos.filter((photo) => {
+          if (!photo?.id) return false;
+          if (!photo.urls?.regular && !photo.urls?.full) return false;
+          if (recentIds.includes(photo.id)) return false;
+          return true;
+        });
+
+        const selected = filtered[0] || photos[0];
+
+        if (!selected) {
+          throw new Error("Nenhuma imagem recebida");
+        }
+
+        const nextUrl =
+          selected.urls?.regular || selected.urls?.full || FALLBACK_BG;
+
+        setBgUrl(`${nextUrl}${nextUrl.includes("?") ? "&" : "?"}v=${Date.now()}`);
+        setBgAuthor(
+          selected.user?.name ? `Foto por ${selected.user.name} (Unsplash)` : ""
+        );
+
+        const updatedRecent = [selected.id, ...recentIds.filter((id) => id !== selected.id)];
+        writeRecentIds(updatedRecent);
+      } catch {
+        if (!mounted) return;
+        setBgUrl(`${FALLBACK_BG}&v=${Date.now()}`);
+        setBgAuthor("");
+      }
+    }
+
+    carregarImagem();
+
+    timer = setInterval(() => {
+      carregarImagem();
+    }, 60000);
+
+    return () => {
+      mounted = false;
+      if (timer) clearInterval(timer);
+    };
+  }, []);
 
   async function submit(ev: React.FormEvent) {
     ev.preventDefault();
@@ -177,23 +308,22 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex">
-      {/* LADO ESQUERDO - ILUSTRAÇÃO */}
-      <div className="hidden lg:flex w-1/2 bg-gradient-to-br from-gray-50 to-gray-100 flex-col justify-between p-12 relative">
-        <div className="flex justify-center items-center flex-1">
-          <img
-            src="https://cdni.iconscout.com/illustration/premium/thumb/business-growth-4489159-3723273.png"
-            alt="illustration"
-            className="max-w-[400px] opacity-90 drop-shadow-2xl"
+      <div className="hidden lg:flex w-1/2 bg-gradient-to-br from-gray-50 to-gray-100 flex-col justify-between p-12 relative overflow-hidden">
+        {bgUrl && (
+          <div
+            className="absolute inset-0 bg-cover bg-center transition-opacity duration-700"
+            style={{ backgroundImage: `url(${bgUrl})` }}
           />
-        </div>
+        )}
+
+        <div className="absolute inset-0 bg-black/35" />
       </div>
 
-      {/* LADO DIREITO - FORMULÁRIO */}
       <div className="w-full lg:w-1/2 flex items-center justify-center bg-white px-6">
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold text-gray-900 mb-2">
-              Bem‑vindo de volta!
+              Bem-vindo de volta!
             </h2>
             <p className="text-gray-400">
               Introduza os seus dados para aceder à conta
@@ -224,7 +354,7 @@ export default function LoginPage() {
 
             <div>
               <label className="text-sm font-medium text-gray-700 mb-1 block">
-                Palavra‑passe
+                Palavra-passe
               </label>
               <PremiumInput
                 icon={Lock}
@@ -260,7 +390,7 @@ export default function LoginPage() {
               href="/auth/register"
               className="text-[#FF4500] font-medium hover:underline"
             >
-              Registre‑se
+              Registre-se
             </a>
           </p>
         </div>

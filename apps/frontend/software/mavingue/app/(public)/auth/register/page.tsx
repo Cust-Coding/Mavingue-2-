@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Eye,
   EyeOff,
@@ -198,6 +198,78 @@ function parseServerErrorText(text: string) {
   }
 }
 
+type UnsplashPhoto = {
+  id: string;
+  urls?: {
+    regular?: string;
+    full?: string;
+  };
+  user?: {
+    name?: string;
+  };
+};
+
+const UNSPLASH_KEY = "chev9GnfrEnrjUqH2453c_WzTsPgKmgKViPk6bCYY4A";
+const RECENT_BG_KEY = "register_recent_unsplash_bg_ids";
+
+const FALLBACK_BG =
+  "https://images.unsplash.com/photo-1581091215367-3c4d4b6f7c71?auto=format&fit=crop&w=1600&q=80";
+
+const BG_QUERIES = [
+  "construction site africa",
+  "construction workers africa",
+  "modern construction site",
+  "engineering project construction",
+  "steel beams construction",
+  "industrial building construction",
+  "workers with hard hats",
+  "commercial construction site",
+];
+
+function readRecentIds(): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(RECENT_BG_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeRecentIds(ids: string[]) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(RECENT_BG_KEY, JSON.stringify(ids.slice(0, 50)));
+  } catch { }
+}
+
+async function fetchConstructionPhotos(
+  accessKey: string,
+  query: string
+): Promise<UnsplashPhoto[]> {
+  const res = await fetch(
+    `https://api.unsplash.com/photos/random?query=${encodeURIComponent(
+      query
+    )}&orientation=landscape&content_filter=high&count=10&sig=${Date.now()}`,
+    {
+      cache: "no-store",
+      headers: {
+        Authorization: `Client-ID ${accessKey}`,
+        "Accept-Version": "v1",
+      },
+    }
+  );
+
+  if (!res.ok) {
+    throw new Error(`Erro API ${res.status}`);
+  }
+
+  const data = await res.json();
+  return Array.isArray(data) ? data : [data];
+}
+
 export default function App() {
   const [loading, setLoading] = useState(false);
   const [ok, setOk] = useState("");
@@ -205,6 +277,9 @@ export default function App() {
   const [fe, setFe] = useState<FieldErrors>({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const [bgUrl, setBgUrl] = useState("");
+  const [bgAuthor, setBgAuthor] = useState("");
 
   const [form, setForm] = useState<FormState>({
     nome: "",
@@ -246,6 +321,62 @@ export default function App() {
     setFe(e);
     return Object.keys(e).length === 0;
   }
+
+  useEffect(() => {
+    let mounted = true;
+    let timer: ReturnType<typeof setInterval> | null = null;
+
+    async function carregarImagem() {
+      try {
+        const recentIds = readRecentIds();
+        const query = BG_QUERIES[Math.floor(Math.random() * BG_QUERIES.length)];
+        const photos = await fetchConstructionPhotos(UNSPLASH_KEY, query);
+
+        if (!mounted) return;
+
+        const filtered = photos.filter((photo) => {
+          if (!photo?.id) return false;
+          if (!photo.urls?.regular && !photo.urls?.full) return false;
+          if (recentIds.includes(photo.id)) return false;
+          return true;
+        });
+
+        const selected = filtered[Math.floor(Math.random() * filtered.length)] || photos[0];
+
+        if (!selected) {
+          throw new Error("Nenhuma imagem recebida");
+        }
+
+        const nextUrl = selected.urls?.regular || selected.urls?.full || FALLBACK_BG;
+
+        setBgUrl(`${nextUrl}${nextUrl.includes("?") ? "&" : "?"}v=${Date.now()}`);
+        setBgAuthor(
+          selected.user?.name ? `Foto por ${selected.user.name} (Unsplash)` : ""
+        );
+
+        const updatedRecent = [
+          selected.id,
+          ...recentIds.filter((id) => id !== selected.id),
+        ];
+        writeRecentIds(updatedRecent);
+      } catch {
+        if (!mounted) return;
+        setBgUrl(`${FALLBACK_BG}&v=${Date.now()}`);
+        setBgAuthor("");
+      }
+    }
+
+    carregarImagem();
+
+    timer = setInterval(() => {
+      carregarImagem();
+    }, 60000);
+
+    return () => {
+      mounted = false;
+      if (timer) clearInterval(timer);
+    };
+  }, []);
 
   async function submit(ev: React.FormEvent) {
     ev.preventDefault();
@@ -371,29 +502,34 @@ export default function App() {
 
       <div className="min-h-screen flex flex-col lg:flex-row premium-bg selection:bg-[#EF6A44]/20 selection:text-[#EF6A44]">
         <div className="hidden lg:flex lg:w-5/12 p-16 flex-col justify-between relative overflow-hidden bg-white">
-          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03]" />
+          {bgUrl && (
+            <div
+              className="absolute inset-0 bg-cover bg-center transition-opacity duration-700"
+              style={{ backgroundImage: `url(${bgUrl})` }}
+            />
+          )}
+
+          <div className="absolute inset-0 bg-black/35" />
 
           <div className="relative z-10">
             <div className="mt-24 max-w-md">
-              <h1 className="text-[54px] font-[800] leading-[1] tracking-tighter text-gray-900 mb-8">
-                Plataforma de <br />
-                <span className="text-[#EF6A44]">Gestão</span> de Stock
+              <h1 className="text-[54px] font-[800] leading-[1] tracking-tighter text-white mb-8">
+                Plataforma de <br />Gestão de 
+                <span className="text-[#EF6A44]"> Stock</span>
               </h1>
 
-              <p className="text-lg text-gray-400 font-medium leading-relaxed">
+              <p className="text-lg text-gray-200 font-medium leading-relaxed">
                 Seja para equipar a sua obra com materiais de construção de qualidade ou
                 para gerir o consumo de água da sua residência, estamos aqui para facilitar
                 o seu dia a dia.
               </p>
 
-              <p className="text-lg text-gray-400 font-medium leading-relaxed mt-4">
+              <p className="text-lg text-gray-200 font-medium leading-relaxed mt-4">
                 Através desta plataforma, terá total transparência e controlo sobre as suas
                 compras e faturas, tudo a partir de um único lugar.
               </p>
             </div>
           </div>
-
-
 
           <div className="absolute top-[-10%] right-[-10%] w-96 h-96 bg-[#EF6A44]/5 rounded-full blur-[120px]" />
         </div>
@@ -408,8 +544,6 @@ export default function App() {
                 ENTRAR
               </a>
             </div>
-
-
 
             <div className="fixed top-8 right-8 z-[100] flex flex-col gap-4 max-w-sm w-full pointer-events-none px-6">
               {err && (
