@@ -22,7 +22,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/mavingue
     username: postgres
-    password: 070239
+    password: 852654
     driver-class-name: org.postgresql.Driver
 
 
@@ -43,6 +43,6 @@ app:
 
 resend:
   api:
-    key: ${RESEND_API_KEY}
+    key: "re_bGvrmzkS_JwwkfrfAwfaSz9GeFtnArJEf"
 email:
-  from: ${EMAIL_FROM}
+  from: "onboarding@resend.dev"
