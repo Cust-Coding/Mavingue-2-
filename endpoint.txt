@@ -1,0 +1,63 @@
+AdressController:
+GET /api/address/
+GET /api/address/{id}
+POST /api/address/
+DELETE /api/address/{id}
+
+AuthController:
+POST /api/auth/login
+GET /api/auth/me
+POST /api/auth/register
+GET /api/auth/verify
+POST /api/auth/resend-token
+POST /api/auth/forgot-password
+POST /api/auth/reset-password
+
+CustomerController:
+GET /api/customer
+GET /api/customer/{id}
+POST /api/customer
+PUT /api/customer/{id}
+DELETE /api/customer/{id}
+
+CustomerWaterController:
+GET /api/customer-water
+GET /api/customer-water/{id}
+POST /api/customer-water
+PUT /api/customer-water/{id}
+DELETE /api/customer-water/{id}
+
+FacturaCompraController:
+POST /api/facturas-compra
+GET /api/facturas-compra
+GET /api/facturas-compra/{id}
+
+FerragemController:
+GET /api/ferragem/
+GET /api/ferragem/{id}
+POST /api/ferragem/
+DELETE /api/ferragem/{id}
+
+LeituraAguaController:
+GET /api/leituras-agua
+GET /api/leituras-agua/{id}
+POST /api/leituras-agua
+
+LigacaoAguaController:
+GET /api/ligacoes-agua
+GET /api/ligacoes-agua/{id}
+POST /api/ligacoes-agua
+PATCH /api/ligacoes-agua/{id}/estado
+
+MetaController:
+GET /api/meta/sexos
+
+StockController:
+GET /api/stock
+GET /api/stock/produto/{produtoId}
+POST /api/stock/adjust
+
+VendaController:
+POST /api/vendas
+GET /api/vendas
+GET /api/vendas/{id}
