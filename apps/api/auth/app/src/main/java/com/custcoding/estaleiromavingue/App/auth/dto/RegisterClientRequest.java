@@ -29,4 +29,5 @@ public record RegisterClientRequest(
         String nuit,
         String tipoDocumento,
         String numeroDocumento
+
 ) {}

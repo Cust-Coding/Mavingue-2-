@@ -45,6 +45,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/products/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/ferragem/**").permitAll()
 
+
+                        .requestMatchers(HttpMethod.GET,  "/api/auth/verify").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/resend-token").permitAll()  // ← estava errado
+                        .requestMatchers(HttpMethod.POST, "/api/auth/forgot-password").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/auth/reset-password").permitAll()
+
                         // Meta (ex: sexos) - público para cadastro
                         .requestMatchers(HttpMethod.GET, "/api/meta/**").permitAll()
 
