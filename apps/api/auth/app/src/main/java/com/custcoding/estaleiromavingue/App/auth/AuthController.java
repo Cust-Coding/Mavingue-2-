@@ -27,8 +27,9 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public LoginResponse register(@Valid @RequestBody RegisterClientRequest req) {
-        return service.registerClient(req);
+    public ResponseEntity<String> register(@Valid @RequestBody RegisterClientRequest req) {
+        service.registerClient(req);
+        return ResponseEntity.ok("Verifique o seu email para ativar a conta");
     }
 
     @GetMapping("/verify")

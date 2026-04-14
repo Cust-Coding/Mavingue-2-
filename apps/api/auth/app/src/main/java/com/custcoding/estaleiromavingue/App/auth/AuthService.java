@@ -37,6 +37,9 @@ public class AuthService {
     @Value("${app.base-url}")
     private String baseUrl;
 
+    @Value("${app.front-url}")
+    private String frontendUrl;
+
 
     public LoginResponse login(LoginRequest req) {
         AppUser u = userRepo.findByEmail(req.email())
@@ -61,7 +64,7 @@ public class AuthService {
     }
 
     // ✅ NOVO: Registo do cliente com senha + perfil
-    public LoginResponse registerClient(RegisterClientRequest req) {
+    public void registerClient(RegisterClientRequest req) {
 
         // email não pode repetir (conta)
         if (userRepo.findByEmail(req.email()).isPresent()) {
@@ -105,8 +108,6 @@ public class AuthService {
         // 3) Envia email de verificacao
         sendVerification(u);
 
-        // 4) devolve token já logado
-        return new LoginResponse(jwt.generate(u));
     }
 
     private void sendVerification(AppUser user){
@@ -120,22 +121,23 @@ public class AuthService {
         token.setExpiryDate(LocalDateTime.now().plusHours(24));
         tokenRepository.save(token);
 
-        String verificationUrl = baseUrl + "/auth/verify?token=" + tokenValue;
+        String verificationUrl = baseUrl + "/api/auth/verify?token=" + tokenValue;
         emailValidatorService.sendVerificationEmail(user.getEmail(),  verificationUrl);
 
    }
 
    public void verifyAccount(String tokenValue){
-        VerificationToken token = tokenRepository.findByToken(tokenValue)
-                .orElseThrow(() -> new RuntimeException("Token Invalido"));
-        if (token.isExpired()){
-            throw new RuntimeException("Token Expirado");
-        }
-        AppUser user  = token.getUser();
-        user.setEnabled(true);
-        userRepo.save(user);
+       VerificationToken vt = tokenRepository.findByToken(tokenValue)
+               .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Token inválido"));
 
-        tokenRepository.delete(token);
+       if (vt.isExpired()) {
+           throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Token expirado. Solicite um novo.");
+       }
+
+       AppUser u = vt.getUser();
+       u.setEnabled(true);
+       userRepo.save(u);
+       tokenRepository.delete(vt);
    }
 
 

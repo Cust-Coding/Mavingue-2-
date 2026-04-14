@@ -47,7 +47,7 @@ public class SecurityConfig {
 
 
                         .requestMatchers(HttpMethod.GET,  "/api/auth/verify").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/auth/resend-token").permitAll()  // ← estava errado
+                        .requestMatchers(HttpMethod.POST, "/api/auth/resend-token").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/forgot-password").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/reset-password").permitAll()
 

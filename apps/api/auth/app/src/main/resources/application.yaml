@@ -13,7 +13,7 @@ spring:
   jpa:
 
     hibernate:
-      ddl-auto: update
+      ddl-auto: create-drop
     properties:
       hibernate:
         format_sql: true
@@ -24,6 +24,7 @@ app:
     secret: "fjsadahdhasiu23423%&^%FSD4342ASHjfaT*&sayfsafjsa5435"
     expirationSeconds: 7200
   base-url: http://localhost:8080
+  front-url: https://teu-frontend.com
 
 resend:
   api:
