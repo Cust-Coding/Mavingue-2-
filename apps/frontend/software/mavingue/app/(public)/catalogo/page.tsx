@@ -68,17 +68,9 @@ export default function CatalogoProdutos() {
             <div>
               {/* Espaço da Imagem */}
               <div className="relative h-48 bg-white rounded-2xl mb-5 flex items-center justify-center overflow-hidden border border-slate-50">
-                {p.image ? (
-                  <img 
-                    src={p.image} 
-                    alt={p.name} 
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
-                  />
-                ) : (
-                  <div className="flex flex-col items-center gap-2">
-                    <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Sem Imagem</span>
-                  </div>
-                )}
+                <div className="flex flex-col items-center gap-2">
+                  <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Sem Imagem</span>
+                </div>
               </div>
 
               {/* Infos do Produto */}

@@ -8,17 +8,18 @@ import { Role, hasRole } from "./rbac";
 export function useRequireAuth(allowedRoles?: Role[]) {
   const router = useRouter();
   const pathname = usePathname();
-  const session = useAuthStore((s) => s.session);
+  const token = useAuthStore((s) => s.token);
+  const role = useAuthStore((s) => s.role);
 
   useEffect(() => {
-    if (!session) {
+    if (!token) {
       router.replace(`/auth/login?next=${encodeURIComponent(pathname)}`);
       return;
     }
-    if (allowedRoles && !hasRole(session.role, allowedRoles)) {
+    if (allowedRoles && role && !hasRole(role, allowedRoles)) {
       router.replace("/forbidden");
     }
-  }, [session, allowedRoles, router, pathname]);
+  }, [token, role, allowedRoles, router, pathname]);
 
-  return session;
+  return { token, role };
 }

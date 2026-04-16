@@ -15,4 +15,13 @@ export const endpoints = {
 
   // existe no backend, mas o controller não expõe CRUD no momento (tu confirmaste via findstr)
   customerWater: "/api/customer-water",
+
+  water: {
+    customers: "/api/water/customers",
+    contracts: "/api/water/contracts",
+    readings: "/api/water/readings",
+    bills: "/api/water/bills",
+    billById: (id: string) => `/api/water/bills/${id}`,
+    payments: "/api/water/payments",
+  },
 };

@@ -12,7 +12,7 @@ export default function AdminClientes() {
   const [err, setErr] = useState("");
 
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [form, setForm] = useState({ nome: "", telefone: "", email: "", endereco: "" });
+  const [form, setForm] = useState({ name: "", phone: "", email: "", address: "" });
 
   async function load() {
     setErr("");
@@ -31,24 +31,23 @@ export default function AdminClientes() {
 
   function newForm() {
     setEditingId(null);
-    setForm({ nome: "", telefone: "", email: "", endereco: "" });
+    setForm({ name: "", phone: "", email: "", address: "" });
   }
 
   function edit(c: Customer) {
     setEditingId(c.id);
-    setForm({ nome: c.nome ?? "", telefone: c.telefone ?? "", email: c.email ?? "", endereco: c.endereco ?? "" });
+    setForm({ name: c.name ?? "", phone: c.phone ?? "", email: c.email ?? "", address: c.phone ?? "" });
   }
 
   async function save() {
     setErr("");
     try {
       const payload = {
-        nome: form.nome,
-        telefone: form.telefone || undefined,
-        email: form.email || undefined,
-        endereco: form.endereco || undefined,
+        name: form.name,
+        phone: form.phone || "",
+        email: form.email || "",
       };
-      if (!payload.nome) {
+      if (!payload.name) {
         setErr("Nome é obrigatório.");
         return;
       }
@@ -81,10 +80,10 @@ export default function AdminClientes() {
       {err && <ErrorBox text={err} />}
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr auto", gap: 10, marginBottom: 12 }}>
-        <Input placeholder="Nome" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} />
-        <Input placeholder="Telefone" value={form.telefone} onChange={(e) => setForm({ ...form, telefone: e.target.value })} />
+        <Input placeholder="Nome" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+        <Input placeholder="Telefone" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
         <Input placeholder="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-        <Input placeholder="Endereço" value={form.endereco} onChange={(e) => setForm({ ...form, endereco: e.target.value })} />
+        <Input placeholder="Telefone" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
         <Button onClick={save}>{editingId ? "Guardar" : "Criar"}</Button>
       </div>
 
@@ -100,7 +99,6 @@ export default function AdminClientes() {
                 <th style={{ textAlign: "left", padding: 10, borderBottom: "1px solid #eee" }}>Nome</th>
                 <th style={{ textAlign: "left", padding: 10, borderBottom: "1px solid #eee" }}>Telefone</th>
                 <th style={{ textAlign: "left", padding: 10, borderBottom: "1px solid #eee" }}>Email</th>
-                <th style={{ textAlign: "left", padding: 10, borderBottom: "1px solid #eee" }}>Endereço</th>
                 <th style={{ padding: 10, borderBottom: "1px solid #eee" }}></th>
               </tr>
             </thead>
@@ -108,15 +106,14 @@ export default function AdminClientes() {
               {rows.map((c) => (
                 <tr key={c.id}>
                   <td style={{ padding: 10, borderBottom: "1px solid #f3f3f3" }}>{c.id}</td>
-                  <td style={{ padding: 10, borderBottom: "1px solid #f3f3f3" }}>{c.nome}</td>
-                  <td style={{ padding: 10, borderBottom: "1px solid #f3f3f3" }}>{c.telefone ?? "-"}</td>
+                  <td style={{ padding: 10, borderBottom: "1px solid #f3f3f3" }}>{c.name}</td>
+                  <td style={{ padding: 10, borderBottom: "1px solid #f3f3f3" }}>{c.phone ?? "-"}</td>
                   <td style={{ padding: 10, borderBottom: "1px solid #f3f3f3" }}>{c.email ?? "-"}</td>
-                  <td style={{ padding: 10, borderBottom: "1px solid #f3f3f3" }}>{c.endereco ?? "-"}</td>
                   <td style={{ padding: 10, borderBottom: "1px solid #f3f3f3", textAlign: "right" }}>
                     <Button variant="secondary" onClick={() => edit(c)}>
                       Editar
                     </Button>{" "}
-                    <Button variant="danger" onClick={() => del(c.id)}>
+                    <Button variant="destructive" onClick={() => del(c.id)}>
                       Apagar
                     </Button>
                   </td>

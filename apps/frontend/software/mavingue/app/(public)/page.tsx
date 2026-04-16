@@ -12,24 +12,28 @@ export default function Landing() {
 
   useEffect(() => {
     // Animação do título
+    if (!titleRef.current) return;
     gsap.fromTo(titleRef.current,
       { opacity: 0, x: -50 },
       { opacity: 1, x: 0, duration: 0.8, ease: "power2.out" }
     );
     
     // Animação do texto (todas as frases vêm da esquerda)
-    gsap.fromTo(textRef.current?.children,
+    if (!textRef.current?.children) return;
+    gsap.fromTo(textRef.current.children,
       { opacity: 0, x: -50 },
       { opacity: 1, x: 0, duration: 0.6, stagger: 0.2, ease: "power2.out" }
     );
     
     // Animação dos botões
-    gsap.fromTo(buttonsRef.current?.children,
+    if (!buttonsRef.current?.children) return;
+    gsap.fromTo(buttonsRef.current.children,
       { opacity: 0, scale: 0.8 },
       { opacity: 1, scale: 1, duration: 0.5, stagger: 0.1, ease: "back.out(0.5)" }
     );
     
     // Animação da secção inferior
+    if (!bottomRef.current) return;
     gsap.fromTo(bottomRef.current,
       { opacity: 0, y: 30 },
       { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }

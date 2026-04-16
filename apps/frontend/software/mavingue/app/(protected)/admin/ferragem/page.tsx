@@ -76,7 +76,7 @@ export default function AdminFerragem() {
                   <td style={{ padding: 10, borderBottom: "1px solid #f3f3f3" }}>{r.nome}</td>
                   <td style={{ padding: 10, borderBottom: "1px solid #f3f3f3" }}>{r.endereco}</td>
                   <td style={{ padding: 10, borderBottom: "1px solid #f3f3f3", textAlign: "right" }}>
-                    <Button variant="danger" onClick={() => del(r.id)}>
+                    <Button variant="destructive" onClick={() => del(r.id)}>
                       Apagar
                     </Button>
                   </td>
