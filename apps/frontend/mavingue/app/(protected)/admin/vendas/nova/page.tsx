@@ -1,0 +1,48 @@
+"use client";
+import { useState } from "react";
+import { Input } from "@/components/ui/Input";
+import { Button } from "@/components/ui/Button";
+import { salesApi } from "@/features/sales/api";
+
+export default function NovaVenda() {
+  const [form, setForm] = useState({ produtoId: "", clienteId: "", funcionarioId: "", quantidade: "", formaPagamento: "DINHEIRO" });
+  const [err, setErr] = useState("");
+  const [ok, setOk] = useState("");
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setErr("");
+    setOk("");
+
+    try {
+      await salesApi.create({
+        produtoId: Number(form.produtoId),
+        clienteId: Number(form.clienteId),
+        funcionarioId: Number(form.funcionarioId),
+        quantidade: Number(form.quantidade),
+        formaPagamento: form.formaPagamento,
+      });
+      setOk("Venda registada.");
+      setForm({ produtoId: "", clienteId: "", funcionarioId: "", quantidade: "", formaPagamento: "DINHEIRO" });
+    } catch (e: any) {
+      setErr(e?.message ?? "Erro");
+    }
+  }
+
+  return (
+    <div style={{ maxWidth: 700 }}>
+      <h2>Nova Venda</h2>
+      {err && <div style={{ color: "crimson" }}>{err}</div>}
+      {ok && <div style={{ color: "green" }}>{ok}</div>}
+
+      <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        <Input placeholder="produtoId" value={form.produtoId} onChange={(e) => setForm({ ...form, produtoId: e.target.value })} />
+        <Input placeholder="clienteId" value={form.clienteId} onChange={(e) => setForm({ ...form, clienteId: e.target.value })} />
+        <Input placeholder="funcionarioId" value={form.funcionarioId} onChange={(e) => setForm({ ...form, funcionarioId: e.target.value })} />
+        <Input placeholder="quantidade" value={form.quantidade} onChange={(e) => setForm({ ...form, quantidade: e.target.value })} />
+        <Input placeholder="formaPagamento" value={form.formaPagamento} onChange={(e) => setForm({ ...form, formaPagamento: e.target.value })} />
+        <Button type="submit">Registar</Button>
+      </form>
+    </div>
+  );
+}

@@ -1,0 +1,9 @@
+import { apiGet, apiPost } from "@/lib/http/client";
+import { endpoints } from "@/lib/http/endpoints";
+import type { StockAdjust, StockItem } from "./types";
+
+export const stockApi = {
+  list: () => apiGet<StockItem[]>(endpoints.stock),
+  byProduto: (produtoId: number) => apiGet<StockItem>(`${endpoints.stock}/produto/${produtoId}`),
+  adjust: (body: StockAdjust) => apiPost<any>(endpoints.stockAdjust, body),
+};

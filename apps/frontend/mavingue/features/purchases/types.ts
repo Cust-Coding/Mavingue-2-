@@ -1,0 +1,1 @@
+export type FacturaCompraCreate = { produtoId: number; funcionarioId: number; quantidade: number };
