@@ -19,12 +19,13 @@ public class VerificationToken {
 
     private String token;
 
+    private String code;
+
     @OneToOne
     @JoinColumn(name = "user_id")
     private AppUser user;
 
-    @CreationTimestamp
-    @Column(nullable = false, updatable = false)
+    @Column(nullable = false)
     private LocalDateTime expiryDate;
 
     public Boolean isExpired() {

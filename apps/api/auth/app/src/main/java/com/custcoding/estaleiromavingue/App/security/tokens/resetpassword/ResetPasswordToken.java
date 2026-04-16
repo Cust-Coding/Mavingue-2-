@@ -20,12 +20,18 @@ public class ResetPasswordToken {
 
     private String token;
 
+    private String code;
+
     @OneToOne
     @JoinColumn(name = "user_id")
     private AppUser user;
 
     @CreationTimestamp
     private LocalDateTime expiryDate;
+
+    public Boolean isExpired() {
+        return LocalDateTime.now().isAfter(expiryDate);
+    }
 
     public Boolean isExpired() {
         return LocalDateTime.now().isAfter(expiryDate);

@@ -169,7 +169,11 @@ export default function LoginPage() {
 
   function validate() {
     const e: Record<string, string> = {};
-    if (!email.trim()) e.email = "Email é obrigatório";
+    if (!email.trim()) {
+      e.email = "Email é obrigatório";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      e.email = "Email inválido";
+    }
     if (!password.trim()) e.password = "Senha é obrigatória";
     setFe(e);
     return Object.keys(e).length === 0;
@@ -351,14 +355,14 @@ export default function LoginPage() {
                 <span className="font-medium">Conta não verificada</span>
               </div>
               <p className="text-sm text-yellow-600 mb-3">
-                Sua conta ainda não foi verificada. Verifique seu email e clique no link de confirmação.
+                Sua conta ainda não foi verificada. Digite o código enviado para seu email para confirmar.
               </p>
               <div className="flex gap-2">
                 <button
                   onClick={() => window.location.href = `/auth/confirm-email?email=${encodeURIComponent(unverifiedEmail)}`}
                   className="px-3 py-1 bg-yellow-600 text-white text-sm rounded hover:bg-yellow-700 transition"
                 >
-                  Ir para Confirmação
+                  Confirmar Conta
                 </button>
                 <button
                   onClick={() => setUnverifiedEmail("")}
@@ -401,7 +405,7 @@ export default function LoginPage() {
 
             <div className="text-right">
               <a
-                href="/auth/reset-password"
+                href="/auth/forgot-password"
                 className="text-sm text-gray-400 hover:text-[#FF4500] transition"
               >
                 Esqueceu a senha?

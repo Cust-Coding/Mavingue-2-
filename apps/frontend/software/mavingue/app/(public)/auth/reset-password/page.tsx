@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { Lock, Eye, EyeOff, AlertCircle, CheckCircle } from "lucide-react";
+import { Lock, Eye, EyeOff, AlertCircle, CheckCircle, Mail } from "lucide-react";
 
 export default function ResetPasswordPage() {
   const searchParams = useSearchParams();
-  const token = searchParams.get("token");
-
+  const [email, setEmail] = useState("");
+  const [code, setCode] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -16,7 +16,16 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
+  useEffect(() => {
+    const emailParam = searchParams.get("email");
+    if (emailParam) {
+      setEmail(emailParam);
+    }
+  }, [searchParams]);
+
   const validate = () => {
+    if (!email.trim()) return "Email é obrigatório";
+    if (!code.trim()) return "Código é obrigatório";
     if (!password.trim()) return "Senha é obrigatória";
     if (password.length < 6) return "Senha deve ter pelo menos 6 caracteres";
     if (password !== confirmPassword) return "Senhas não coincidem";
@@ -33,18 +42,14 @@ export default function ResetPasswordPage() {
       return;
     }
 
-    if (!token) {
-      setError("Token inválido");
-      return;
-    }
-
     setLoading(true);
     try {
       const res = await fetch("/api/proxy/api/auth/reset-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          token,
+          email: email.trim(),
+          code: code.trim(),
           newPassword: password,
         }),
       });
@@ -94,7 +99,7 @@ export default function ResetPasswordPage() {
             Redefinir Senha
           </h1>
           <p className="text-gray-600">
-            Digite sua nova senha abaixo.
+            Digite seu email, o código recebido e sua nova senha.
           </p>
         </div>
 
@@ -106,6 +111,36 @@ export default function ResetPasswordPage() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Email
+            </label>
+            <div className="relative">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#EF6A44]/20 focus:border-[#EF6A44] transition-all"
+                placeholder="seu@email.com"
+              />
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Código de Verificação
+            </label>
+            <input
+              type="text"
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              className="w-full px-4 py-3 text-center text-2xl font-mono tracking-widest border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#EF6A44]/20 focus:border-[#EF6A44] transition-all"
+              placeholder="000000"
+              maxLength={6}
+            />
+          </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Nova Senha

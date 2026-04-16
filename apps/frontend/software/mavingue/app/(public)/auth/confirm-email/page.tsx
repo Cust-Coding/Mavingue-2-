@@ -1,16 +1,19 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import { Mail, CheckCircle, AlertCircle, RefreshCw } from "lucide-react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { Mail, CheckCircle, AlertCircle, RefreshCw, ArrowRight } from "lucide-react";
 
 export default function ConfirmEmailPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const email = searchParams.get("email") || "";
 
   const [loading, setLoading] = useState(false);
+  const [verifying, setVerifying] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [code, setCode] = useState("");
 
   const handleResend = async () => {
     if (!email) return;
@@ -26,15 +29,47 @@ export default function ConfirmEmailPage() {
       });
 
       if (res.ok) {
-        setMessage("Email de verificação reenviado. Verifique sua caixa de entrada.");
+        setMessage("Código de verificação reenviado. Verifique sua caixa de entrada.");
       } else {
         const text = await res.text();
-        setError(text || "Erro ao reenviar email.");
+        setError(text || "Erro ao reenviar código.");
       }
     } catch (e) {
       setError("Falha ao comunicar com o servidor.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleVerify = async () => {
+    if (!code.trim()) {
+      setError("Por favor, insira o código de verificação.");
+      return;
+    }
+    setVerifying(true);
+    setError("");
+    setMessage("");
+
+    try {
+      const res = await fetch("/api/proxy/api/auth/verify-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, code: code.trim() }),
+      });
+
+      if (res.ok) {
+        setMessage("Conta verificada com sucesso! Redirecionando...");
+        setTimeout(() => {
+          router.push("/cliente"); // Redirect to dashboard
+        }, 2000);
+      } else {
+        const text = await res.text();
+        setError(text || "Código inválido ou expirado.");
+      }
+    } catch (e) {
+      setError("Falha ao comunicar com o servidor.");
+    } finally {
+      setVerifying(false);
     }
   };
 
@@ -49,9 +84,9 @@ export default function ConfirmEmailPage() {
             Verifique seu Email
           </h1>
           <p className="text-gray-600 leading-relaxed">
-            Enviamos um link de confirmação para{" "}
+            Enviamos um código de confirmação para{" "}
             <span className="font-semibold text-[#EF6A44]">{email || "seu email"}</span>.
-            Clique no link para ativar sua conta.
+            Digite o código abaixo para ativar sua conta.
           </p>
         </div>
 
@@ -69,23 +104,52 @@ export default function ConfirmEmailPage() {
           </div>
         )}
 
-        <div className="space-y-3">
-          <p className="text-sm text-gray-500">
-            Não recebeu o email? Verifique sua pasta de spam ou lixo eletrônico.
-          </p>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Código de Verificação
+            </label>
+            <input
+              type="text"
+              value={code}
+              onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              placeholder="000000"
+              className="w-full px-4 py-3 text-center text-2xl font-mono tracking-widest border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#EF6A44]/20 focus:border-[#EF6A44] transition-all"
+              maxLength={6}
+            />
+          </div>
 
           <button
-            onClick={handleResend}
-            disabled={loading || !email}
+            onClick={handleVerify}
+            disabled={verifying || code.length !== 6}
             className="w-full bg-[#EF6A44] text-white font-bold py-3 px-6 rounded-xl hover:bg-[#EF6A44]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            {loading ? (
+            {verifying ? (
               <RefreshCw className="w-4 h-4 animate-spin" />
             ) : (
-              <RefreshCw className="w-4 h-4" />
+              <ArrowRight className="w-4 h-4" />
             )}
-            Reenviar Email de Confirmação
+            Verificar Conta
           </button>
+
+          <div className="text-center">
+            <p className="text-sm text-gray-500 mb-2">
+              Não recebeu o código? Verifique sua pasta de spam ou lixo eletrônico.
+            </p>
+
+            <button
+              onClick={handleResend}
+              disabled={loading || !email}
+              className="text-[#EF6A44] hover:text-[#EF6A44]/80 font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1 mx-auto"
+            >
+              {loading ? (
+                <RefreshCw className="w-3 h-3 animate-spin" />
+              ) : (
+                <RefreshCw className="w-3 h-3" />
+              )}
+              Reenviar Código
+            </button>
+          </div>
 
           <button
             onClick={() => window.location.href = "/auth/login"}

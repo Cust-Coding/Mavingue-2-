@@ -38,6 +38,17 @@ public class AuthController {
         return ResponseEntity.ok("Conta Activada com Sucesso");
     }
 
+    @PostMapping("/verify-code")
+    public ResponseEntity<String> verifyCode(@RequestBody Map<String, String> body) {
+        String email = body.get("email");
+        String code = body.get("code");
+        if (email == null || code == null) {
+            return ResponseEntity.badRequest().body("Email e código são obrigatórios");
+        }
+        service.verifyAccountByCode(email, code);
+        return ResponseEntity.ok("Conta ativada com sucesso");
+    }
+
     @PostMapping("/resend-token")
     public ResponseEntity<String> resendToken(@RequestBody Map<String, String> body) {
         service.resendVerificationToken(body.get("email"));
@@ -50,13 +61,5 @@ public class AuthController {
     ){
         service.requestPasswordReset(request);
         return ResponseEntity.ok("Email de Redifinição enviado");
-    }
-
-    @PostMapping("/reset-password")
-    public ResponseEntity<String> resetPassword(
-            @RequestBody ResetPasswordRequest request
-    ){
-        service.resetPassword(request);
-        return ResponseEntity.ok("Senha redefinida com sucesso.");
     }
 }

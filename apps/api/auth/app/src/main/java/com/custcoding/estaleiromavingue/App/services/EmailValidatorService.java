@@ -21,16 +21,16 @@ public class EmailValidatorService {
 
     private final OkHttpClient client = new OkHttpClient();
 
-    public void sendVerificationEmail(String toEmail, String verificationUrl){
+    public void sendVerificationEmail(String toEmail, String verificationCode){
         String body = """
                 {
                     "from" : "%s",
                     "to" : ["%s"],
                     "subject" : "Confirme o seu email",
-                    "html": "<p>Clique no link para activar a sua conta:</p><a href='%s'>%s</a>"
+                    "html": "<p>Use o código abaixo para confirmar sua conta:</p><h2 style='color: #EF6A44; font-size: 24px;'>%s</h2><p>O código expira em 24 horas.</p>"
                 
                 }
-                """.formatted(from, toEmail, verificationUrl, verificationUrl);
+                """.formatted(from, toEmail, verificationCode);
 
         Request request = new Request.Builder()
                 .url("https://api.resend.com/emails")
@@ -49,12 +49,12 @@ public class EmailValidatorService {
         }
     }
 
-    public void sendPasswordResetEmail(String toEmail, String resetUrl) {
+    public void sendPasswordResetEmail(String toEmail, String resetCode) {
 
         String html = "<h2>Redefinição de senha</h2>" +
-                "<p>Clique no link abaixo para redefinir a sua senha:</p>" +
-                "<a href='" + resetUrl + "'>Redefinir senha</a>" +
-                "<p>O link expira em 1 hora.</p>" +
+                "<p>Use o código abaixo para redefinir sua senha:</p>" +
+                "<h2 style='color: #EF6A44; font-size: 24px;'>" + resetCode + "</h2>" +
+                "<p>O código expira em 1 hora.</p>" +
                 "<p>Se não solicitou a redefinição, ignore este email.</p>";
 
         String body = """

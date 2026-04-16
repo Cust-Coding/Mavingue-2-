@@ -26,8 +26,16 @@ app:
   base-url: http://localhost:8080
   front-url: http://localhost:3000
 
+#resend:
+#  api:
+#    key: "re_bGvrmzkS_JwwkfrfAwfaSz9GeFtnArJEf"
+#email:
+#  from: "onboarding@resend.dev"
+
 resend:
   api:
-    key: "re_bGvrmzkS_JwwkfrfAwfaSz9GeFtnArJEf"
+    key: "re_HEQFbCbe_8ZMKo8EKZLiMcXDQykkJf84x"
+
 email:
   from: "onboarding@resend.dev"
+  to: "delmirosandramanuelchongo@gmail.com"

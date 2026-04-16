@@ -307,7 +307,11 @@ export default function App() {
 
     if (!form.nome.trim()) e.nome = "Campo obrigatório";
     if (!form.telefone.trim()) e.telefone = "Campo obrigatório";
-    if (!form.email.trim()) e.email = "Campo obrigatório";
+    if (!form.email.trim()) {
+      e.email = "Campo obrigatório";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      e.email = "Email inválido";
+    }
     if (!form.password.trim() || form.password.length < 6)
       e.password = "Mín. 6 caracteres";
     if (form.confirmPassword !== form.password) e.confirmPassword = "Divergente";
