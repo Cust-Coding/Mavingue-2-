@@ -1,0 +1,1 @@
+export { default } from "@/app/(protected)/admin/stock/movimentos/page";
