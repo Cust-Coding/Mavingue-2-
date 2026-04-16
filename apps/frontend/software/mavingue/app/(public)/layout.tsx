@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Topbar from '@/components/layout/Topbar';
+import Footer from '@/components/layout/Footer';
 
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
@@ -57,6 +58,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
     <>
       <Topbar />
       {children}
+      <Footer />
     </>
   );
 }
