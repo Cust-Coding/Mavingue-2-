@@ -6,7 +6,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/mavingue
     username: postgres
-    password: 070239
+    password: 852654
     driver-class-name: org.postgresql.Driver
 
 
@@ -24,7 +24,7 @@ app:
     secret: "fjsadahdhasiu23423%&^%FSD4342ASHjfaT*&sayfsafjsa5435"
     expirationSeconds: 7200
   base-url: http://localhost:8080
-  front-url: https://teu-frontend.com
+  front-url: http://localhost:3000
 
 resend:
   api:

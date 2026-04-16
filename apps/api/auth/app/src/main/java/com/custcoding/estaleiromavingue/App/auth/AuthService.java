@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
@@ -33,9 +34,6 @@ public class AuthService {
     private final EmailValidatorService emailValidatorService;
 
     private final ResetPassowordTokenRepository resetPassowordTokenRepository;
-
-    @Value("${app.base-url}")
-    private String baseUrl;
 
     @Value("${app.front-url}")
     private String frontendUrl;
@@ -64,6 +62,7 @@ public class AuthService {
     }
 
     // ✅ NOVO: Registo do cliente com senha + perfil
+    @Transactional
     public void registerClient(RegisterClientRequest req) {
 
         // email não pode repetir (conta)
@@ -121,11 +120,17 @@ public class AuthService {
         token.setExpiryDate(LocalDateTime.now().plusHours(24));
         tokenRepository.save(token);
 
-        String verificationUrl = baseUrl + "/api/auth/verify?token=" + tokenValue;
-        emailValidatorService.sendVerificationEmail(user.getEmail(),  verificationUrl);
+        String verificationUrl = frontendUrl + "/auth/verify?token=" + tokenValue;
+        try {
+            emailValidatorService.sendVerificationEmail(user.getEmail(),  verificationUrl);
+        } catch (Exception e) {
+            // Log the error, but don't fail the registration
+            System.err.println("Failed to send verification email: " + e.getMessage());
+        }
 
    }
 
+   @Transactional
    public void verifyAccount(String tokenValue){
        VerificationToken vt = tokenRepository.findByToken(tokenValue)
                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Token inválido"));
@@ -141,6 +146,7 @@ public class AuthService {
    }
 
 
+    @Transactional
     public void resendVerificationToken(String email) {
         AppUser user = userRepo.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Utilizador não encontrado"));
@@ -152,6 +158,7 @@ public class AuthService {
         sendVerification(user);
     }
 
+    @Transactional
     public void requestPasswordReset(ForgotPasswordRequest request)
     {
         AppUser user = userRepo.findByEmail(request.email())
@@ -169,12 +176,17 @@ public class AuthService {
 
         resetPassowordTokenRepository.save(token);
 
-        String retetUrl = baseUrl + "/auth/reset-password?token=" + tokenValue;
-        emailValidatorService.sendPasswordResetEmail(user.getEmail(), retetUrl);
+        String retetUrl = frontendUrl + "/auth/reset-password?token=" + tokenValue;
+        try {
+            emailValidatorService.sendPasswordResetEmail(user.getEmail(), retetUrl);
+        } catch (Exception e) {
+            System.err.println("Failed to send password reset email: " + e.getMessage());
+        }
 
 
     }
 
+    @Transactional
     public void resetPassword(ResetPasswordRequest request){
 
         ResetPasswordToken token = resetPassowordTokenRepository.findByToken(request.token())

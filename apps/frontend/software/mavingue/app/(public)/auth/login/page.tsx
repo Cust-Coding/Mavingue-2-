@@ -159,6 +159,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
   const [fe, setFe] = useState<Record<string, string>>({});
+  const [unverifiedEmail, setUnverifiedEmail] = useState("");
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -258,7 +259,13 @@ export default function LoginPage() {
             return;
           }
           if (j?.message) {
-            setErr(String(j.message));
+            const msg = String(j.message);
+            if (msg.includes("não verificada") || msg.includes("verifique o seu email")) {
+              setUnverifiedEmail(email.trim());
+              setErr("");
+              return;
+            }
+            setErr(msg);
             return;
           }
         } catch {}
@@ -334,6 +341,32 @@ export default function LoginPage() {
             <div className="mb-6 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm flex items-center gap-2">
               <AlertCircle size={16} />
               {err}
+            </div>
+          )}
+
+          {unverifiedEmail && (
+            <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div className="flex items-center gap-2 text-yellow-700 mb-2">
+                <AlertCircle size={16} />
+                <span className="font-medium">Conta não verificada</span>
+              </div>
+              <p className="text-sm text-yellow-600 mb-3">
+                Sua conta ainda não foi verificada. Verifique seu email e clique no link de confirmação.
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => window.location.href = `/auth/confirm-email?email=${encodeURIComponent(unverifiedEmail)}`}
+                  className="px-3 py-1 bg-yellow-600 text-white text-sm rounded hover:bg-yellow-700 transition"
+                >
+                  Ir para Confirmação
+                </button>
+                <button
+                  onClick={() => setUnverifiedEmail("")}
+                  className="px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300 transition"
+                >
+                  Tentar Novamente
+                </button>
+              </div>
             </div>
           )}
 

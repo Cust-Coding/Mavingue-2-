@@ -431,37 +431,11 @@ export default function App() {
         data = rawText;
       }
 
-      const token =
-        typeof data === "string"
-          ? data
-          : data?.token ?? data?.accessToken ?? data?.jwt ?? null;
-
-      if (!token) {
-        setErr("Registo feito, mas o token não foi devolvido pelo servidor.");
-        return;
-      }
-
-      setSession(token, "CLIENTE");
-
-      try {
-        const meRes = await fetch("/api/proxy/api/auth/me", {
-          method: "GET",
-          credentials: "include",
-        });
-
-        if (meRes.ok) {
-          const me = await meRes.json().catch(() => null);
-          const role = normalizeRole(me?.role ?? me?.perfil ?? "CLIENTE");
-          setSession(token, role);
-        }
-      } catch {
-        // mantém a sessão já gravada
-      }
-
-      setOk("Conta criada e login feito. A entrar...");
+      // Registration successful, show message and redirect to confirm email
+      setOk(rawText || "Conta criada com sucesso. Verifique seu email para ativar a conta.");
       setTimeout(() => {
-        window.location.href = "/cliente";
-      }, 600);
+        window.location.href = `/auth/confirm-email?email=${encodeURIComponent(form.email.trim())}`;
+      }, 2000);
     } catch (e: any) {
       setErr(e?.message ?? "Falha ao comunicar com servidor");
     } finally {
