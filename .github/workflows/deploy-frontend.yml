@@ -14,7 +14,7 @@ on:
 
 env:
   WORKDIR: apps/frontend/software/mavingue
-  NODE_VERSION: 24
+  NODE_VERSION: '24'
 
 jobs:
   ci:
@@ -52,16 +52,17 @@ jobs:
 
       - name: Run tests
         run: |
-          if [ "${{ steps.pm.outputs.pm }}" = "pnpm" ]; then pnpm test -- --passWithNoTests; fi
-          if [ "${{ steps.pm.outputs.pm }}" = "npm" ]; then npm test -- --watchAll=false --passWithNoTests; fi
-      - name: Run tests
-        run: |
           if [ "${{ steps.pm.outputs.pm }}" = "pnpm" ]; then
-            if pnpm run --list | grep -q "^test"; then pnpm test -- --passWithNoTests; else echo " Sem script test, a ignorar."; fi
+            if pnpm run --list | grep -q "test"; then pnpm test -- --passWithNoTests; else echo " Sem script test, a ignorar."; fi
           fi
           if [ "${{ steps.pm.outputs.pm }}" = "npm" ]; then
             if npm run | grep -q "test"; then npm test -- --watchAll=false --passWithNoTests; else echo " Sem script test, a ignorar."; fi
           fi
+
+      - name: Build
+        run: |
+          if [ "${{ steps.pm.outputs.pm }}" = "pnpm" ]; then pnpm build; fi
+          if [ "${{ steps.pm.outputs.pm }}" = "npm" ]; then npm run build; fi
         env:
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
 
@@ -83,6 +84,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install pnpm
+        run: npm install -g pnpm
 
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
@@ -107,7 +111,7 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: ` Preview Frontend\n\n ${process.env.PREVIEW_URL || "Not generated"}`
+              body: `## Preview Frontend\n\n Deploy concluído!\n\n **URL:** ${{ steps.deploy.outputs.preview_url }}`
             })
 
   deploy-production:
@@ -128,6 +132,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install pnpm
+        run: npm install -g pnpm
 
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
