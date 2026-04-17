@@ -4,19 +4,16 @@ WORKDIR /app
 
 COPY pom.xml .
 COPY mvnw .
-
 RUN chmod +x mvnw
 RUN ./mvnw dependency:go-offline -B
-
 COPY src/ src/
 RUN ./mvnw package -DskipTests --no-transfer-progress
-
 
 FROM eclipse-temurin:21-jre
 
 WORKDIR /app
 
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+RUN groupadd -r appgroup && useradd -r -g appgroup appuser
 
 COPY --from=builder /app/target/*.jar app.jar
 
