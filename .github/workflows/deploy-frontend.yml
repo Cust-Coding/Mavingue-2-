@@ -14,7 +14,7 @@ on:
 
 env:
   WORKDIR: apps/frontend/software/mavingue
-  NODE_VERSION: '24'
+  NODE_VERSION: '20'
 
 jobs:
   ci:
