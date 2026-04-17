@@ -29,11 +29,7 @@ public class ResetPasswordToken {
     @CreationTimestamp
     private LocalDateTime expiryDate;
 
-    public Boolean isExpired() {
-        return LocalDateTime.now().isAfter(expiryDate);
-    }
-
-    public Boolean isExpired() {
+    public boolean isExpired() {
         return LocalDateTime.now().isAfter(expiryDate);
     }
 
