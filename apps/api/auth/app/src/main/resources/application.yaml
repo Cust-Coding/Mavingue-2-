@@ -1,19 +1,16 @@
 server:
   port: 8080
 
-
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/mavingue
-    username: postgres
-    password: 852654
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
-
   jpa:
-
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: update
     properties:
       hibernate:
         format_sql: true
@@ -21,21 +18,21 @@ spring:
 
 app:
   jwt:
-    secret: "fjsadahdhasiu23423%&^%FSD4342ASHjfaT*&sayfsafjsa5435"
+    secret: ${JWT_SECRET}
     expirationSeconds: 7200
-  base-url: http://localhost:8080
-  front-url: http://localhost:3000
+  base-url: ${BASE_URL}
+  front-url: ${FRONT_URL}
+
+resend:
+  api:
+    key: ${RESEND_API_KEY}
+
+email:
+  from: ${EMAIL_FROM}
+  to: ${EMAIL_TO}
 
 #resend:
 #  api:
 #    key: "re_bGvrmzkS_JwwkfrfAwfaSz9GeFtnArJEf"
 #email:
 #  from: "onboarding@resend.dev"
-
-resend:
-  api:
-    key: "re_HEQFbCbe_8ZMKo8EKZLiMcXDQykkJf84x"
-
-email:
-  from: "onboarding@resend.dev"
-  to: "delmirosandramanuelchongo@gmail.com"
