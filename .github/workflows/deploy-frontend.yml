@@ -53,18 +53,11 @@ jobs:
       - name: Run tests
         run: |
           if [ "${{ steps.pm.outputs.pm }}" = "pnpm" ]; then
-            if pnpm run --list | grep -q "test"; then pnpm test -- --passWithNoTests; else echo " Sem script test, a ignorar."; fi
+            if pnpm run --list | grep -q "test"; then pnpm test -- --passWithNoTests; else echo "⚠️ Sem script test, a ignorar."; fi
           fi
           if [ "${{ steps.pm.outputs.pm }}" = "npm" ]; then
-            if npm run | grep -q "test"; then npm test -- --watchAll=false --passWithNoTests; else echo " Sem script test, a ignorar."; fi
+            if npm run | grep -q "test"; then npm test -- --watchAll=false --passWithNoTests; else echo "⚠️ Sem script test, a ignorar."; fi
           fi
-
-      - name: Build
-        run: |
-          if [ "${{ steps.pm.outputs.pm }}" = "pnpm" ]; then pnpm build; fi
-          if [ "${{ steps.pm.outputs.pm }}" = "npm" ]; then npm run build; fi
-        env:
-          VITE_API_URL: ${{ secrets.VITE_API_URL }}
 
   deploy-preview:
     name: Deploy Preview
@@ -96,6 +89,8 @@ jobs:
 
       - name: Build Vercel
         run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
 
       - name: Deploy Preview
         id: deploy
@@ -144,6 +139,8 @@ jobs:
 
       - name: Build Vercel (Production)
         run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
 
       - name: Deploy Production
         run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
