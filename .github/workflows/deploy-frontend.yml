@@ -14,7 +14,7 @@ on:
 
 env:
   WORKDIR: apps/frontend/software/mavingue
-  NODE_VERSION: 20
+  NODE_VERSION: 24
 
 jobs:
   ci:
@@ -54,11 +54,14 @@ jobs:
         run: |
           if [ "${{ steps.pm.outputs.pm }}" = "pnpm" ]; then pnpm test -- --passWithNoTests; fi
           if [ "${{ steps.pm.outputs.pm }}" = "npm" ]; then npm test -- --watchAll=false --passWithNoTests; fi
-
-      - name: Build
+      - name: Run tests
         run: |
-          if [ "${{ steps.pm.outputs.pm }}" = "pnpm" ]; then pnpm build; fi
-          if [ "${{ steps.pm.outputs.pm }}" = "npm" ]; then npm run build; fi
+          if [ "${{ steps.pm.outputs.pm }}" = "pnpm" ]; then
+            if pnpm run --list | grep -q "^test"; then pnpm test -- --passWithNoTests; else echo " Sem script test, a ignorar."; fi
+          fi
+          if [ "${{ steps.pm.outputs.pm }}" = "npm" ]; then
+            if npm run | grep -q "test"; then npm test -- --watchAll=false --passWithNoTests; else echo " Sem script test, a ignorar."; fi
+          fi
         env:
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
 
