@@ -3,11 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview",
-    "test": "echo 'sem testes' && exit 0",
+    "dev": "next dev",
+    "build": "next build",
     "start": "next start",
+    "test": "echo 'sem testes' && exit 0",
     "lint": "eslint",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build"
