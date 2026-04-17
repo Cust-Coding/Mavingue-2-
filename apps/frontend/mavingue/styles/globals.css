@@ -1,6 +1,0 @@
-/* global styles (placeholder) */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-h1 { font-size: 1rem; }
