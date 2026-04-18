@@ -20,7 +20,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.scheduling.annotation.Scheduled;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 @RequiredArgsConstructor
@@ -35,6 +39,11 @@ public class AuthService {
     private final EmailValidatorService emailValidatorService;
 
     private final ResetPassowordTokenRepository resetPassowordTokenRepository;
+
+    private final Map<String, List<LocalDateTime>> requestsPerEmail = new  ConcurrentHashMap<>();
+
+    private final Integer MAX_EMAIL_PER_DAY=5;
+
 
     @Value("${app.front-url}")
     private String frontendUrl;
@@ -289,6 +298,24 @@ public class AuthService {
         }
 
         System.out.println("Limpeza automática executada em " + now);
+    }
+
+    public void verifyLimit(String email) {
+        LocalDateTime aDayAgo = LocalDateTime.now().minusDays(1);
+
+        List<LocalDateTime> requests = requestsPerEmail
+                .computeIfAbsent(email, k -> new ArrayList<>());
+
+        requests.removeIf(t -> t.isBefore(aDayAgo));
+
+        if (requests.size() >= MAX_EMAIL_PER_DAY){
+            throw  new ResponseStatusException(
+                    HttpStatus.TOO_MANY_REQUESTS,
+                    "Limite diário de emails atingido. Tente novamente amanhã."
+            );
+        }
+
+        requests.add(LocalDateTime.now());
     }
 
 
