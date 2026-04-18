@@ -32,9 +32,11 @@ public class AuthController {
         return ResponseEntity.ok("Verifique o seu email para ativar a conta");
     }
 
-    @GetMapping("/verify")
-    public ResponseEntity<String> verify (@RequestParam String token){
-        service.verifyAccount(token);
+    @GetMapping("/email/verify/{userId}/{token}")
+    public ResponseEntity<String> verify (
+            @PathVariable Long userId,
+            @PathVariable String token){
+        service.verifyAccount(userId, token);
         return ResponseEntity.ok("Conta Activada com Sucesso");
     }
 

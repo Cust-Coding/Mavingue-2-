@@ -144,19 +144,25 @@ public class AuthService {
 
    }
 
-   public void verifyAccount(String tokenValue){
-       VerificationToken vt = tokenRepository.findByToken(tokenValue)
-               .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Token inválido"));
+    public void verifyAccount(Long userId, String token) {
+        AppUser user = userRepo.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Utilizador não encontrado"));
 
-       if (vt.isExpired()) {
-           throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Token expirado. Solicite um novo.");
-       }
+        VerificationToken vt = tokenRepository.findByToken(token)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Token inválido"));
 
-       AppUser u = vt.getUser();
-       u.setEnabled(true);
-       userRepo.save(u);
-       tokenRepository.delete(vt);
-   }
+        if (!vt.getUser().getId().equals(userId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Token não pertence a este utilizador");
+        }
+
+        if (vt.isExpired()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Token expirado. Solicite um novo.");
+        }
+
+        user.setEnabled(true);
+        userRepo.save(user);
+        tokenRepository.delete(vt);
+    }
 
    public void verifyAccountByCode(String email, String code) {
        System.out.println("Tentando verificar código para email: " + email + ", código digitado: " + code);
