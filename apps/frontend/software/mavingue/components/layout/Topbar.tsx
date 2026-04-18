@@ -121,9 +121,9 @@ export default function Topbar() {
             <Link href="/catalogo" className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-orange-50 hover:text-orange-600 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-orange-400">
               Catálogo
             </Link>
-            <Link href="/novidades" className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-orange-50 hover:text-orange-600 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-orange-400">
+            {/* <Link href="/novidades" className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-orange-50 hover:text-orange-600 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-orange-400">
               Novidades
-            </Link>
+            </Link> */}
             <Link href="/cliente/perfil" className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-orange-50 hover:text-orange-600 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-orange-400">
               Minha area
             </Link>
@@ -200,7 +200,7 @@ export default function Topbar() {
         <div className="border-t border-slate-100 bg-white p-4 animate-in slide-in-from-top md:hidden dark:border-slate-800 dark:bg-slate-950">
           <nav className="flex flex-col gap-2">
             <Link href="/catalogo" className="rounded-xl p-3 text-base font-medium text-slate-700 hover:bg-orange-50 dark:text-slate-200 dark:hover:bg-slate-900">Catálogo</Link>
-            <Link href="/novidades" className="rounded-xl p-3 text-base font-medium text-slate-700 hover:bg-orange-50 dark:text-slate-200 dark:hover:bg-slate-900">Novidades</Link>
+            {/* <Link href="/novidades" className="rounded-xl p-3 text-base font-medium text-slate-700 hover:bg-orange-50 dark:text-slate-200 dark:hover:bg-slate-900">Novidades</Link> */}
             <Link href="/cliente/perfil" className="rounded-xl p-3 text-base font-medium text-slate-700 hover:bg-orange-50 dark:text-slate-200 dark:hover:bg-slate-900">Minha area</Link>
           </nav>
         </div>
