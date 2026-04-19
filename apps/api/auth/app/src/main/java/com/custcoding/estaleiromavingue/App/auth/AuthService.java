@@ -168,12 +168,16 @@ public class AuthService {
    public void verifyAccountByCode(String email, String code) {
        System.out.println("Tentando verificar código para email: " + email + ", código digitado: " + code);
 
-       AppUser user = userRepo.findByEmail(email)
+       // Normalizar o email (trim e lowercase)
+       String normalizedEmail = email != null ? email.trim().toLowerCase() : "";
+       System.out.println("Email normalizado: " + normalizedEmail);
+
+       AppUser user = userRepo.findByEmail(normalizedEmail)
                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email não encontrado"));
        System.out.println("Usuário encontrado: " + user.getEmail() + ", enabled: " + user.getEnabled());
 
        VerificationToken vt = tokenRepository.findByUser(user)
-               .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Código de verificação não encontrado"));
+               .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Código de verificação não encontrado. Solicite um novo código."));
        System.out.println("Token encontrado, código salvo: '" + vt.getCode() + "', expirado: " + vt.isExpired());
 
        if (vt.isExpired()) {
@@ -183,16 +187,19 @@ public class AuthService {
        // Normalizar o código para 6 dígitos com zeros à esquerda
        String normalizedCode;
        try {
-           normalizedCode = String.format("%06d", Integer.parseInt(code.trim()));
+           // Remove qualquer caractere não numérico e normaliza
+           String cleanCode = code != null ? code.replaceAll("[^0-9]", "") : "";
+           normalizedCode = String.format("%06d", Integer.parseInt(cleanCode));
            System.out.println("Código normalizado: '" + normalizedCode + "'");
        } catch (NumberFormatException e) {
            System.out.println("Erro ao parsear código: " + code);
            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Código inválido");
        }
 
+       // Comparação direta sem trim extra (já normalizado acima)
        if (!normalizedCode.equals(vt.getCode())) {
            System.out.println("Código não bate: esperado '" + vt.getCode() + "', recebido '" + normalizedCode + "'");
-           throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Código inválido");
+           throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Código inválido ou expirado");
        }
 
        System.out.println("Código válido, ativando conta");
@@ -215,7 +222,10 @@ public class AuthService {
 
     public void requestPasswordReset(ForgotPasswordRequest request)
     {
-        AppUser user = userRepo.findByEmail(request.email())
+        // Normalizar email
+        String normalizedEmail = request.email() != null ? request.email().trim().toLowerCase() : "";
+        
+        AppUser user = userRepo.findByEmail(normalizedEmail)
                 .orElseThrow(() -> new RuntimeException("Utilizador não encontrado"));
 
         verifyLimit(user.getEmail());
@@ -233,6 +243,8 @@ public class AuthService {
 
         resetPassowordTokenRepository.save(token);
 
+        System.out.println("Código de redefinição de senha gerado para " + user.getEmail() + ": " + code);
+
         try {
             emailValidatorService.sendPasswordResetEmail(user.getEmail(), code);
         } catch (Exception e) {
@@ -245,25 +257,30 @@ public class AuthService {
     @Transactional
     public void resetPassword(ResetPasswordRequest request){
 
-        AppUser user = userRepo.findByEmail(request.email())
+        // Normalizar o email
+        String normalizedEmail = request.email() != null ? request.email().trim().toLowerCase() : "";
+        
+        AppUser user = userRepo.findByEmail(normalizedEmail)
                 .orElseThrow(() -> new RuntimeException("Utilizador não encontrado"));
 
         ResetPasswordToken token = resetPassowordTokenRepository.findByUser(user)
-                .orElseThrow(() -> new RuntimeException("Token Invalido"));
+                .orElseThrow(() -> new RuntimeException("Token Inválido. Solicite um novo código."));
+        
         if(token.isExpired()){
-            throw new RuntimeException("Token Expirado");
+            throw new RuntimeException("Código expirado. Solicite um novo.");
         }
 
-        // Normalizar o código
+        // Normalizar o código - remove caracteres não numéricos
         String normalizedCode;
         try {
-            normalizedCode = String.format("%06d", Integer.parseInt(request.code().trim()));
+            String cleanCode = request.code() != null ? request.code().replaceAll("[^0-9]", "") : "";
+            normalizedCode = String.format("%06d", Integer.parseInt(cleanCode));
         } catch (NumberFormatException e) {
             throw new RuntimeException("Código inválido");
         }
 
         if (!normalizedCode.equals(token.getCode())) {
-            throw new RuntimeException("Código inválido");
+            throw new RuntimeException("Código inválido ou expirado");
         }
 
         user.setPasswordHash(encoder.encode(request.newPassword()));

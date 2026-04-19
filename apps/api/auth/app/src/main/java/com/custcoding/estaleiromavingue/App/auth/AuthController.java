@@ -64,4 +64,12 @@ public class AuthController {
         service.requestPasswordReset(request);
         return ResponseEntity.ok("Email de Redifinição enviado");
     }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<String> resetPassword(
+            @Valid @RequestBody ResetPasswordRequest request
+    ){
+        service.resetPassword(request);
+        return ResponseEntity.ok("Senha redefinida com sucesso");
+    }
 }

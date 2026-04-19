@@ -4,7 +4,6 @@ package com.custcoding.estaleiromavingue.App.security.tokens.resetpassword;
 import com.custcoding.estaleiromavingue.App.users.AppUser;
 import jakarta.persistence.*;
 import lombok.Data;
-import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
 
@@ -26,7 +25,7 @@ public class ResetPasswordToken {
     @JoinColumn(name = "user_id")
     private AppUser user;
 
-    @CreationTimestamp
+    @Column(nullable = false)
     private LocalDateTime expiryDate;
 
     public boolean isExpired() {
