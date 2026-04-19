@@ -120,6 +120,7 @@ public class AuthService {
     }
 
     private void sendVerification(AppUser user){
+        verifyLimit(user.getEmail());
         tokenRepository.findByUser(user).ifPresent(tokenRepository::delete);
 
         String tokenValue = UUID.randomUUID().toString();
@@ -216,6 +217,8 @@ public class AuthService {
     {
         AppUser user = userRepo.findByEmail(request.email())
                 .orElseThrow(() -> new RuntimeException("Utilizador não encontrado"));
+
+        verifyLimit(user.getEmail());
 
         resetPassowordTokenRepository.findByUser(user).ifPresent(resetPassowordTokenRepository::delete);
 
