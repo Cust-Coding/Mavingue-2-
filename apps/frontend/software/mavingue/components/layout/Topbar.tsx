@@ -93,147 +93,151 @@ export default function Topbar() {
 
   if (!mounted) {
     return (
-      <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-gray-100/80 backdrop-blur-md dark:border-slate-800 dark:bg-slate-950/80">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <div className="h-8 w-24 bg-orange-200 animate-pulse rounded dark:bg-orange-900/30"></div>
-          <div className="h-8 w-32 bg-slate-200 animate-pulse rounded dark:bg-slate-800"></div>
+      <header className="fixed top-0 left-0 right-0 z-50 flex justify-center px-4 py-4 pointer-events-none">
+        <div className="pointer-events-auto w-full max-w-7xl rounded-full border border-white/20 bg-white/70 backdrop-blur-xl shadow-xl dark:border-slate-700/50 dark:bg-slate-900/70">
+          <div className="flex h-16 items-center justify-between px-4 sm:px-6">
+            <div className="h-8 w-24 bg-orange-200 animate-pulse rounded-full dark:bg-orange-900/30"></div>
+            <div className="h-8 w-32 bg-slate-200 animate-pulse rounded-full dark:bg-slate-800"></div>
+          </div>
         </div>
       </header>
     );
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-gray-100/80 backdrop-blur-md dark:border-slate-800 dark:bg-slate-950/80">
+    <header className="fixed top-0 left-0 right-0 z-50 flex justify-center px-4 py-4 pointer-events-none">
       <div 
-        className={`mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8 transition-all duration-700 ${
-          visible ? "opacity-100" : "opacity-0"
+        className={`pointer-events-auto w-full max-w-7xl rounded-full md:rounded-full rounded-3xl border border-white/30 bg-white/70 backdrop-blur-xl shadow-lg shadow-black/5 dark:border-slate-700/50 dark:bg-slate-900/70 transition-all duration-700 ${
+          visible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"
         }`}
       >
-        
-        {/* Lado Esquerdo: Logo e Nav Desktop */}
-        <div className="flex items-center gap-6">
-          <button 
-            className="text-slate-600 hover:text-orange-500 md:hidden dark:text-slate-300"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            {mobileMenuOpen ? <Icons.X /> : <Icons.Menu />}
-          </button>
-
-          <Link href="/" className="text-2xl font-black tracking-tighter text-orange-600 dark:text-orange-500">
-            M
-          </Link>
-
-          <nav className="hidden mx-20 space-x-1 md:flex">
-            <Link href="/catalogo" className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-orange-50 hover:text-orange-600 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-orange-400">
-              {t("nav.catalog")}
-            </Link>
-            <Link href="/cliente/perfil" className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-orange-50 hover:text-orange-600 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-orange-400">
-              {t("nav.myArea")}
-            </Link>
-          </nav>
-        </div>
-
-        {/* Lado Direito*/}
-        <div className="flex items-center gap-2 sm:gap-4">
+        <div className="flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
           
-          {/* Dark Mode Toggle */}
-          <button 
-            onClick={toggleDarkMode}
-            className="flex h-10 w-10 items-center justify-center rounded-full text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-900"
-            title={t("nav.darkMode")}
-          >
-            {darkMode ? <Icons.Sun /> : <Icons.Moon />}
-          </button>
-
-          {/* Language Selector */}
-          <div ref={langRef} className="relative">
-            <button
-              onClick={() => setLangOpen(!langOpen)}
-              className={`flex h-10 w-10 items-center justify-center rounded-full text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-900 ${langOpen ? "bg-slate-100 dark:bg-slate-800" : ""}`}
-              title={t("nav.language")}
+          {/* Lado Esquerdo: Logo e Nav Desktop */}
+          <div className="flex items-center gap-6">
+            <button 
+              className="text-slate-600 hover:text-orange-500 md:hidden dark:text-slate-300"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
-              <Icons.Globe />
+              {mobileMenuOpen ? <Icons.X /> : <Icons.Menu />}
             </button>
-            {langOpen && (
-              <div className="absolute right-0 mt-2 w-28 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg dark:border-slate-800 dark:bg-slate-900">
-                <button
-                  onClick={() => { setLocale("pt"); setLangOpen(false); }}
-                  className={`flex w-full items-center gap-2 px-4 py-2 text-sm font-medium transition hover:bg-orange-50 dark:hover:bg-slate-800 ${locale === "pt" ? "text-orange-600" : "text-slate-700 dark:text-slate-200"}`}
-                >
-                  <span className={locale === "pt" ? "font-bold" : ""}>🇲🇿</span> PT
-                </button>
-                <button
-                  onClick={() => { setLocale("en"); setLangOpen(false); }}
-                  className={`flex w-full items-center gap-2 border-t border-slate-100 px-4 py-2 text-sm font-medium transition hover:bg-orange-50 dark:border-slate-800 dark:hover:bg-slate-800 ${locale === "en" ? "text-orange-600" : "text-slate-700 dark:text-slate-200"}`}
-                >
-                  <span className={locale === "en" ? "font-bold" : ""}>🇬🇧</span> EN
-                </button>
-              </div>
-            )}
+
+            <Link href="/" className="text-2xl font-black tracking-tighter text-orange-600 dark:text-orange-500">
+              M
+            </Link>
+
+            <nav className="hidden mx-4 space-x-1 md:flex">
+              <Link href="/catalogo" className="rounded-full px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-orange-50 hover:text-orange-600 dark:text-slate-300 dark:hover:bg-slate-800/80 dark:hover:text-orange-400">
+                {t("nav.catalog")}
+              </Link>
+              <Link href="/cliente/perfil" className="rounded-full px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-orange-50 hover:text-orange-600 dark:text-slate-300 dark:hover:bg-slate-800/80 dark:hover:text-orange-400">
+                {t("nav.myArea")}
+              </Link>
+            </nav>
           </div>
 
-          {/* Carrinh */}
-          <Link 
-            href="/carrinho" 
-            className="relative flex h-10 w-10 items-center justify-center rounded-full text-slate-600 transition hover:bg-orange-50 hover:text-orange-600 dark:text-slate-300 dark:hover:bg-slate-900"
-          >
-            <Icons.Cart />
-            <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-orange-600 text-[10px] font-bold text-white ring-2 ring-white dark:ring-slate-950">
-              2
-            </span>
-          </Link>
+          {/* Lado Direito*/}
+          <div className="flex items-center gap-2 sm:gap-3">
+            
+            {/* Dark Mode Toggle */}
+            <button 
+              onClick={toggleDarkMode}
+              className="flex h-10 w-10 items-center justify-center rounded-full text-slate-600 transition hover:bg-slate-100/50 dark:text-slate-300 dark:hover:bg-slate-800/50"
+              title={t("nav.darkMode")}
+            >
+              {darkMode ? <Icons.Sun /> : <Icons.Moon />}
+            </button>
 
-          {!role ? (
-            <div className="flex items-center gap-2">
-              <Link href="/auth/login" className="hidden text-sm font-semibold text-slate-600 hover:text-orange-600 sm:block dark:text-slate-300">
-                {t("common.login")}
-              </Link>
-              <Link href="/auth/register" className="rounded-full bg-orange-600 px-4 py-2 text-sm font-bold text-white shadow-lg shadow-orange-200 transition hover:bg-orange-700 active:scale-95 dark:shadow-none">
-                {t("common.register")}
-              </Link>
-            </div>
-          ) : (
-            <div ref={boxRef} className="relative">
+            {/* Language Selector */}
+            <div ref={langRef} className="relative">
               <button
-                onClick={() => setOpen(!open)}
-                className={`flex items-center gap-2 rounded-full border p-1 pr-3 transition-all ${
-                  open ? "border-orange-600 bg-orange-50 dark:bg-orange-950/30" : "border-slate-200 hover:border-orange-300 dark:border-slate-800"
-                }`}
+                onClick={() => setLangOpen(!langOpen)}
+                className={`flex h-10 w-10 items-center justify-center rounded-full text-slate-600 transition hover:bg-slate-100/50 dark:text-slate-300 dark:hover:bg-slate-800/50 ${langOpen ? "bg-slate-100/70 dark:bg-slate-800/70" : ""}`}
+                title={t("nav.language")}
               >
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-600 text-white">
-                  <Icons.User />
-                </div>
-                <span className="hidden text-sm font-bold text-slate-700 sm:block dark:text-slate-200">{displayName}</span>
-                <Icons.ChevronDown />
+                <Icons.Globe />
               </button>
-
-              {open && (
-                <div className="absolute right-0 mt-2 w-52 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl animate-in fade-in slide-in-from-top-2 dark:border-slate-800 dark:bg-slate-900">
-                  <Link href={profileHref} onClick={() => setOpen(false)} className="flex items-center gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-orange-50 dark:text-slate-200 dark:hover:bg-slate-800">
-                    {t("common.profile")}
-                  </Link>
+              {langOpen && (
+                <div className="absolute right-0 mt-2 w-28 overflow-hidden rounded-2xl border border-white/30 bg-white/90 backdrop-blur-md shadow-lg dark:border-slate-700/50 dark:bg-slate-900/90">
                   <button
-                    onClick={() => { clearSession(); window.location.href = "/"; }}
-                    className="flex w-full items-center gap-3 border-t border-slate-100 px-4 py-3 text-sm font-medium text-red-500 hover:bg-red-50 dark:border-slate-800 dark:hover:bg-red-950/20"
+                    onClick={() => { setLocale("pt"); setLangOpen(false); }}
+                    className={`flex w-full items-center gap-2 px-4 py-2 text-sm font-medium transition hover:bg-orange-50 dark:hover:bg-slate-800 ${locale === "pt" ? "text-orange-600" : "text-slate-700 dark:text-slate-200"}`}
                   >
-                    {t("common.logout")}
+                    <span className={locale === "pt" ? "font-bold" : ""}>🇲🇿</span> PT
+                  </button>
+                  <button
+                    onClick={() => { setLocale("en"); setLangOpen(false); }}
+                    className={`flex w-full items-center gap-2 border-t border-slate-100/50 px-4 py-2 text-sm font-medium transition hover:bg-orange-50 dark:border-slate-800 dark:hover:bg-slate-800 ${locale === "en" ? "text-orange-600" : "text-slate-700 dark:text-slate-200"}`}
+                  >
+                    <span className={locale === "en" ? "font-bold" : ""}>🇬🇧</span> EN
                   </button>
                 </div>
               )}
             </div>
-          )}
-        </div>
-      </div>
 
-      {/* Menu Mbile */}
-      {mobileMenuOpen && (
-        <div className="border-t border-slate-100 bg-white p-4 animate-in slide-in-from-top md:hidden dark:border-slate-800 dark:bg-slate-950">
-          <nav className="flex flex-col gap-2">
-            <Link href="/catalogo" onClick={() => setMobileMenuOpen(false)} className="rounded-xl p-3 text-base font-medium text-slate-700 hover:bg-orange-50 dark:text-slate-200 dark:hover:bg-slate-900">{t("nav.catalog")}</Link>
-            <Link href="/cliente/perfil" onClick={() => setMobileMenuOpen(false)} className="rounded-xl p-3 text-base font-medium text-slate-700 hover:bg-orange-50 dark:text-slate-200 dark:hover:bg-slate-900">{t("nav.myArea")}</Link>
-          </nav>
+            {/* Carrinho */}
+            <Link 
+              href="/carrinho" 
+              className="relative flex h-10 w-10 items-center justify-center rounded-full text-slate-600 transition hover:bg-orange-50/50 hover:text-orange-600 dark:text-slate-300 dark:hover:bg-slate-800/50"
+            >
+              <Icons.Cart />
+              <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-orange-600 text-[10px] font-bold text-white ring-2 ring-white dark:ring-slate-900">
+                2
+              </span>
+            </Link>
+
+            {!role ? (
+              <div className="flex items-center gap-2">
+                <Link href="/auth/login" className="hidden text-sm font-semibold text-slate-600 hover:text-orange-600 sm:block dark:text-slate-300">
+                  {t("common.login")}
+                </Link>
+                <Link href="/auth/register" className="rounded-full bg-orange-600 px-4 py-2 text-sm font-bold text-white shadow-lg shadow-orange-200/50 transition hover:bg-orange-700 active:scale-95 dark:shadow-none">
+                  {t("common.register")}
+                </Link>
+              </div>
+            ) : (
+              <div ref={boxRef} className="relative">
+                <button
+                  onClick={() => setOpen(!open)}
+                  className={`flex items-center gap-2 rounded-full border p-1 pr-3 transition-all ${
+                    open ? "border-orange-400 bg-orange-50/70 dark:bg-orange-950/30" : "border-white/30 hover:border-orange-300 dark:border-slate-700"
+                  }`}
+                >
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-600 text-white">
+                    <Icons.User />
+                  </div>
+                  <span className="hidden text-sm font-bold text-slate-700 sm:block dark:text-slate-200">{displayName}</span>
+                  <Icons.ChevronDown />
+                </button>
+
+                {open && (
+                  <div className="absolute right-0 mt-2 w-52 overflow-hidden rounded-2xl border border-white/30 bg-white/90 backdrop-blur-md shadow-xl animate-in fade-in slide-in-from-top-2 dark:border-slate-700/50 dark:bg-slate-900/90">
+                    <Link href={profileHref} onClick={() => setOpen(false)} className="flex items-center gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-orange-50 dark:text-slate-200 dark:hover:bg-slate-800">
+                      {t("common.profile")}
+                    </Link>
+                    <button
+                      onClick={() => { clearSession(); window.location.href = "/"; }}
+                      className="flex w-full items-center gap-3 border-t border-slate-100/50 px-4 py-3 text-sm font-medium text-red-500 hover:bg-red-50 dark:border-slate-800 dark:hover:bg-red-950/20"
+                    >
+                      {t("common.logout")}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
-      )}
+
+        {/* Menu Mobile (abaixo da barra flutuante) */}
+        {mobileMenuOpen && (
+          <div className="absolute left-4 right-4 top-full mt-2 overflow-hidden rounded-2xl border border-white/30 bg-white/90 backdrop-blur-md shadow-lg animate-in slide-in-from-top-2 md:hidden dark:border-slate-700/50 dark:bg-slate-900/90">
+            <nav className="flex flex-col gap-1 p-2">
+              <Link href="/catalogo" onClick={() => setMobileMenuOpen(false)} className="rounded-xl px-4 py-3 text-base font-medium text-slate-700 hover:bg-orange-50 dark:text-slate-200 dark:hover:bg-slate-800">{t("nav.catalog")}</Link>
+              <Link href="/cliente/perfil" onClick={() => setMobileMenuOpen(false)} className="rounded-xl px-4 py-3 text-base font-medium text-slate-700 hover:bg-orange-50 dark:text-slate-200 dark:hover:bg-slate-800">{t("nav.myArea")}</Link>
+            </nav>
+          </div>
+        )}
+      </div>
     </header>
   );
 }
