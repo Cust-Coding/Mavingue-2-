@@ -29,3 +29,4 @@ resend:
     key: ${RESEND_API_KEY}
 
 email:
+  from: ${EMAIL_FROM}8
