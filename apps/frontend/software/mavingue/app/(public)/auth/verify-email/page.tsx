@@ -1,42 +1,46 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 
-export default function VerifyPage() {
-  const searchParams = useSearchParams();
-  const token = searchParams.get("token");
+export default function VerifyEmailPage() {
+  const params = useParams();
+  const router = useRouter();
+  const userId = params.userId;
+  const signedToken = params.signedToken;
 
   const [loading, setLoading] = useState(true);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (!token) {
-      setError("Token de verificação não fornecido.");
+    if (!userId || !signedToken) {
+      setError("Link de verificação inválido ou incompleto.");
       setLoading(false);
       return;
     }
 
     const verify = async () => {
       try {
-        const res = await fetch(`/api/proxy/api/auth/verify?token=${encodeURIComponent(token)}`);
+        // Chamada para o backend no formato /email/verify/{userId}/{token}
+        const res = await fetch(`/api/proxy/email/verify/${userId}/${signedToken}`);
+        
         if (res.ok) {
           setSuccess(true);
         } else {
           const text = await res.text();
-          setError(text || "Erro na verificação.");
+          setError(text || "Erro na verificação da conta.");
         }
       } catch (e) {
-        setError("Falha ao comunicar com o servidor.");
+        setError("Falha ao comunicar com o servidor. Tente novamente mais tarde.");
       } finally {
         setLoading(false);
       }
     };
 
     verify();
-  }, [token]);
+  }, [userId, signedToken]);
 
   if (loading) {
     return (
@@ -68,7 +72,7 @@ export default function VerifyPage() {
             Sua conta foi ativada com sucesso. Agora você pode fazer login.
           </p>
           <button
-            onClick={() => window.location.href = "/auth/login"}
+            onClick={() => router.push("/auth/login")}
             className="w-full bg-[#EF6A44] text-white font-bold py-3 px-6 rounded-xl hover:bg-[#EF6A44]/90 transition-colors"
           >
             Ir para Login
@@ -90,13 +94,13 @@ export default function VerifyPage() {
         <p className="text-gray-600 mb-6">{error}</p>
         <div className="space-y-3">
           <button
-            onClick={() => window.location.href = "/auth/login"}
+            onClick={() => router.push("/auth/login")}
             className="w-full bg-[#EF6A44] text-white font-bold py-3 px-6 rounded-xl hover:bg-[#EF6A44]/90 transition-colors"
           >
             Ir para Login
           </button>
           <button
-            onClick={() => window.location.href = "/auth/confirm-email"}
+            onClick={() => router.push("/auth/confirm-email")}
             className="w-full bg-gray-100 text-gray-700 font-bold py-3 px-6 rounded-xl hover:bg-gray-200 transition-colors"
           >
             Solicitar Novo Email
