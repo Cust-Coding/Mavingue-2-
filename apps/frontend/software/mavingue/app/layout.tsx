@@ -1,4 +1,5 @@
 import "./globals.css";
+import { I18nProvider } from "@/lib/i18n";
 
 export const metadata = {
   metadataBase: new URL("https://estaleiromavingueonline.com"),
@@ -43,8 +44,10 @@ export const metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt">
-      <body>{children}</body>
+    <html lang="pt" suppressHydrationWarning>
+      <body>
+        <I18nProvider>{children}</I18nProvider>
+      </body>
     </html>
   );
 }

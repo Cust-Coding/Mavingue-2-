@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { clearSession, getRole } from "@/lib/auth/session";
+import { useI18n } from "@/lib/i18n";
 
 interface MeResponse {
   nome?: string;
@@ -25,7 +26,8 @@ const Icons = {
   Moon: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>,
   Menu: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>,
   X: () => <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>,
-  ChevronDown: () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+  ChevronDown: () => <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>,
+  Globe: () => <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
 };
 
 export default function Topbar() {
@@ -33,11 +35,14 @@ export default function Topbar() {
   const [visible, setVisible] = useState(false);
   
   const role = getRole();
+  const { t, locale, setLocale } = useI18n();
   const [meName, setMeName] = useState<string>("");
   const [open, setOpen] = useState(false);
+  const [langOpen, setLangOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const boxRef = useRef<HTMLDivElement | null>(null);
+  const langRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -77,12 +82,13 @@ export default function Topbar() {
   useEffect(() => {
     function onDocClick(e: MouseEvent) {
       if (boxRef.current && !boxRef.current.contains(e.target as Node)) setOpen(false);
+      if (langRef.current && !langRef.current.contains(e.target as Node)) setLangOpen(false);
     }
     document.addEventListener("mousedown", onDocClick);
     return () => document.removeEventListener("mousedown", onDocClick);
   }, []);
 
-  const displayName = firstName(meName) || (role ? "Conta" : "");
+  const displayName = firstName(meName) || (role ? t("nav.account") : "");
   const profileHref = role === "ADMIN" ? "/admin" : role === "CLIENTE" ? "/cliente/perfil" : "/staff";
 
   if (!mounted) {
@@ -119,13 +125,10 @@ export default function Topbar() {
 
           <nav className="hidden mx-20 space-x-1 md:flex">
             <Link href="/catalogo" className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-orange-50 hover:text-orange-600 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-orange-400">
-              Catálogo
+              {t("nav.catalog")}
             </Link>
-            {/* <Link href="/novidades" className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-orange-50 hover:text-orange-600 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-orange-400">
-              Novidades
-            </Link> */}
             <Link href="/cliente/perfil" className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-orange-50 hover:text-orange-600 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-orange-400">
-              Minha area
+              {t("nav.myArea")}
             </Link>
           </nav>
         </div>
@@ -137,10 +140,37 @@ export default function Topbar() {
           <button 
             onClick={toggleDarkMode}
             className="flex h-10 w-10 items-center justify-center rounded-full text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-900"
-            title="Alternar Tema"
+            title={t("nav.darkMode")}
           >
             {darkMode ? <Icons.Sun /> : <Icons.Moon />}
           </button>
+
+          {/* Language Selector */}
+          <div ref={langRef} className="relative">
+            <button
+              onClick={() => setLangOpen(!langOpen)}
+              className={`flex h-10 w-10 items-center justify-center rounded-full text-slate-600 transition hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-900 ${langOpen ? "bg-slate-100 dark:bg-slate-800" : ""}`}
+              title={t("nav.language")}
+            >
+              <Icons.Globe />
+            </button>
+            {langOpen && (
+              <div className="absolute right-0 mt-2 w-28 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg dark:border-slate-800 dark:bg-slate-900">
+                <button
+                  onClick={() => { setLocale("pt"); setLangOpen(false); }}
+                  className={`flex w-full items-center gap-2 px-4 py-2 text-sm font-medium transition hover:bg-orange-50 dark:hover:bg-slate-800 ${locale === "pt" ? "text-orange-600" : "text-slate-700 dark:text-slate-200"}`}
+                >
+                  <span className={locale === "pt" ? "font-bold" : ""}>🇲🇿</span> PT
+                </button>
+                <button
+                  onClick={() => { setLocale("en"); setLangOpen(false); }}
+                  className={`flex w-full items-center gap-2 border-t border-slate-100 px-4 py-2 text-sm font-medium transition hover:bg-orange-50 dark:border-slate-800 dark:hover:bg-slate-800 ${locale === "en" ? "text-orange-600" : "text-slate-700 dark:text-slate-200"}`}
+                >
+                  <span className={locale === "en" ? "font-bold" : ""}>🇬🇧</span> EN
+                </button>
+              </div>
+            )}
+          </div>
 
           {/* Carrinh */}
           <Link 
@@ -156,10 +186,10 @@ export default function Topbar() {
           {!role ? (
             <div className="flex items-center gap-2">
               <Link href="/auth/login" className="hidden text-sm font-semibold text-slate-600 hover:text-orange-600 sm:block dark:text-slate-300">
-                Entrar
+                {t("common.login")}
               </Link>
               <Link href="/auth/register" className="rounded-full bg-orange-600 px-4 py-2 text-sm font-bold text-white shadow-lg shadow-orange-200 transition hover:bg-orange-700 active:scale-95 dark:shadow-none">
-                Criar Conta
+                {t("common.register")}
               </Link>
             </div>
           ) : (
@@ -180,13 +210,13 @@ export default function Topbar() {
               {open && (
                 <div className="absolute right-0 mt-2 w-52 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl animate-in fade-in slide-in-from-top-2 dark:border-slate-800 dark:bg-slate-900">
                   <Link href={profileHref} onClick={() => setOpen(false)} className="flex items-center gap-3 px-4 py-3 text-sm text-slate-700 hover:bg-orange-50 dark:text-slate-200 dark:hover:bg-slate-800">
-                    Meu Perfil
+                    {t("common.profile")}
                   </Link>
                   <button
                     onClick={() => { clearSession(); window.location.href = "/"; }}
                     className="flex w-full items-center gap-3 border-t border-slate-100 px-4 py-3 text-sm font-medium text-red-500 hover:bg-red-50 dark:border-slate-800 dark:hover:bg-red-950/20"
                   >
-                    Sair
+                    {t("common.logout")}
                   </button>
                 </div>
               )}
@@ -199,9 +229,8 @@ export default function Topbar() {
       {mobileMenuOpen && (
         <div className="border-t border-slate-100 bg-white p-4 animate-in slide-in-from-top md:hidden dark:border-slate-800 dark:bg-slate-950">
           <nav className="flex flex-col gap-2">
-            <Link href="/catalogo" className="rounded-xl p-3 text-base font-medium text-slate-700 hover:bg-orange-50 dark:text-slate-200 dark:hover:bg-slate-900">Catálogo</Link>
-            {/* <Link href="/novidades" className="rounded-xl p-3 text-base font-medium text-slate-700 hover:bg-orange-50 dark:text-slate-200 dark:hover:bg-slate-900">Novidades</Link> */}
-            <Link href="/cliente/perfil" className="rounded-xl p-3 text-base font-medium text-slate-700 hover:bg-orange-50 dark:text-slate-200 dark:hover:bg-slate-900">Minha area</Link>
+            <Link href="/catalogo" onClick={() => setMobileMenuOpen(false)} className="rounded-xl p-3 text-base font-medium text-slate-700 hover:bg-orange-50 dark:text-slate-200 dark:hover:bg-slate-900">{t("nav.catalog")}</Link>
+            <Link href="/cliente/perfil" onClick={() => setMobileMenuOpen(false)} className="rounded-xl p-3 text-base font-medium text-slate-700 hover:bg-orange-50 dark:text-slate-200 dark:hover:bg-slate-900">{t("nav.myArea")}</Link>
           </nav>
         </div>
       )}

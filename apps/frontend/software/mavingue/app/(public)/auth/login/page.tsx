@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { setSession } from "@/lib/auth/session";
+import { useI18n } from "@/lib/i18n";
 import { Mail, Lock, Eye, EyeOff, AlertCircle } from "lucide-react";
 
 type UnsplashPhoto = {
@@ -153,6 +154,7 @@ async function fetchConstructionPhotos(
 }
 
 export default function LoginPage() {
+  const { t } = useI18n();
   const sp = useSearchParams();
   const nextParam = sp.get("next");
 
@@ -170,11 +172,11 @@ export default function LoginPage() {
   function validate() {
     const e: Record<string, string> = {};
     if (!email.trim()) {
-      e.email = "Email é obrigatório";
+      e.email = t("auth.emailRequired");
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      e.email = "Email inválido";
+      e.email = t("auth.emailInvalid");
     }
-    if (!password.trim()) e.password = "Senha é obrigatória";
+    if (!password.trim()) e.password = t("auth.passwordRequired");
     setFe(e);
     return Object.keys(e).length === 0;
   }
@@ -202,7 +204,7 @@ export default function LoginPage() {
         const selected = filtered[0] || photos[0];
 
         if (!selected) {
-          throw new Error("Nenhuma imagem recebida");
+          throw new Error("No image received");
         }
 
         const nextUrl =
@@ -259,7 +261,7 @@ export default function LoginPage() {
           const j = JSON.parse(txt);
           if (j && typeof j === "object" && !Array.isArray(j) && !j.message) {
             setFe(j);
-            setErr("Campos inválidos.");
+            setErr(t("auth.invalidFields"));
             return;
           }
           if (j?.message) {
@@ -273,15 +275,24 @@ export default function LoginPage() {
             return;
           }
         } catch {}
-        setErr(txt || `Erro HTTP ${res.status}`);
+        setErr(txt || `HTTP Error ${res.status}`);
         return;
       }
 
+      // Backend returns {token: "..."} - extract the token string
       const data = await res.json();
-      const token = data?.token ?? data;
+      const token = data?.token;
+      
+      if (!token) {
+        setErr(t("auth.processingError"));
+        setLoading(false);
+        return;
+      }
 
+      // Store token first
       setSession(token, "CLIENTE");
 
+      // Then fetch user role from /auth/me
       let role = "CLIENTE";
       try {
         const meRes = await fetch("/api/proxy/api/auth/me", {
@@ -291,13 +302,18 @@ export default function LoginPage() {
 
         if (meRes.ok) {
           const me = await meRes.json();
+          // Backend returns {id, nome, email, role}
           role = me?.role ?? "CLIENTE";
+          // Update session with correct role
           setSession(token, role);
 
           const nome = me?.nome ?? "";
           if (nome) localStorage.setItem("me_name", nome);
         }
-      } catch {}
+      } catch (e) {
+        // If /me fails, still allow login with default CLIENTE role
+        console.error("Failed to fetch user role:", e);
+      }
 
       const defaultDash = dashboardForRole(role);
 
@@ -311,7 +327,7 @@ export default function LoginPage() {
 
       location.href = next;
     } catch (e: any) {
-      setErr(e?.message ?? "Erro no servidor");
+      setErr(e?.message ?? t("auth.serverError"));
     } finally {
       setLoading(false);
     }
@@ -334,10 +350,10 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold text-gray-900 mb-2">
-              Bem-vindo de volta!
+              {t("auth.welcomeBack")}
             </h2>
             <p className="text-gray-400">
-              Introduza os seus dados para aceder à conta
+              {t("auth.loginSystem")}
             </p>
           </div>
 
@@ -352,23 +368,23 @@ export default function LoginPage() {
             <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
               <div className="flex items-center gap-2 text-yellow-700 mb-2">
                 <AlertCircle size={16} />
-                <span className="font-medium">Conta não verificada</span>
+                <span className="font-medium">{t("auth.unverifiedAccount").split(".")[0]}</span>
               </div>
               <p className="text-sm text-yellow-600 mb-3">
-                Sua conta ainda não foi verificada. Digite o código enviado para seu email para confirmar.
+                {t("auth.unverifiedAccount")}
               </p>
               <div className="flex gap-2">
                 <button
                   onClick={() => window.location.href = `/auth/confirm-email?email=${encodeURIComponent(unverifiedEmail)}`}
                   className="px-3 py-1 bg-yellow-600 text-white text-sm rounded hover:bg-yellow-700 transition"
                 >
-                  Confirmar Conta
+                  {t("auth.confirm").split(".")[0]}
                 </button>
                 <button
                   onClick={() => setUnverifiedEmail("")}
                   className="px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300 transition"
                 >
-                  Tentar Novamente
+                  {t("common.previous")}
                 </button>
               </div>
             </div>
@@ -377,21 +393,21 @@ export default function LoginPage() {
           <form onSubmit={submit} className="flex flex-col gap-6">
             <div>
               <label className="text-sm font-medium text-gray-700 mb-1 block">
-                Endereço de email
+                {t("auth.email")}
               </label>
               <PremiumInput
                 icon={Mail}
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="seu@email.com"
+                placeholder={t("form.placeholders.email")}
                 error={fe.email}
               />
             </div>
 
             <div>
               <label className="text-sm font-medium text-gray-700 mb-1 block">
-                Palavra-passe
+                {t("auth.password")}
               </label>
               <PremiumInput
                 icon={Lock}
@@ -408,7 +424,7 @@ export default function LoginPage() {
                 href="/auth/forgot-password"
                 className="text-sm text-gray-400 hover:text-[#FF4500] transition"
               >
-                Esqueceu a senha?
+                {t("auth.forgotPassword")}
               </a>
             </div>
 
@@ -417,17 +433,17 @@ export default function LoginPage() {
               disabled={loading}
               className="h-12 rounded-xl bg-[#FF4500] text-white font-semibold hover:bg-[#e03e00] transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
             >
-              {loading ? "A entrar..." : "Entrar"}
+              {loading ? t("auth.loggingIn") : t("auth.loginButton")}
             </button>
           </form>
 
           <p className="text-center text-sm text-gray-400 mt-8">
-            Não tem uma conta?{" "}
+            {t("auth.noAccount")}{" "}
             <a
               href="/auth/register"
               className="text-[#FF4500] font-medium hover:underline"
             >
-              Registre-se
+              {t("auth.register")}
             </a>
           </p>
         </div>

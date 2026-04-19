@@ -1,12 +1,14 @@
 'use client';
 
 import { useEffect, useRef } from "react";
+import { useI18n } from "@/lib/i18n";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 gsap.registerPlugin(ScrollTrigger);
 
 export default function TermosPage() {
+  const { t } = useI18n();
   const heroRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -51,9 +53,9 @@ export default function TermosPage() {
       >
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
           <h1 className="text-5xl md:text-6xl font-black text-white mb-4 tracking-tight">
-            Termos de <span className="text-orange-400">Uso</span>
+            {t("terms.title").split(" ")[0]} <span className="text-orange-400">{t("terms.title").split(" ").slice(1).join(" ")}</span>
           </h1>
-          <p className="text-xl text-slate-300">Última atualização: Abril 2026</p>
+          <p className="text-xl text-slate-300">{t("terms.lastUpdated")}</p>
         </div>
       </div>
 
@@ -61,70 +63,70 @@ export default function TermosPage() {
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 space-y-8">
             
             <section>
-              <h2 className="text-xl font-bold text-slate-800 mb-4">1. Aceitação dos Termos</h2>
+              <h2 className="text-xl font-bold text-slate-800 mb-4">1. {t("terms.title").split(" ")[0]}</h2>
               <p className="text-slate-600 leading-relaxed">
-                Ao acessar e utilizar o site da Mavingue Materiais de Construção, você concorda em cumprir estes Termos de Uso. Se não concordar, não deve utilizar o nosso site.
+                {t("terms.title").split(" ")[0]}
               </p>
             </section>
 
             <section>
-              <h2 className="text-xl font-bold text-slate-800 mb-4">2. Uso do Site</h2>
+              <h2 className="text-xl font-bold text-slate-800 mb-4">2. {t("common.explore")}</h2>
               <p className="text-slate-600 leading-relaxed mb-4">
-                Você concorda em:
+                {t("terms.intellectualProperty")}
               </p>
               <ul className="list-disc list-inside text-slate-600 space-y-2 ml-4">
-                <li>Usar o site apenas para fins legais</li>
-                <li>Não tentar acessar áreas restritas sem autorização</li>
-                <li>Não introduzir vírus ou código malicioso</li>
-                <li>Respeitar os direitos de propriedade intelectual</li>
+                <li>{t("terms.intellectualProperty")}</li>
+                <li>{t("terms.accountResponsibility").split(".")[0]}</li>
+                <li>{t("terms.fraudCancelation").split(".")[0]}</li>
+                <li>{t("terms.intellectualPropertyHeader")}</li>
               </ul>
             </section>
 
             <section>
-              <h2 className="text-xl font-bold text-slate-800 mb-4">3. Contas e Registos</h2>
+              <h2 className="text-xl font-bold text-slate-800 mb-4">3. {t("profile.title")}</h2>
               <p className="text-slate-600 leading-relaxed">
-                Ao criar uma conta, você é responsável por manter a confidencialidade das suas credenciais e por todas as atividades sob a sua conta. Reservamo-nos o direito de suspender ou encerrar contas a nosso critério.
+                {t("terms.accountResponsibility")}
               </p>
             </section>
 
             <section>
-              <h2 className="text-xl font-bold text-slate-800 mb-4">4. Compras e Pagamentos</h2>
+              <h2 className="text-xl font-bold text-slate-800 mb-4">4. {t("cart.checkout")}</h2>
               <p className="text-slate-600 leading-relaxed mb-4">
-                Ao realizar compras:
+                {t("terms.fraudCancelation")}
               </p>
               <ul className="list-disc list-inside text-slate-600 space-y-2 ml-4">
-                <li>Os preços estão sujeitos a alterações sem aviso prévio</li>
-                <li>As encomendas estão sujeitas à disponibilidade</li>
-                <li>Os pagamentos são processados de forma segura</li>
-                <li>Reservamo-nos o direito de cancelar encomendas em caso de fraude</li>
+                <li>{t("terms.fraudCancelation").split(".")[0]}</li>
+                <li>{t("terms.fraudCancelation").split(".")[0]}</li>
+                <li>{t("terms.fraudCancelation").split(".")[0]}</li>
+                <li>{t("terms.fraudCancelation")}</li>
               </ul>
             </section>
 
             <section>
-              <h2 className="text-xl font-bold text-slate-800 mb-4">5. Propriedade Intelectual</h2>
+              <h2 className="text-xl font-bold text-slate-800 mb-4">5. {t("terms.intellectualPropertyHeader")}</h2>
               <p className="text-slate-600 leading-relaxed">
-                Todo o conteúdo deste site, incluindo textos, imagens, logótipos e design, é propriedade da Mavingue ou dos seus licenciadores e está protegido por direitos de autor e marcas registadas.
+                {t("terms.contentOwnership")}
               </p>
             </section>
 
             <section>
-              <h2 className="text-xl font-bold text-slate-800 mb-4">6. Limitação de Responsabilidade</h2>
+              <h2 className="text-xl font-bold text-slate-800 mb-4">6. {t("terms.liabilityDisclaimer").split(".")[0]}</h2>
               <p className="text-slate-600 leading-relaxed">
-                Não garantimos que o site esteja sempre disponível ou livre de erros. Não seremos responsáveis por quaisquer danos indiretos, incidentais ou consequenciais resultantes do uso do site.
+                {t("terms.liabilityDisclaimer")}
               </p>
             </section>
 
             <section>
-              <h2 className="text-xl font-bold text-slate-800 mb-4">7. Alterações aos Termos</h2>
+              <h2 className="text-xl font-bold text-slate-800 mb-4">7. {t("terms.changesNotice").split(".")[0]}</h2>
               <p className="text-slate-600 leading-relaxed">
-                Reservamo-nos o direito de alterar estes termos a qualquer momento. As alterações serão publicadas nesta página e entrarão em vigor imediatamente após a publicação.
+                {t("terms.changesNotice")}
               </p>
             </section>
 
             <section>
-              <h2 className="text-xl font-bold text-slate-800 mb-4">8. Contactos</h2>
+              <h2 className="text-xl font-bold text-slate-800 mb-4">8. {t("contact.title")}</h2>
               <p className="text-slate-600 leading-relaxed">
-                Para questões sobre estes termos, contacte-nos através de <strong>legal@mavingue.co.mz</strong> ou pelo telefone <strong>+258 84 000 0000</strong>.
+                {t("terms.changesNotice").split(".")[0]}
               </p>
             </section>
 

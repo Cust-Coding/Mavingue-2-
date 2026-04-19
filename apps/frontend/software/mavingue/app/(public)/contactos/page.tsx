@@ -9,17 +9,20 @@ import {
   Building2,
   ArrowRight
 } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
 
 export default function ContactosPage() {
+  const { t } = useI18n();
+
   return (
     <main className="min-h-screen bg-white">
       {/* Hero Section */}
       <section className="relative bg-gradient-to-r from-slate-900 to-slate-800 text-white py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">Contactos</h1>
+            <h1 className="text-4xl md:text-5xl font-bold mb-6">{t("contact.title")}</h1>
             <p className="text-xl text-slate-300 leading-relaxed">
-              Estamos disponíveis para esclarecer dúvidas, receber sugestões e apoiar os nossos clientes.
+              {t("contact.subtitle")}
             </p>
           </div>
         </div>
@@ -33,15 +36,14 @@ export default function ContactosPage() {
               <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4 text-orange-600 group-hover:bg-orange-600 group-hover:text-white transition-colors">
                 <MapPin size={22} />
               </div>
-              <h3 className="font-bold text-slate-800 mb-2">Localização</h3>
-              <p className="text-slate-500 text-sm">Maputo, Moçambique</p>
-              <p className="text-slate-500 text-sm">-----------</p>
+              <h3 className="font-bold text-slate-800 mb-2">{t("contact.location")}</h3>
+              <p className="text-slate-500 text-sm">{t("contact.address")}</p>
             </div>
             <div className="bg-slate-50 rounded-xl p-6 text-center group hover:bg-orange-50 transition-colors">
               <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4 text-orange-600 group-hover:bg-orange-600 group-hover:text-white transition-colors">
                 <Phone size={22} />
               </div>
-              <h3 className="font-bold text-slate-800 mb-2">Telefone</h3>
+              <h3 className="font-bold text-slate-800 mb-2">{t("contact.phone")}</h3>
               <p className="text-slate-500 text-sm">+258 84 000 0000</p>
               <p className="text-slate-500 text-sm">+258 85 000 0000</p>
             </div>
@@ -49,17 +51,16 @@ export default function ContactosPage() {
               <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4 text-orange-600 group-hover:bg-orange-600 group-hover:text-white transition-colors">
                 <Mail size={22} />
               </div>
-              <h3 className="font-bold text-slate-800 mb-2">Email</h3>
+              <h3 className="font-bold text-slate-800 mb-2">{t("contact.email")}</h3>
               <p className="text-slate-500 text-sm">info@mavingue.co.mz</p>
-              <p className="text-slate-500 text-sm">-----------</p>
             </div>
             <div className="bg-slate-50 rounded-xl p-6 text-center group hover:bg-orange-50 transition-colors">
               <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4 text-orange-600 group-hover:bg-orange-600 group-hover:text-white transition-colors">
                 <Clock size={22} />
               </div>
-              <h3 className="font-bold text-slate-800 mb-2">Horário</h3>
-              <p className="text-slate-500 text-sm">Segunda a Sábado</p>
-              <p className="text-slate-500 text-sm">7h00 - 18h00</p>
+              <h3 className="font-bold text-slate-800 mb-2">{t("contact.hours")}</h3>
+              <p className="text-slate-500 text-sm">{t("contact.hoursDesc")}</p>
+              <p className="text-slate-500 text-sm">{t("contact.hoursTime")}</p>
             </div>
           </div>
 
@@ -80,18 +81,17 @@ export default function ContactosPage() {
 
             {/* */}
             <div className="bg-orange-50 rounded-xl p-6">
-              <h3 className="font-bold text-slate-800 mb-3">Atendimento ao Cliente</h3>
+              <h3 className="font-bold text-slate-800 mb-3">{t("contact.customerSupport")}</h3>
               <p className="text-slate-600 text-sm mb-4">
-                Para questões relacionadas a compras, faturas ou gestão de água, 
-                utilize a plataforma digital ou contacte o nosso suporte.
+                {t("contact.supportDesc")}
               </p>
               <Link href="/auth/login" className="inline-flex items-center gap-2 text-orange-600 font-semibold text-sm hover:text-orange-700 transition">
-                entrar
+                {t("common.login")}
                 <ArrowRight size={14} />
               </Link>
               <div className="mt-6 pt-6 border-t border-orange-200">
                 <p className="text-xs text-slate-500">
-                  <span className="font-medium text-slate-700">Resposta em até 24h úteis</span>
+                  <span className="font-medium text-slate-700">{t("contact.responseTime")}</span>
                 </p>
               </div>
             </div>

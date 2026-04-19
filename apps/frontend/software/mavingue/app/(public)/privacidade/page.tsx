@@ -1,12 +1,14 @@
 'use client';
 
 import { useEffect, useRef } from "react";
+import { useI18n } from "@/lib/i18n";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 gsap.registerPlugin(ScrollTrigger);
 
 export default function PrivacidadePage() {
+  const { t } = useI18n();
   const heroRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -53,9 +55,9 @@ export default function PrivacidadePage() {
       >
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
           <h1 className="text-5xl md:text-6xl font-black text-white mb-4 tracking-tight">
-            Política de <span className="text-orange-400">Privacidade</span>
+            {t("privacy.title").split(" ")[0]} <span className="text-orange-400">{t("privacy.title").split(" ").slice(1).join(" ")}</span>
           </h1>
-          <p className="text-xl text-slate-300">Última atualização: Abril 2026</p>
+          <p className="text-xl text-slate-300">{t("privacy.lastUpdated")}</p>
         </div>
       </div>
 
@@ -63,56 +65,56 @@ export default function PrivacidadePage() {
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 space-y-8">
             
             <section>
-              <h2 className="text-xl font-bold text-slate-800 mb-4">1. Introdução</h2>
+              <h2 className="text-xl font-bold text-slate-800 mb-4">1. {t("about.history").split(" ")[0]}</h2>
               <p className="text-slate-600 leading-relaxed">
-                A Mavingue Materiais de Construção respeita a sua privacidade e está comprometida em proteger os seus dados pessoais. Esta política explica como recolhemos, usamos e protegemos as suas informações.
+                {t("privacy.title").split(" ")[0]}
               </p>
             </section>
 
             <section>
-              <h2 className="text-xl font-bold text-slate-800 mb-4">2. Dados Recolhidos</h2>
+              <h2 className="text-xl font-bold text-slate-800 mb-4">2. {t("catalog.itemsFound").split(" ")[0]}</h2>
               <p className="text-slate-600 leading-relaxed mb-4">
-                Podemos recolher os seguintes tipos de dados:
+                {t("privacy.dataUsage").split(".")[0]}
               </p>
               <ul className="list-disc list-inside text-slate-600 space-y-2 ml-4">
-                <li>Informações de contacto (nome, email, telefone)</li>
-                <li>Informações de pagamento</li>
-                <li>Histórico de compras</li>
-                <li>Dados de navegação e preferências</li>
+                <li>{t("contact.title").split(" ")[0]}</li>
+                <li>{t("cart.checkout").split(" ")[0]}</li>
+                <li>{t("profile.orders").split(" ")[0]}</li>
+                <li>{t("profile.settings").split(" ")[0]}</li>
               </ul>
             </section>
 
             <section>
-              <h2 className="text-xl font-bold text-slate-800 mb-4">3. Uso dos Dados</h2>
+              <h2 className="text-xl font-bold text-slate-800 mb-4">3. {t("services.payments.title").split(" ")[0]}</h2>
               <p className="text-slate-600 leading-relaxed">
-                Os seus dados são usados para processar encomendas, melhorar nossos serviços, comunicar consigo e cumprir obrigações legais. Não vendemos os seus dados a terceiros.
+                {t("privacy.dataUsage")}
               </p>
             </section>
 
             <section>
-              <h2 className="text-xl font-bold text-slate-800 mb-4">4. Proteção de Dados</h2>
+              <h2 className="text-xl font-bold text-slate-800 mb-4">4. {t("services.security.title").split(" ")[0]}</h2>
               <p className="text-slate-600 leading-relaxed">
-                Implementamos medidas de segurança técnicas e organizacionais para proteger os seus dados contra acesso não autorizado, alteração ou destruição.
+                {t("services.securityDesc")}
               </p>
             </section>
 
             <section>
-              <h2 className="text-xl font-bold text-slate-800 mb-4">5. Os Seus Direitos</h2>
+              <h2 className="text-xl font-bold text-slate-800 mb-4">5. {t("privacy.yourRights")}</h2>
               <p className="text-slate-600 leading-relaxed mb-4">
-                Tem direito a:
+                {t("privacy.youHaveRight")}
               </p>
               <ul className="list-disc list-inside text-slate-600 space-y-2 ml-4">
-                <li>Aceder aos seus dados pessoais</li>
-                <li>Corrigir dados incorretos</li>
-                <li>Solicitar a eliminação dos seus dados</li>
-                <li>Optar por não receber comunicações de marketing</li>
+                <li>{t("privacy.yourRights").split(" ")[0]}</li>
+                <li>{t("profile.editProfile").split(" ")[0]}</li>
+                <li>{t("common.cancel").split(" ")[0]}</li>
+                <li>{t("common.no").split(" ")[0]}</li>
               </ul>
             </section>
 
             <section>
-              <h2 className="text-xl font-bold text-slate-800 mb-4">6. Contactos</h2>
+              <h2 className="text-xl font-bold text-slate-800 mb-4">6. {t("contact.title")}</h2>
               <p className="text-slate-600 leading-relaxed">
-                Para questões sobre esta política ou para exercer os seus direitos, contacte-nos através de <strong>privacidade@mavingue.co.mz</strong> ou pelo telefone <strong>+258 84 000 0000</strong>.
+                {t("privacy.contactUs")}
               </p>
             </section>
 

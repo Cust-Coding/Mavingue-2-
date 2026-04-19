@@ -2,9 +2,11 @@
 
 import React, { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { useI18n } from "@/lib/i18n";
 import { Mail, CheckCircle, AlertCircle, RefreshCw, ArrowRight } from "lucide-react";
 
 export default function ConfirmEmailPage() {
+  const { t } = useI18n();
   const searchParams = useSearchParams();
   const router = useRouter();
   const email = searchParams.get("email") || "";
@@ -29,13 +31,13 @@ export default function ConfirmEmailPage() {
       });
 
       if (res.ok) {
-        setMessage("Código de verificação reenviado. Verifique sua caixa de entrada.");
+        setMessage(t("auth.codeSent"));
       } else {
         const text = await res.text();
-        setError(text || "Erro ao reenviar código.");
+        setError(text || t("auth.resetError"));
       }
     } catch (e) {
-      setError("Falha ao comunicar com o servidor.");
+      setError(t("auth.serverError"));
     } finally {
       setLoading(false);
     }
@@ -43,7 +45,7 @@ export default function ConfirmEmailPage() {
 
   const handleVerify = async () => {
     if (!code.trim()) {
-      setError("Por favor, insira o código de verificação.");
+      setError(t("auth.invalidCode"));
       return;
     }
     setVerifying(true);
@@ -58,16 +60,16 @@ export default function ConfirmEmailPage() {
       });
 
       if (res.ok) {
-        setMessage("Conta verificada com sucesso! Redirecionando...");
+        setMessage(t("auth.verificationSuccess"));
         setTimeout(() => {
           router.push("/cliente"); // Redirect to dashboard
         }, 2000);
       } else {
         const text = await res.text();
-        setError(text || "Código inválido ou expirado.");
+        setError(text || t("auth.invalidCode"));
       }
     } catch (e) {
-      setError("Falha ao comunicar com o servidor.");
+      setError(t("auth.serverError"));
     } finally {
       setVerifying(false);
     }
@@ -81,12 +83,12 @@ export default function ConfirmEmailPage() {
             <Mail className="w-8 h-8 text-[#EF6A44]" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            Verifique seu Email
+            {t("auth.email").split(" ")[0] + " " + t("common.confirm").toLowerCase()}
           </h1>
           <p className="text-gray-600 leading-relaxed">
-            Enviamos um código de confirmação para{" "}
-            <span className="font-semibold text-[#EF6A44]">{email || "seu email"}</span>.
-            Digite o código abaixo para ativar sua conta.
+            {t("auth.codeSentDesc").split(".")[0]}{" "}
+            <span className="font-semibold text-[#EF6A44]">{email || t("form.placeholders.email")}</span>.
+            {t("auth.enterCodeInstructions")}
           </p>
         </div>
 
@@ -107,7 +109,7 @@ export default function ConfirmEmailPage() {
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Código de Verificação
+              {t("auth.sendCode").split(" ")[0]}
             </label>
             <input
               type="text"
@@ -129,12 +131,12 @@ export default function ConfirmEmailPage() {
             ) : (
               <ArrowRight className="w-4 h-4" />
             )}
-            Verificar Conta
+            {t("common.confirm")}
           </button>
 
           <div className="text-center">
             <p className="text-sm text-gray-500 mb-2">
-              Não recebeu o código? Verifique sua pasta de spam ou lixo eletrônico.
+              {t("auth.noAccount")}
             </p>
 
             <button
@@ -147,7 +149,7 @@ export default function ConfirmEmailPage() {
               ) : (
                 <RefreshCw className="w-3 h-3" />
               )}
-              Reenviar Código
+              {t("auth.sendCode")}
             </button>
           </div>
 
@@ -155,7 +157,7 @@ export default function ConfirmEmailPage() {
             onClick={() => window.location.href = "/auth/login"}
             className="w-full bg-gray-100 text-gray-700 font-bold py-3 px-6 rounded-xl hover:bg-gray-200 transition-colors"
           >
-            Voltar ao Login
+            {t("common.back")}
           </button>
         </div>
       </div>

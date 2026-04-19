@@ -1,6 +1,7 @@
 'use client';
 
 import Link from "next/link";
+import { useI18n } from "@/lib/i18n";
 
 const currentYear = new Date().getFullYear();
 
@@ -56,34 +57,36 @@ const Icons = {
   ),
 };
 
-const companyLinks = [
-  { label: "Sobre Nós", href: "/sobre" },
-  { label: "Nossos Serviços", href: "/servicos" },
-  { label: "Projetos", href: "/projetos" },
-  { label: "Contactos", href: "/contactos" },
-];
-
-const productLinks = [
-  { label: "Materiais de Construção", href: "/catalogo?cat=construcao" },
-  { label: "Ferragens", href: "/catalogo?cat=ferragem" },
-  { label: "Água e Saneamento", href: "/admin/agua" },
-  { label: "Produtos Premium", href: "/catalogo?cat=premium" },
-];
-
-const contactInfo = [
-  { icon: Icons.Location, text: "Maputo, Moçambique" },
-  { icon: Icons.Phone, text: "+258 84/85 000 0000" },
-  { icon: Icons.Mail, text: "info@mavingue.co.mz" },
-  { icon: Icons.Clock, text: "Seg - Sáb: 7h00 - 18h00" },
-];
-
-const socialLinks = [
-  { icon: Icons.Facebook, label: "Facebook", href: "https://facebook.com/mavingue" },
-  { icon: Icons.Instagram, label: "Instagram", href: "https://instagram.com/mavingue" },
-  { icon: Icons.LinkedIn, label: "LinkedIn", href: "https://linkedin.com/company/mavingue" },
-];
-
 export default function Footer() {
+  const { t } = useI18n();
+
+  const companyLinks = [
+    { label: t("footer.about"), href: "/sobre" },
+    { label: t("footer.services"), href: "/servicos" },
+    { label: t("nav.projects"), href: "/projetos" },
+    { label: t("footer.contact"), href: "/contactos" },
+  ];
+
+  const productLinks = [
+    { label: t("common.catalog"), href: "/catalogo?cat=construcao" },
+    { label: t("footer.productCategories.hardware"), href: "/catalogo?cat=ferragem" },
+    { label: t("footer.productCategories.water"), href: "/admin/agua" },
+    { label: t("footer.productCategories.premium"), href: "/catalogo?cat=premium" },
+  ];
+
+  const contactInfo = [
+    { icon: Icons.Location, text: t("footer.location") },
+    { icon: Icons.Phone, text: t("footer.phone") },
+    { icon: Icons.Mail, text: t("footer.email") },
+    { icon: Icons.Clock, text: t("footer.hours") },
+  ];
+
+  const socialLinks = [
+    { icon: Icons.Facebook, label: "Facebook", href: "https://facebook.com/mavingue" },
+    { icon: Icons.Instagram, label: "Instagram", href: "https://instagram.com/mavingue" },
+    { icon: Icons.LinkedIn, label: "LinkedIn", href: "https://linkedin.com/company/mavingue" },
+  ];
+
   return (
     <footer className="bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 text-slate-300">
       {/* Main Footer */}
@@ -102,7 +105,7 @@ export default function Footer() {
               </div>
             </div>
             <p className="text-sm text-slate-400 leading-relaxed mb-6">
-              Líder em materiais de construção em Moçambique. Qualidade, confiança e inovação para seus projetos.
+              {t("footer.aboutText")}
             </p>
             <div className="flex gap-3">
               {socialLinks.map((social) => (
@@ -124,7 +127,7 @@ export default function Footer() {
           <div>
             <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-6 flex items-center gap-2">
               <span className="w-1 h-4 bg-orange-500 rounded-full"></span>
-              Empresa
+              {t("footer.company")}
             </h4>
             <ul className="space-y-3">
               {companyLinks.map((link) => (
@@ -145,7 +148,7 @@ export default function Footer() {
           <div>
             <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-6 flex items-center gap-2">
               <span className="w-1 h-4 bg-orange-500 rounded-full"></span>
-              Produtos
+              {t("footer.products")}
             </h4>
             <ul className="space-y-3">
               {productLinks.map((link) => (
@@ -166,7 +169,7 @@ export default function Footer() {
           <div>
             <h4 className="text-sm font-bold text-white uppercase tracking-wider mb-6 flex items-center gap-2">
               <span className="w-1 h-4 bg-orange-500 rounded-full"></span>
-              Contactos
+              {t("footer.contact")}
             </h4>
             <ul className="space-y-4">
               {contactInfo.map((info, index) => (
@@ -178,11 +181,11 @@ export default function Footer() {
             </ul>
             {/* Newsletter */}
             <div className="mt-6">
-              <p className="text-sm text-slate-400 mb-3">Receba nossas novidades</p>
+              <p className="text-sm text-slate-400 mb-3">{t("footer.newsletter")}</p>
               <div className="flex gap-2">
                 <input
                   type="email"
-                  placeholder="Seu email"
+                  placeholder={t("footer.newsletterPlaceholder")}
                   className="flex-1 px-4 py-2.5 bg-slate-800/50 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all"
                 />
                 <button className="px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-semibold text-sm rounded-lg transition-colors duration-200 flex items-center justify-center">
@@ -199,17 +202,17 @@ export default function Footer() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-slate-500">
-              © {currentYear} Mavingue Materiais de Construção. Todos os direitos reservados.
+              © {currentYear} Mavingue. {t("footer.copyright")}
             </p>
             <div className="flex gap-6">
               <Link href="/privacidade" className="text-sm text-slate-500 hover:text-orange-400 transition-colors">
-                Política de Privacidade
+                {t("footer.privacy")}
               </Link>
               <Link href="/termos" className="text-sm text-slate-500 hover:text-orange-400 transition-colors">
-                Termos de Uso
+                {t("footer.terms")}
               </Link>
               <Link href="/faq" className="text-sm text-slate-500 hover:text-orange-400 transition-colors">
-                FAQ
+                {t("common.faq")}
               </Link>
             </div>
           </div>

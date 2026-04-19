@@ -3,45 +3,23 @@
 import { useState, useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useI18n } from "@/lib/i18n";
 
 gsap.registerPlugin(ScrollTrigger);
 
-const faqs = [
-  {
-    question: "Como posso fazer uma encomenda?",
-    answer: "Pode fazer encomendas através do nosso catálogo online, contactando-nos por telefone ou visitando uma das nossas lojas. Para encomendas online, basta selecionar os produtos desejados e seguir o processo de checkout."
-  },
-  {
-    question: "Quais são os métodos de pagamento disponíveis?",
-    answer: "Aceitamos pagamento em dinheiro, transferência bancária, M-Pesa e cartões de crédito/débito. Para encomendas grandes, oferecemos pagamento a prazo mediante aprovação de crédito."
-  },
-  {
-    question: "Qual é o prazo de entrega?",
-    answer: "O prazo de entrega varia conforme a localização e disponibilidade dos produtos. Em Maputo, a entrega geralmente ocorre em 24-48 horas. Para outras provinces, consulte-nos para obter uma estimativa."
-  },
-  {
-    question: "Posso devolver ou trocar produtos?",
-    answer: "Sim, aceitamos devoluções dentro de 14 dias após a compra, desde que os produtos estejam em condições originais e com embalagem. Produtos personalizados ou danificados por uso não são elegíveis para devolução."
-  },
-  {
-    question: "Vocês oferecem entrega gratuita?",
-    answer: "Oferecemos entrega gratuita para encomendas acima de 5.000 MT dentro de Maputo. Para outras áreas, aplicamos uma taxa de entrega baseada na distância e volume da encomenda."
-  },
-  {
-    question: "Como posso rastrear a minha encomenda?",
-    answer: "Após a confirmação da encomenda, receberá um número de rastreio por SMS ou email. Também pode acompanhar o estado da sua encomenda através da sua conta no nosso site ou contactando o nosso serviço ao cliente."
-  },
-  {
-    question: "Vocês vendem a profissionais e empresas?",
-    answer: "Sim, temos condições especiais para profissionais da construção, empreiteiros e empresas. Contacte-nos para obter informações sobre preços de grosso e condições de pagamento corporativo."
-  },
-  {
-    question: "Como posso contactar o suporte ao cliente?",
-    answer: "Pode contactar-nos por telefone (+258 84 000 0000), email (info@mavingue.co.mz), ou através do chat no nosso site. O nosso horário de atendimento é de segunda a sábado, das 7h00 às 18h00."
-  }
-];
-
 export default function FAQPage() {
+  const { t } = useI18n();
+
+  const faqs = [
+    { question: t("faq.questions.order.question"), answer: t("faq.questions.order.answer") },
+    { question: t("faq.questions.payment.question"), answer: t("faq.questions.payment.answer") },
+    { question: t("faq.questions.delivery.question"), answer: t("faq.questions.delivery.answer") },
+    { question: t("faq.questions.returns.question"), answer: t("faq.questions.returns.answer") },
+    { question: t("faq.questions.freeDelivery.question"), answer: t("faq.questions.freeDelivery.answer") },
+    { question: t("faq.questions.tracking.question"), answer: t("faq.questions.tracking.answer") },
+    { question: t("faq.questions.business.question"), answer: t("faq.questions.business.answer") },
+    { question: t("faq.questions.support.question"), answer: t("faq.questions.support.answer") },
+  ];
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const heroRef = useRef<HTMLDivElement>(null);
   const faqsRef = useRef<HTMLDivElement>(null);
@@ -88,9 +66,9 @@ export default function FAQPage() {
       >
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
           <h1 className="text-5xl md:text-6xl font-black text-white mb-4 tracking-tight">
-            Perguntas <span className="text-orange-400">Frequentes</span>
+            {t("faq.title").split(" ")[0]} <span className="text-orange-400">{t("faq.title").split(" ").slice(1).join(" ")}</span>
           </h1>
-          <p className="text-xl text-slate-300">Encontre respostas para as dúvidas mais comuns</p>
+          <p className="text-xl text-slate-300">{t("faq.subtitle")}</p>
         </div>
       </div>
 

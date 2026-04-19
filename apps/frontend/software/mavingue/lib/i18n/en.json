@@ -1,0 +1,361 @@
+{
+  "common": {
+    "home": "Home",
+    "catalog": "Catalog",
+    "services": "Services",
+    "about": "About",
+    "contact": "Contact",
+    "faq": "FAQ",
+    "login": "Login",
+    "register": "Create Account",
+    "logout": "Logout",
+    "profile": "My Profile",
+    "myArea": "My Area",
+    "search": "Search",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "viewAll": "View All",
+    "learnMore": "Learn More",
+    "explore": "Explore",
+    "submit": "Submit",
+    "send": "Send",
+    "close": "Close",
+    "yes": "Yes",
+    "no": "No",
+    "lastUpdated": "Last updated: April 2026",
+    "photoBy": "Photo by {name} (Unsplash)"
+  },
+  "nav": {
+    "home": "Home",
+    "catalog": "Catalog",
+    "myArea": "My Area",
+    "cart": "Cart",
+    "account": "Account",
+    "darkMode": "Toggle Theme",
+    "language": "Language",
+    "projects": "Projects"
+  },
+  "auth": {
+    "login": "Login",
+    "register": "Create Account",
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forgot your password?",
+    "noAccount": "Don't have an account?",
+    "hasAccount": "Already have an account?",
+    "welcomeBack": "Welcome back!",
+    "createAccount": "Create new account",
+    "fullName": "Full Name",
+    "phone": "Phone",
+    "address": "Address",
+    "nuit": "NUIT",
+    "documentType": "Document Type",
+    "documentNumber": "Document Number",
+    "loginButton": "Login",
+    "registerButton": "Create Account",
+    "emailRequired": "Email is required",
+    "emailInvalid": "Invalid email",
+    "passwordRequired": "Password is required",
+    "apiError": "API Error",
+    "processingError": "Error processing your request.",
+    "forgotPasswordTitle": "Forgot Password?",
+    "forgotPasswordDesc": "Enter your email to receive a verification code.",
+    "codeSent": "Code Sent!",
+    "codeSentDesc": "We sent a verification code to your email. Use it to reset your password.",
+    "goToReset": "Go to Reset",
+    "sendCode": "Send Code",
+    "resetError": "Error sending code",
+    "serverError": "Failed to communicate with server",
+    "invalidFields": "Invalid fields.",
+    "unverifiedAccount": "Your account has not been verified yet. Enter the code sent to your email to confirm.",
+    "alreadyPartner": "Already a partner?",
+    "loginSystem": "LOGIN TO SYSTEM",
+    "invalidLink": "Invalid or incomplete verification link.",
+    "verified": "Account Verified!",
+    "verificationSuccess": "Account verified successfully! Redirecting...",
+    "invalidCode": "Invalid or expired code.",
+    "enterCodeInstructions": "Enter the code below to activate your account.",
+    "loggingIn": "Logging in...",
+    "creating": "Creating...",
+    "createUser": "Create user"
+  },
+  "form": {
+    "errors": {
+      "required": "Required field",
+      "nameRequired": "Name is required",
+      "emailRequired": "Email is required",
+      "invalidEmail": "Invalid email",
+      "invalidGender": "Invalid gender",
+      "phoneRequired": "Phone is required",
+      "birthdateRequired": "Birthdate is required",
+      "provinceRequired": "Province is required",
+      "cityRequired": "City is required",
+      "neighborhoodRequired": "Neighborhood is required",
+      "addressRequired": "Address is required",
+      "noPermission": "No permission to create users.",
+      "createUserError": "Error creating user",
+      "loadError": "Error loading catalog"
+    },
+    "genders": {
+      "male": "Male",
+      "female": "Female"
+    },
+    "labels": {
+      "nuitOptional": "NUIT (optional)",
+      "documentTypeOptional": "Document Type (optional)",
+      "password": "Password",
+      "confirmPassword": "Confirm Password",
+      "gender": "Gender",
+      "birthdate": "Date of Birth",
+      "fullAddress": "Full Address",
+      "nuitOptional2": "NUIT (Optional)",
+      "documentType2": "Document Type",
+      "documentNumber2": "Document Number",
+      "corporateEmail": "Corporate Email"
+    },
+    "placeholders": {
+      "fullName": "How should we call you?",
+      "email": "your@email.com",
+      "neighborhood": "Neighborhood"
+    },
+    "sections": {
+      "basicInfo": "Basic Information",
+      "accountSecurity": "Account Security",
+      "location": "Location",
+      "taxId": "Tax Identification"
+    },
+    "documentTypes": {
+      "passport": "Passport"
+    }
+  },
+  "hero": {
+    "title": "Shipyard",
+    "subtitle": "Mavingue",
+    "description": "Construction materials and water management for Mozambique",
+    "heroText": "Whether to equip your construction site with the best building materials or to manage water consumption for your home, we are here to make your daily life easier.",
+    "transparencyText": "Through this platform, you will have full transparency and control over your purchases and invoices, all from a single place.",
+    "cta": "View Catalog",
+    "createAccount": "Create Account",
+    "alreadyHaveAccount": "Already have an account",
+    "login": "Login"
+  },
+  "landing": {
+    "publicCatalog": "Public catalog available",
+    "catalogDesc": "Explore available products. To make purchases and manage your account, login or create an account.",
+    "register": "Register",
+    "featureDescription": "Whether to equip your construction site with quality building materials or to manage water consumption for your home, we are here to make your daily life easier. Through this platform, you will have full transparency and control over your purchases and invoices, all from a single place."
+  },
+  "services": {
+    "title": "Our Services",
+    "subtitle": "Integrated solutions for construction and resource management, all in one digital platform.",
+    "materials": {
+      "title": "Construction Materials Sales",
+      "description": "Complete catalog of materials for residential, commercial and industrial projects. From cement and iron to premium finishes.",
+      "features": ["Certified quality products", "Scheduled delivery", "Competitive prices"]
+    },
+    "water": {
+      "title": "Water Consumption Management",
+      "description": "Full control of water consumption for your home or business through the digital platform.",
+      "features": ["Monthly readings", "Consumption history", "High consumption alerts"]
+    },
+    "payments": {
+      "title": "Integrated Payment Platform",
+      "description": "Pay for your purchases and water bills directly on the platform, with multiple methods available.",
+      "features": ["M-PESA, credit/debit cards", "Transaction history", "Digital invoices"]
+    },
+    "invoices": {
+      "title": "Invoice Management",
+      "description": "Access all your invoices in one place, with full transparency on each transaction.",
+      "features": ["Digital invoices", "Complete history", "Document download"]
+    },
+    "stock": {
+      "title": "Stock Control for Clients",
+      "description": "Business clients can track available stock and make advance reservations.",
+      "features": ["Real-time stock", "Product reservation", "Scheduled orders"]
+    },
+    "projects": {
+      "title": "Project Tracking",
+      "description": "For business clients, track project progress and deliveries.",
+      "features": ["Delivery schedule", "Direct communication", "Periodic reports"]
+    },
+    "learnMore": "Learn more",
+    "whyChoose": "Why choose Mavingue Digital",
+    "whyChooseDesc": "Mavingue combines years of experience in the construction sector with a modern digital platform.",
+    "transparency": "Transparency",
+    "transparencyDesc": "Full control over purchases and invoices",
+    "convenience": "Convenience",
+    "convenienceDesc": "All in one place, 24/7",
+    "security": "Security",
+    "securityDesc": "Protected data and secure payments",
+    "support": "Support",
+    "supportDesc": "Dedicated assistance",
+    "viewCatalog": "View Catalog"
+  },
+  "about": {
+    "title": "About Mavingue",
+    "description": "Leader in construction materials in Mozambique, now digitized to offer full control over your purchases, water consumption and payments.",
+    "history": "Our History",
+    "historyText": "Mavingue was born with the purpose of providing high-quality construction materials for residential, commercial and industrial projects in Mozambique. With years of experience in the market, we have become a reference in the sector. Today, we take a step further by digitizing our services, offering our clients a modern platform to manage purchases, water consumption and payments simply and efficiently.",
+    "years": "Years of experience",
+    "projects": "Completed projects",
+    "clients": "Satisfied clients",
+    "pillars": "Our Pillars",
+    "mission": "Mission",
+    "missionText": "Provide quality construction materials with excellence in service, coupled with digital innovation to facilitate project management and domestic consumption.",
+    "vision": "Vision",
+    "visionText": "To be a reference in Mozambique in the integration between civil construction and technology, offering complete solutions for clients and partners.",
+    "values": "Values",
+    "valuesText": "Quality, transparency, innovation, commitment to deadlines and client satisfaction.",
+    "cta": "Join the new era of construction in Mozambique",
+    "ctaDesc": "Create your account and have full control over your purchases, water consumption and payments."
+  },
+  "contact": {
+    "title": "Contact Us",
+    "subtitle": "We are available to clarify doubts, receive suggestions and support our clients.",
+    "location": "Location",
+    "address": "Maputo, Mozambique",
+    "coordinates": "Coordinates: 25.9692° S, 32.5732° E",
+    "phone": "Phone",
+    "email": "Email",
+    "hours": "Hours",
+    "hoursDesc": "Monday to Saturday",
+    "hoursTime": "7h00 - 18h00",
+    "customerSupport": "Customer Support",
+    "supportDesc": "For questions related to purchases, invoices or water management, use the digital platform or contact our support.",
+    "responseTime": "Response within 24 business hours"
+  },
+  "projects": {
+    "title": "Projects",
+    "description": "Learn about Mavingue's projects. We will soon make the complete portfolio available.",
+    "comingSoon": "Portfolio coming soon",
+    "comingSoonDesc": "We are organizing our project portfolio to present soon.",
+    "requestInfo": "Request information"
+  },
+  "faq": {
+    "title": "Frequently Asked Questions",
+    "subtitle": "Find answers to your questions",
+    "questions": {
+      "order": {
+        "question": "How can I place an order?",
+        "answer": "You can place your order directly through our online catalog. Simply select the desired products, add to cart and follow the steps to complete the purchase. You can also contact our team for personalized assistance."
+      },
+      "payment": {
+        "question": "What payment methods are available?",
+        "answer": "We accept multiple payment methods: M-PESA, credit and debit cards (Visa, Mastercard), and bank transfer. All payments are processed securely on our platform."
+      },
+      "delivery": {
+        "question": "What is the delivery timeframe?",
+        "answer": "Delivery time varies according to location and product availability. In Maputo, delivery is usually made in 2-5 business days. For other provinces, the timeframe can be 5-10 business days."
+      },
+      "returns": {
+        "question": "Can I return or exchange products?",
+        "answer": "Yes, we accept returns up to 14 days after delivery, provided the product is in original condition. Contact us to initiate the return or exchange process."
+      },
+      "freeDelivery": {
+        "question": "Do you offer free delivery?",
+        "answer": "We offer free delivery for orders above 5,000 MT within Maputo. For smaller orders or deliveries outside Maputo, variable delivery fees apply."
+      },
+      "tracking": {
+        "question": "How can I track my order?",
+        "answer": "After order confirmation, you will receive a tracking code by email. You can also track your order status in the 'My Orders' section of your account."
+      },
+      "business": {
+        "question": "Do you sell to professionals and companies?",
+        "answer": "Yes, we have special conditions for business clients, including bulk prices, personalized payment terms and dedicated project management. Contact us for more information."
+      },
+      "support": {
+        "question": "How can I contact customer support?",
+        "answer": "You can contact us via email at info@mavingue.co.mz, by phone at +258 84/85 000 0000, or through the digital platform. Our team is available from 7h00 to 18h00, Monday to Saturday."
+      }
+    }
+  },
+  "catalog": {
+    "title": "Product Catalog",
+    "search": "Search products...",
+    "loading": "Loading materials...",
+    "error": "Oops! Something went wrong.",
+    "loadError": "Error loading catalog",
+    "noProducts": "No products available at the moment.",
+    "available": "Available Materials",
+    "itemsFound": "items found",
+    "noImage": "No Image",
+    "description": "High resistance material for civil construction and finishes.",
+    "currency": "MT",
+    "buy": "Buy"
+  },
+  "footer": {
+    "about": "About Us",
+    "aboutText": "Leader in construction materials in Mozambique. Quality, trust and innovation for your projects.",
+    "quickLinks": "Quick Links",
+    "services": "Our Services",
+    "products": "Products",
+    "productCategories": {
+      "hardware": "Hardware",
+      "water": "Water and Sanitation",
+      "premium": "Premium Products"
+    },
+    "company": "Company",
+    "contact": "Contact",
+    "newsletter": "Receive our news",
+    "newsletterPlaceholder": "Your email",
+    "copyright": "All rights reserved.",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Use",
+    "location": "Maputo, Mozambique",
+    "phone": "+258 84/85 000 0000",
+    "email": "info@mavingue.co.mz",
+    "hours": "Mon - Sat: 7h00 - 18h00"
+  },
+  "cart": {
+    "title": "Shopping Cart",
+    "empty": "Your cart is empty",
+    "total": "Total",
+    "checkout": "Checkout",
+    "continueShopping": "Continue Shopping",
+    "remove": "Remove",
+    "quantity": "Quantity"
+  },
+  "profile": {
+    "title": "My Profile",
+    "editProfile": "Edit Profile",
+    "orders": "My Orders",
+    "settings": "Settings",
+    "waterConsumption": "Water Consumption"
+  },
+  "dashboard": {
+    "greeting": "Hello, Client",
+    "clientArea": "Client area"
+  },
+  "admin": {
+    "clients": "Clients",
+    "noClients": "No clients.",
+    "users": "Users",
+    "noUsers": "No users."
+  },
+  "terms": {
+    "title": "Terms of Use",
+    "lastUpdated": "Last updated: April 2026",
+    "intellectualProperty": "Respect intellectual property rights",
+    "accountResponsibility": "When creating an account, you are responsible for maintaining the confidentiality of your credentials and for all activities under your account. We reserve the right to suspend or terminate accounts at our discretion.",
+    "fraudCancelation": "We reserve the right to cancel orders in case of fraud",
+    "intellectualPropertyHeader": "Intellectual Property",
+    "contentOwnership": "All content on this site, including text, images, logos and design, is the property of Mavingue or its licensors and is protected by copyright and registered trademarks.",
+    "liabilityDisclaimer": "We do not guarantee that the site is always available or error-free. We will not be liable for any indirect, incidental or consequential damages resulting from the use of the site.",
+    "changesNotice": "We reserve the right to change these terms at any time. Changes will be posted on this page and will take effect immediately upon publication."
+  },
+  "privacy": {
+    "title": "Privacy Policy",
+    "lastUpdated": "Last updated: April 2026",
+    "dataUsage": "Your data is used to process orders, improve our services, communicate with you and comply with legal obligations. We do not sell your data to third parties.",
+    "yourRights": "Your Rights",
+    "youHaveRight": "You have the right to:",
+    "contactUs": "For questions about this policy or to exercise your rights, contact us at privacidade@mavingue.co.mz or by phone at +258 84 000 0000"
+  }
+}

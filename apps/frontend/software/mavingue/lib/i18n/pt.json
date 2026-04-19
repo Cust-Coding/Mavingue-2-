@@ -1,0 +1,361 @@
+{
+  "common": {
+    "home": "Início",
+    "catalog": "Catálogo",
+    "services": "Serviços",
+    "about": "Sobre",
+    "contact": "Contactos",
+    "faq": "FAQ",
+    "login": "Entrar",
+    "register": "Criar Conta",
+    "logout": "Sair",
+    "profile": "Meu Perfil",
+    "myArea": "Minha área",
+    "search": "Pesquisar",
+    "loading": "Carregando...",
+    "error": "Erro",
+    "success": "Sucesso",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "back": "Voltar",
+    "next": "Próximo",
+    "previous": "Anterior",
+    "viewAll": "Ver Tudo",
+    "learnMore": "Saber Mais",
+    "explore": "Explorar",
+    "submit": "Submeter",
+    "send": "Enviar",
+    "close": "Fechar",
+    "yes": "Sim",
+    "no": "Não",
+    "lastUpdated": "Última atualização: Abril 2026",
+    "photoBy": "Foto por {name} (Unsplash)"
+  },
+  "nav": {
+    "home": "Início",
+    "catalog": "Catálogo",
+    "myArea": "Minha área",
+    "cart": "Carrinho",
+    "account": "Conta",
+    "darkMode": "Alternar Tema",
+    "language": "Idioma",
+    "projects": "Projetos"
+  },
+  "auth": {
+    "login": "Entrar",
+    "register": "Criar Conta",
+    "email": "Email",
+    "password": "Palavra-passe",
+    "forgotPassword": "Esqueceu a palavra-passe?",
+    "noAccount": "Não tem conta?",
+    "hasAccount": "Já tem conta?",
+    "welcomeBack": "Bem-vindo de volta!",
+    "createAccount": "Criar nova conta",
+    "fullName": "Nome Completo",
+    "phone": "Telefone",
+    "address": "Endereço",
+    "nuit": "NUIT",
+    "documentType": "Tipo de Documento",
+    "documentNumber": "Número do Documento",
+    "loginButton": "Entrar",
+    "registerButton": "Criar Conta",
+    "emailRequired": "Email é obrigatório",
+    "emailInvalid": "Email inválido",
+    "passwordRequired": "Senha é obrigatória",
+    "apiError": "Erro API",
+    "processingError": "Erro ao processar o seu pedido.",
+    "forgotPasswordTitle": "Esqueceu a Senha?",
+    "forgotPasswordDesc": "Digite seu email para receber um código de verificação.",
+    "codeSent": "Código Enviado!",
+    "codeSentDesc": "Enviamos um código de verificação para seu email. Use-o para redefinir sua senha.",
+    "goToReset": "Ir para Redefinição",
+    "sendCode": "Enviar Código",
+    "resetError": "Erro ao enviar código",
+    "serverError": "Falha ao comunicar com o servidor",
+    "invalidFields": "Campos inválidos.",
+    "unverifiedAccount": "Sua conta ainda não foi verificada. Digite o código enviado para seu email para confirmar.",
+    "alreadyPartner": "Já é parceiro?",
+    "loginSystem": "ENTRAR NO SISTEMA",
+    "invalidLink": "Link de verificação inválido ou incompleto.",
+    "verified": "Conta Verificada!",
+    "verificationSuccess": "Conta verificada com sucesso! Redirecionando...",
+    "invalidCode": "Código inválido ou expirado.",
+    "enterCodeInstructions": "Digite o código abaixo para ativar sua conta.",
+    "loggingIn": "A entrar...",
+    "creating": "A criar...",
+    "createUser": "Criar utilizador"
+  },
+  "form": {
+    "errors": {
+      "required": "Campo obrigatório",
+      "nameRequired": "Nome é obrigatório",
+      "emailRequired": "Email é obrigatório",
+      "invalidEmail": "Email inválido",
+      "invalidGender": "Sexo inválido",
+      "phoneRequired": "Telefone é obrigatório",
+      "birthdateRequired": "Data nascimento obrigatória",
+      "provinceRequired": "Província obrigatória",
+      "cityRequired": "Cidade obrigatória",
+      "neighborhoodRequired": "Bairro obrigatório",
+      "addressRequired": "Endereço obrigatório",
+      "noPermission": "Sem permissão para criar utilizadores.",
+      "createUserError": "Erro ao criar utilizador",
+      "loadError": "Erro ao carregar catálogo"
+    },
+    "genders": {
+      "male": "Homem",
+      "female": "Mulher"
+    },
+    "labels": {
+      "nuitOptional": "NUIT (opcional)",
+      "documentTypeOptional": "Tipo Documento (opcional)",
+      "password": "Palavra-passe",
+      "confirmPassword": "Validar Senha",
+      "gender": "Género",
+      "birthdate": "Data de Nascimento",
+      "fullAddress": "Morada Completa",
+      "nuitOptional2": "Nuit (Opcional)",
+      "documentType2": "Tipo Documento",
+      "documentNumber2": "Nº do Documento",
+      "corporateEmail": "E-mail Corporativo"
+    },
+    "placeholders": {
+      "fullName": "Como devemos chamar-te?",
+      "email": "teu@email.com",
+      "neighborhood": "Bairro"
+    },
+    "sections": {
+      "basicInfo": "Informação Básica",
+      "accountSecurity": "Segurança da Conta",
+      "location": "Localização",
+      "taxId": "Identificação Fiscal"
+    },
+    "documentTypes": {
+      "passport": "Passaporte"
+    }
+  },
+  "hero": {
+    "title": "Estaleiro",
+    "subtitle": "Mavingue",
+    "description": "Materiais de construção e gestão de água para Moçambique",
+    "heroText": "Seja para equipar a sua obra com os melhores materiais de construção ou para gerir o consumo de água da sua residência, estamos aqui para facilitar o seu dia a dia.",
+    "transparencyText": "Através desta plataforma, terá total transparência e controlo sobre as suas compras e faturas, tudo a partir de um único lugar.",
+    "cta": "Ver Catálogo",
+    "createAccount": "Criar Conta",
+    "alreadyHaveAccount": "Já tenho conta",
+    "login": "Login"
+  },
+  "landing": {
+    "publicCatalog": "Catálogo público disponível",
+    "catalogDesc": "Explore os produtos disponíveis. Para realizar compras e gerir a sua conta, faça login ou crie uma conta.",
+    "register": "Registar",
+    "featureDescription": "Seja para equipar a sua obra com materiais de construção de qualidade ou para gerir o consumo de água da sua residência, estamos aqui para facilitar o seu dia a dia. Através desta plataforma, terá total transparência e controlo sobre as suas compras e faturas, tudo a partir de um único lugar."
+  },
+  "services": {
+    "title": "Os Nossos Serviços",
+    "subtitle": "Soluções integradas para construção e gestão de recursos, tudo numa plataforma digital.",
+    "materials": {
+      "title": "Venda de Materiais de Construção",
+      "description": "Catálogo completo de materiais para obras residenciais, comerciais e industriais. Desde cimento e ferro até acabamentos premium.",
+      "features": ["Produtos de qualidade certificada", "Entrega programada", "Preços competitivos"]
+    },
+    "water": {
+      "title": "Gestão de Consumo de Água",
+      "description": "Controlo total do consumo de água da sua residência ou empresa através da plataforma digital.",
+      "features": ["Leituras mensais", "Histórico de consumo", "Alertas de consumo elevado"]
+    },
+    "payments": {
+      "title": "Plataforma de Pagamentos Integrada",
+      "description": "Pague suas compras e faturas de água diretamente na plataforma, com múltiplos métodos disponíveis.",
+      "features": ["M-PESA, cartões de crédito/débito", "Histórico de transações", "Faturas digitais"]
+    },
+    "invoices": {
+      "title": "Gestão de Faturas",
+      "description": "Aceda a todas as suas faturas num só lugar, com transparência total sobre cada transação.",
+      "features": ["Faturas digitais", "Histórico completo", "Download de documentos"]
+    },
+    "stock": {
+      "title": "Controlo de Stock para Clientes",
+      "description": "Clientes empresariais podem acompanhar o stock disponível e fazer reservas antecipadas.",
+      "features": ["Stock em tempo real", "Reserva de produtos", "Encomendas programadas"]
+    },
+    "projects": {
+      "title": "Acompanhamento de Projetos",
+      "description": "Para clientes empresariais, acompanhe o andamento de projetos e entregas.",
+      "features": ["Cronograma de entregas", "Comunicação directa", "Relatórios periódicos"]
+    },
+    "learnMore": "Saber mais",
+    "whyChoose": "Porquê escolher a Mavingue Digital",
+    "whyChooseDesc": "A Mavingue combina anos de experiência no sector da construção com uma plataforma digital moderna.",
+    "transparency": "Transparência",
+    "transparencyDesc": "Controlo total sobre compras e faturas",
+    "convenience": "Comodidade",
+    "convenienceDesc": "Tudo num só lugar, 24/7",
+    "security": "Segurança",
+    "securityDesc": "Dados protegidos e pagamentos seguros",
+    "support": "Suporte",
+    "supportDesc": "Atendimento dedicado",
+    "viewCatalog": "Ver Catálogo"
+  },
+  "about": {
+    "title": "Sobre a Mavingue",
+    "description": "Líder em materiais de construção em Moçambique, agora digitalizada para oferecer controlo total sobre suas compras, consumo de água e pagamentos.",
+    "history": "Nossa História",
+    "historyText": "A Mavingue nasceu com o propósito de fornecer materiais de construção de alta qualidade para projetos residenciais, comerciais e industriais em Moçambique. Com anos de experiência no mercado, tornámo-nos referência no sector. Hoje, damos um passo além ao digitalizar nossos serviços, oferecendo aos nossos clientes uma plataforma moderna para gerir compras, consumo de água e pagamentos de forma simples e eficiente.",
+    "years": "Anos de experiência",
+    "projects": "Projetos concluídos",
+    "clients": "Clientes satisfeitos",
+    "pillars": "Nossos Pilares",
+    "mission": "Missão",
+    "missionText": "Fornecer materiais de construção de qualidade com excelência no atendimento, aliado à inovação digital para facilitar a gestão de obras e consumo doméstico.",
+    "vision": "Visão",
+    "visionText": "Ser referência em Moçambique na integração entre construção civil e tecnologia, oferecendo soluções completas para clientes e parceiros.",
+    "values": "Valores",
+    "valuesText": "Qualidade, transparência, inovação, compromisso com prazos e satisfação do cliente.",
+    "cta": "Faça parte da nova era da construção em Moçambique",
+    "ctaDesc": "Crie sua conta e tenha controlo total sobre suas compras, consumo de água e pagamentos."
+  },
+  "contact": {
+    "title": "Contactos",
+    "subtitle": "Estamos disponíveis para esclarecer dúvidas, receber sugestões e apoiar os nossos clientes.",
+    "location": "Localização",
+    "address": "Maputo, Moçambique",
+    "coordinates": "Coordenadas: 25.9692° S, 32.5732° E",
+    "phone": "Telefone",
+    "email": "Email",
+    "hours": "Horário",
+    "hoursDesc": "Segunda a Sábado",
+    "hoursTime": "7h00 - 18h00",
+    "customerSupport": "Atendimento ao Cliente",
+    "supportDesc": "Para questões relacionadas a compras, faturas ou gestão de água, utilize a plataforma digital ou contacte o nosso suporte.",
+    "responseTime": "Resposta em até 24h úteis"
+  },
+  "projects": {
+    "title": "Projetos",
+    "description": "Conheça os projetos da Mavingue. Em breve disponibilizaremos o portfólio completo.",
+    "comingSoon": "Portfólio em breve",
+    "comingSoonDesc": "Estamos a organizar o nosso portfólio de projetos para apresentar em breve.",
+    "requestInfo": "Solicitar informações"
+  },
+  "faq": {
+    "title": "Perguntas Frequentes",
+    "subtitle": "Encontre respostas para as suas dúvidas",
+    "questions": {
+      "order": {
+        "question": "Como posso fazer uma encomenda?",
+        "answer": "Pode fazer a sua encomenda diretamente através do nosso catálogo online. Basta selecionar os produtos desejados, adicionar ao carrinho e seguir os passos para finalizar a compra. Também pode contactar a nossa equipe para assistência personalizada."
+      },
+      "payment": {
+        "question": "Quais são os métodos de pagamento disponíveis?",
+        "answer": "Aceitamos múltiplos métodos de pagamento: M-PESA, cartões de crédito e débito (Visa, Mastercard), e transferência bancária. Todos os pagamentos são processados de forma segura na nossa plataforma."
+      },
+      "delivery": {
+        "question": "Qual é o prazo de entrega?",
+        "answer": "O prazo de entrega varia conforme a localização e disponibilidade do produto. Em Maputo, a entrega é geralmente feita em 2-5 dias úteis. Para outras provinces, o prazo pode ser de 5-10 dias úteis."
+      },
+      "returns": {
+        "question": "Posso devolver ou trocar produtos?",
+        "answer": "Sim, aceitamos devoluções até 14 dias após a entrega, desde que o produto esteja em condições originais. Contacte-nos para iniciar o processo de devolução ou troca."
+      },
+      "freeDelivery": {
+        "question": "Vocês oferecem entrega gratuita?",
+        "answer": "Oferecemos entrega gratuita para encomendas acima de 5.000 MT dentro de Maputo. Para encomendas menores ou entregas fora de Maputo, aplicam-se taxas de entrega variáveis."
+      },
+      "tracking": {
+        "question": "Como posso rastrear a minha encomenda?",
+        "answer": "Após a confirmação da encomenda, receberá um código de rastreamento por email. Pode também acompanhar o estado da sua encomenda na área 'Meus Pedidos' da sua conta."
+      },
+      "business": {
+        "question": "Vocês vendem a profissionais e empresas?",
+        "answer": "Sim, temos condições especiais para clientes empresariais, incluindo preços bulk, prazos de pagamento personalizados e gestão de projetos dedicada. Contacte-nos para mais informações."
+      },
+      "support": {
+        "question": "Como posso contactar o suporte ao cliente?",
+        "answer": "Pode contactar-nos através do email info@mavingue.co.mz, pelo telefone +258 84/85 000 0000, ou através da plataforma digital. A nossa equipe está disponível das 7h00 às 18h00, de segunda a sábado."
+      }
+    }
+  },
+  "catalog": {
+    "title": "Catálogo de Produtos",
+    "search": "Pesquisar produtos...",
+    "loading": "Carregando materiais...",
+    "error": "Ops! Algo correu mal.",
+    "loadError": "Erro ao carregar catálogo",
+    "noProducts": "Nenhum produto disponível no momento.",
+    "available": "Materiais Disponíveis",
+    "itemsFound": "itens encontrados",
+    "noImage": "Sem Imagem",
+    "description": "Material de alta resistência para construção civil e acabamentos.",
+    "currency": "MT",
+    "buy": "Comprar"
+  },
+  "footer": {
+    "about": "Sobre Nós",
+    "aboutText": "Líder em materiais de construção em Moçambique. Qualidade, confiança e inovação para seus projetos.",
+    "quickLinks": "Links Rápidos",
+    "services": "Nossos Serviços",
+    "products": "Produtos",
+    "productCategories": {
+      "hardware": "Ferragens",
+      "water": "Água e Saneamento",
+      "premium": "Produtos Premium"
+    },
+    "company": "Empresa",
+    "contact": "Contactos",
+    "newsletter": "Receba nossas novidades",
+    "newsletterPlaceholder": "Seu email",
+    "copyright": "Todos os direitos reservados.",
+    "privacy": "Política de Privacidade",
+    "terms": "Termos de Uso",
+    "location": "Maputo, Moçambique",
+    "phone": "+258 84/85 000 0000",
+    "email": "info@mavingue.co.mz",
+    "hours": "Seg - Sáb: 7h00 - 18h00"
+  },
+  "cart": {
+    "title": "Carrinho de Compras",
+    "empty": "O seu carrinho está vazio",
+    "total": "Total",
+    "checkout": "Finalizar Compra",
+    "continueShopping": "Continuar a Comprar",
+    "remove": "Remover",
+    "quantity": "Quantidade"
+  },
+  "profile": {
+    "title": "Meu Perfil",
+    "editProfile": "Editar Perfil",
+    "orders": "Meus Pedidos",
+    "settings": "Configurações",
+    "waterConsumption": "Consumo de Água"
+  },
+  "dashboard": {
+    "greeting": "Olá, Cliente",
+    "clientArea": "Área do cliente"
+  },
+  "admin": {
+    "clients": "Clientes",
+    "noClients": "Sem clientes.",
+    "users": "Utilizadores",
+    "noUsers": "Sem utilizadores."
+  },
+  "terms": {
+    "title": "Termos de Uso",
+    "lastUpdated": "Última atualização: Abril 2026",
+    "intellectualProperty": "Respeitar os direitos de propriedade intelectual",
+    "accountResponsibility": "Ao criar uma conta, você é responsável por manter a confidencialidade das suas credenciais e por todas as atividades sob a sua conta. Reservamo-nos o direito de suspender ou encerrar contas a nosso critério.",
+    "fraudCancelation": "Reservamo-nos o direito de cancelar encomendas em caso de fraude",
+    "intellectualPropertyHeader": "Propriedade Intelectual",
+    "contentOwnership": "Todo o conteúdo deste site, incluindo textos, imagens, logótipos e design, é propriedade da Mavingue ou dos seus licenciadores e está protegido por direitos de autor e marcas registadas.",
+    "liabilityDisclaimer": "Não garantimos que o site esteja sempre disponível ou livre de erros. Não seremos responsáveis por quaisquer danos indiretos, incidentais ou consequenciais resultantes do uso do site.",
+    "changesNotice": "Reservamo-nos o direito de alterar estes termos a qualquer momento. As alterações serão publicadas nesta página e entrarão em vigor imediatamente após a publicação."
+  },
+  "privacy": {
+    "title": "Política de Privacidade",
+    "lastUpdated": "Última atualização: Abril 2026",
+    "dataUsage": "Os seus dados são usados para processar encomendas, melhorar nossos serviços, comunicar consigo e cumprir obrigações legais. Não vendemos os seus dados a terceiros.",
+    "yourRights": "Os Seus Direitos",
+    "youHaveRight": "Tem direito a:",
+    "contactUs": "Para questões sobre esta política ou para exercer os seus direitos, contacte-nos através de privacidade@mavingue.co.mz ou pelo telefone +258 84 000 0000"
+  }
+}

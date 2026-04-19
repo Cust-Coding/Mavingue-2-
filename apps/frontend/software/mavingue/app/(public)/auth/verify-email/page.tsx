@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useI18n } from "@/lib/i18n";
 import { CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 
 export default function VerifyEmailPage() {
+  const { t } = useI18n();
   const params = useParams();
   const router = useRouter();
   const userId = params.userId;
@@ -16,7 +18,7 @@ export default function VerifyEmailPage() {
 
   useEffect(() => {
     if (!userId || !signedToken) {
-      setError("Link de verificação inválido ou incompleto.");
+      setError(t("auth.invalidLink"));
       setLoading(false);
       return;
     }
@@ -30,17 +32,17 @@ export default function VerifyEmailPage() {
           setSuccess(true);
         } else {
           const text = await res.text();
-          setError(text || "Erro na verificação da conta.");
+          setError(text || t("auth.invalidCode"));
         }
       } catch (e) {
-        setError("Falha ao comunicar com o servidor. Tente novamente mais tarde.");
+        setError(t("auth.serverError"));
       } finally {
         setLoading(false);
       }
     };
 
     verify();
-  }, [userId, signedToken]);
+  }, [userId, signedToken, t]);
 
   if (loading) {
     return (
@@ -50,9 +52,9 @@ export default function VerifyEmailPage() {
             <Loader2 className="w-8 h-8 text-[#EF6A44] animate-spin" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            Verificando Conta
+            {t("common.loading")}
           </h1>
-          <p className="text-gray-600">Aguarde enquanto verificamos sua conta...</p>
+          <p className="text-gray-600">{t("auth.processingError")}</p>
         </div>
       </div>
     );
@@ -66,16 +68,16 @@ export default function VerifyEmailPage() {
             <CheckCircle className="w-8 h-8 text-green-600" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            Conta Verificada!
+            {t("auth.verified")}
           </h1>
           <p className="text-gray-600 mb-6">
-            Sua conta foi ativada com sucesso. Agora você pode fazer login.
+            {t("auth.verificationSuccess")}
           </p>
           <button
             onClick={() => router.push("/auth/login")}
             className="w-full bg-[#EF6A44] text-white font-bold py-3 px-6 rounded-xl hover:bg-[#EF6A44]/90 transition-colors"
           >
-            Ir para Login
+            {t("auth.login")}
           </button>
         </div>
       </div>
@@ -89,7 +91,7 @@ export default function VerifyEmailPage() {
           <AlertCircle className="w-8 h-8 text-red-600" />
         </div>
         <h1 className="text-2xl font-bold text-gray-900 mb-2">
-          Verificação Falhou
+          {t("common.error")}
         </h1>
         <p className="text-gray-600 mb-6">{error}</p>
         <div className="space-y-3">
@@ -97,7 +99,7 @@ export default function VerifyEmailPage() {
             onClick={() => router.push("/auth/login")}
             className="w-full bg-[#EF6A44] text-white font-bold py-3 px-6 rounded-xl hover:bg-[#EF6A44]/90 transition-colors"
           >
-            Ir para Login
+            {t("auth.login")}
           </button>
           <button
             onClick={() => router.push("/auth/confirm-email")}

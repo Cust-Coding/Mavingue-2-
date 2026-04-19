@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { useEffect, useRef } from 'react';
 import gsap from 'gsap';
+import { useI18n } from "@/lib/i18n";
 
 export default function Landing() {
+  const { t } = useI18n();
   const titleRef = useRef<HTMLHeadingElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
   const buttonsRef = useRef<HTMLDivElement>(null);
@@ -60,24 +62,18 @@ export default function Landing() {
             ref={titleRef}
             className="text-[#FF4500] text-5xl lg:text-7xl font-black mb-6 tracking-tight leading-[1.05]"
           >
-            Estaleiro <br />
-            <span className="text-white">Mavingue</span>
+            {t("hero.title")} <br />
+            <span className="text-white">{t("hero.subtitle")}</span>
           </h1>
 
           {/* Texto com animação da esquerda */}
           <div ref={textRef} className="text-white text-xl lg:text-2xl leading-relaxed font-medium max-w-2xl">
             <p className="mb-6">
-              Seja para equipar a sua obra com os melhores materiais de
-              construção ou para gerir o consumo de{" "}
-              <span className="bg-[#10afd3] text-transparent bg-clip-text font-semibold">
-                água
-              </span>{" "}
-              da sua residência, estamos aqui para facilitar o seu dia a dia.
+              {t("hero.heroText")}
             </p>
 
             <div className="border-l-4 border-[#FF4500] pl-6 text-orange-100 text-lg lg:text-xl italic">
-              Através desta plataforma, terá total transparência e controlo
-              sobre as suas compras e faturas, tudo a partir de um único lugar.
+              {t("hero.transparencyText")}
             </div>
           </div>
 
@@ -90,21 +86,21 @@ export default function Landing() {
               href="/catalogo"
               className="px-6 h-14 flex items-center justify-center rounded-2xl bg-[#FF4500] text-white font-bold shadow-xl shadow-[#FF4500]/30 hover:shadow-[#FF4500]/50 hover:-translate-y-1 transition-all duration-300"
             >
-              Ver Catálogo
+              {t("hero.cta")}
             </Link>
 
             <Link
               href="/auth/register"
               className="px-6 h-14 flex items-center justify-center rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 text-white font-bold hover:bg-white/20 hover:-translate-y-1 transition-all duration-300"
             >
-              Criar Conta
+              {t("hero.createAccount")}
             </Link>
 
             <Link
               href="/auth/login"
               className="px-6 h-14 flex items-center justify-center rounded-2xl text-white/80 font-bold hover:text-white hover:-translate-y-1 transition-all duration-300"
             >
-              Já tenho conta
+              {t("hero.alreadyHaveAccount")}
             </Link>
           </div>
         </div>
@@ -117,12 +113,11 @@ export default function Landing() {
       >
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-2xl lg:text-3xl font-extrabold text-gray-900 mb-4">
-            Catálogo público disponível
+            {t("landing.publicCatalog")}
           </h2>
 
           <p className="text-gray-500 font-medium mb-8">
-            Explore os produtos disponíveis. Para realizar compras e gerir a sua
-            conta, faça login ou crie uma conta.
+            {t("landing.catalogDesc")}
           </p>
 
           <div className="flex flex-wrap justify-center gap-4">
@@ -130,21 +125,21 @@ export default function Landing() {
               href="/catalogo"
               className="px-6 h-12 flex items-center rounded-xl bg-gray-900 text-white font-bold hover:bg-black hover:-translate-y-1 transition-all duration-300"
             >
-              Explorar
+              {t("common.explore")}
             </Link>
 
             <Link
               href="/auth/register"
               className="px-6 h-12 flex items-center rounded-xl border border-gray-200 font-bold text-gray-700 hover:bg-gray-100 hover:-translate-y-1 transition-all duration-300"
             >
-              Registar
+              {t("landing.register")}
             </Link>
 
             <Link
               href="/auth/login"
               className="px-6 h-12 flex items-center rounded-xl text-gray-500 font-bold hover:text-gray-900 hover:-translate-y-1 transition-all duration-300"
             >
-              Login
+              {t("hero.login")}
             </Link>
           </div>
         </div>

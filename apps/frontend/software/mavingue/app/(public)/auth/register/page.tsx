@@ -16,6 +16,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { setSession } from "@/lib/auth/session";
+import { useI18n } from "@/lib/i18n";
 
 type Sexo = "HOMEM" | "MULHER";
 type TipoDocumento = "BI" | "PASSAPORTE" | "DIRE";
@@ -271,6 +272,7 @@ async function fetchConstructionPhotos(
 }
 
 export default function App() {
+  const { t } = useI18n();
   const [loading, setLoading] = useState(false);
   const [ok, setOk] = useState("");
   const [err, setErr] = useState("");
@@ -305,22 +307,22 @@ export default function App() {
   function validate() {
     const e: FieldErrors = {};
 
-    if (!form.nome.trim()) e.nome = "Campo obrigatório";
-    if (!form.telefone.trim()) e.telefone = "Campo obrigatório";
+    if (!form.nome.trim()) e.nome = t("form.errors.nameRequired");
+    if (!form.telefone.trim()) e.telefone = t("form.errors.phoneRequired");
     if (!form.email.trim()) {
-      e.email = "Campo obrigatório";
+      e.email = t("form.errors.emailRequired");
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-      e.email = "Email inválido";
+      e.email = t("form.errors.invalidEmail");
     }
     if (!form.password.trim() || form.password.length < 6)
-      e.password = "Mín. 6 caracteres";
-    if (form.confirmPassword !== form.password) e.confirmPassword = "Divergente";
-    if (!form.dataNascimento) e.dataNascimento = "Obrigatório";
-    if (!form.provincia.trim()) e.provincia = "Obrigatório";
-    if (!form.cidade.trim()) e.cidade = "Obrigatório";
-    if (!form.bairro.trim()) e.bairro = "Obrigatório";
-    if (!form.endereco.trim()) e.endereco = "Obrigatório";
-    if (!form.numeroDocumento.trim()) e.numeroDocumento = "Obrigatório";
+      e.password = t("auth.passwordRequired");
+    if (form.confirmPassword !== form.password) e.confirmPassword = t("auth.passwordRequired");
+    if (!form.dataNascimento) e.dataNascimento = t("form.errors.birthdateRequired");
+    if (!form.provincia.trim()) e.provincia = t("form.errors.provinceRequired");
+    if (!form.cidade.trim()) e.cidade = t("form.errors.cityRequired");
+    if (!form.bairro.trim()) e.bairro = t("form.errors.neighborhoodRequired");
+    if (!form.endereco.trim()) e.endereco = t("form.errors.addressRequired");
+    if (!form.numeroDocumento.trim()) e.numeroDocumento = t("form.errors.required");
 
     setFe(e);
     return Object.keys(e).length === 0;
@@ -348,14 +350,14 @@ export default function App() {
         const selected = filtered[Math.floor(Math.random() * filtered.length)] || photos[0];
 
         if (!selected) {
-          throw new Error("Nenhuma imagem recebida");
+          throw new Error("No image received");
         }
 
         const nextUrl = selected.urls?.regular || selected.urls?.full || FALLBACK_BG;
 
         setBgUrl(`${nextUrl}${nextUrl.includes("?") ? "&" : "?"}v=${Date.now()}`);
         setBgAuthor(
-          selected.user?.name ? `Foto por ${selected.user.name} (Unsplash)` : ""
+          selected.user?.name ? t("common.photoBy", { name: selected.user.name }) : ""
         );
 
         const updatedRecent = [
@@ -420,11 +422,11 @@ export default function App() {
 
         if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
           setFe(parsed as FieldErrors);
-          setErr("Há campos inválidos.");
+          setErr(t("auth.invalidFields"));
           return;
         }
 
-        setErr(typeof parsed === "string" ? parsed : `Erro HTTP ${res.status}`);
+        setErr(typeof parsed === "string" ? parsed : `HTTP Error ${res.status}`);
         return;
       }
 
@@ -436,12 +438,12 @@ export default function App() {
       }
 
       // Registration successful, show message and redirect to confirm email
-      setOk(rawText || "Conta criada com sucesso. Verifique seu email para ativar a conta.");
+      setOk(rawText || t("auth.codeSentDesc"));
       setTimeout(() => {
         window.location.href = `/auth/confirm-email?email=${encodeURIComponent(form.email.trim())}`;
       }, 2000);
     } catch (e: any) {
-      setErr(e?.message ?? "Falha ao comunicar com servidor");
+      setErr(e?.message ?? t("auth.serverError"));
     } finally {
       setLoading(false);
     }
@@ -492,19 +494,11 @@ export default function App() {
           <div className="relative z-10">
             <div className="mt-24 max-w-md">
               <h1 className="text-[54px] font-[800] leading-[1] tracking-tighter text-white mb-8">
-                Plataforma de <br />Gestão de 
-                <span className="text-[#EF6A44]"> Stock</span>
+                {t("services.stock.title")}
               </h1>
 
               <p className="text-lg text-gray-200 font-medium leading-relaxed">
-                Seja para equipar a sua obra com materiais de construção de qualidade ou
-                para gerir o consumo de água da sua residência, estamos aqui para facilitar
-                o seu dia a dia.
-              </p>
-
-              <p className="text-lg text-gray-200 font-medium leading-relaxed mt-4">
-                Através desta plataforma, terá total transparência e controlo sobre as suas
-                compras e faturas, tudo a partir de um único lugar.
+                {t("landing.featureDescription")}
               </p>
             </div>
           </div>
@@ -519,7 +513,7 @@ export default function App() {
                 P
               </div>
               <a href="/login" className="text-sm font-bold text-[#EF6A44]">
-                ENTRAR
+                {t("auth.login").toUpperCase()}
               </a>
             </div>
 
@@ -546,29 +540,29 @@ export default function App() {
             <form onSubmit={submit} className="flex flex-col gap-10">
               <div className="space-y-6">
                 <h3 className="text-xs font-black text-gray-300 uppercase tracking-[3px] mb-8">
-                  Informação Básica
+                  {t("form.sections.basicInfo")}
                 </h3>
 
-                <Field label="Nome Completo" error={fe.nome}>
+                <Field label={t("auth.fullName")} error={fe.nome}>
                   <Input
                     icon={User}
-                    placeholder="Como devemos chamar-te?"
+                    placeholder={t("form.placeholders.fullName")}
                     value={form.nome}
                     onChange={(e) => setField("nome", e.target.value)}
                   />
                 </Field>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Field label="E-mail Corporativo" error={fe.email}>
+                  <Field label={t("form.labels.corporateEmail")} error={fe.email}>
                     <Input
                       icon={Mail}
-                      placeholder="teu@email.com"
+                      placeholder={t("form.placeholders.email")}
                       value={form.email}
                       onChange={(e) => setField("email", e.target.value)}
                     />
                   </Field>
 
-                  <Field label="Contacto Telefónico" error={fe.telefone}>
+                  <Field label={t("auth.phone")} error={fe.telefone}>
                     <Input
                       icon={Phone}
                       placeholder="+258 --- --- ---"
@@ -579,18 +573,18 @@ export default function App() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Field label="Género" error={fe.sexo}>
+                  <Field label={t("form.labels.gender")} error={fe.sexo}>
                     <ToggleSelector
                       value={form.sexo}
                       onChange={(v) => setField("sexo", v)}
                       options={[
-                        { label: "Homem", val: "HOMEM" },
-                        { label: "Mulher", val: "MULHER" },
+                        { label: t("form.genders.male"), val: "HOMEM" },
+                        { label: t("form.genders.female"), val: "MULHER" },
                       ]}
                     />
                   </Field>
 
-                  <Field label="Data de Nascimento" error={fe.dataNascimento}>
+                  <Field label={t("form.labels.birthdate")} error={fe.dataNascimento}>
                     <div className="relative group">
                       <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#EF6A44] w-[18px] h-[18px] transition-colors duration-300 z-10" />
                       <input
@@ -606,15 +600,15 @@ export default function App() {
 
               <div className="space-y-6">
                 <h3 className="text-xs font-black text-gray-300 uppercase tracking-[3px] mb-8">
-                  Segurança da Conta
+                  {t("form.sections.accountSecurity")}
                 </h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Field label="Palavra-passe" error={fe.password}>
+                  <Field label={t("form.labels.password")} error={fe.password}>
                     <Input
                       icon={Lock}
                       type={showPassword ? "text" : "password"}
-                      placeholder="Mín. 6 chars"
+                      placeholder={t("auth.passwordRequired")}
                       value={form.password}
                       onChange={(e) => setField("password", e.target.value)}
                       rightIcon={
@@ -639,7 +633,7 @@ export default function App() {
                     />
                   </Field>
 
-                  <Field label="Validar Senha" error={fe.confirmPassword}>
+                  <Field label={t("form.labels.confirmPassword")} error={fe.confirmPassword}>
                     <Input
                       icon={Lock}
                       type={showConfirmPassword ? "text" : "password"}
@@ -672,22 +666,22 @@ export default function App() {
 
               <div className="space-y-6">
                 <h3 className="text-xs font-black text-gray-300 uppercase tracking-[3px] mb-8">
-                  Localização
+                  {t("form.sections.location")}
                 </h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Field label="Província" error={fe.provincia}>
+                  <Field label={t("form.errors.provinceRequired").split(" ")[0]} error={fe.provincia}>
                     <Input
                       icon={MapPin}
-                      placeholder="Província"
+                      placeholder={t("form.errors.provinceRequired").split(" ")[0]}
                       value={form.provincia}
                       onChange={(e) => setField("provincia", e.target.value)}
                     />
                   </Field>
 
-                  <Field label="Cidade" error={fe.cidade}>
+                  <Field label={t("form.errors.cityRequired").split(" ")[0]} error={fe.cidade}>
                     <Input
-                      placeholder="Cidade"
+                      placeholder={t("form.errors.cityRequired").split(" ")[0]}
                       value={form.cidade}
                       onChange={(e) => setField("cidade", e.target.value)}
                     />
@@ -695,17 +689,17 @@ export default function App() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Field label="Bairro" error={fe.bairro}>
+                  <Field label={t("form.labels.neighborhoodOptional").split(" ")[0]} error={fe.bairro}>
                     <Input
-                      placeholder="Bairro"
+                      placeholder={t("form.placeholders.neighborhood")}
                       value={form.bairro}
                       onChange={(e) => setField("bairro", e.target.value)}
                     />
                   </Field>
 
-                  <Field label="Morada Completa" error={fe.endereco}>
+                  <Field label={t("form.labels.fullAddress")} error={fe.endereco}>
                     <Input
-                      placeholder="Rua, Casa, nº..."
+                      placeholder={t("form.labels.fullAddress")}
                       value={form.endereco}
                       onChange={(e) => setField("endereco", e.target.value)}
                     />
@@ -715,34 +709,34 @@ export default function App() {
 
               <div className="space-y-6">
                 <h3 className="text-xs font-black text-gray-300 uppercase tracking-[3px] mb-8">
-                  Identificação Fiscal
+                  {t("form.sections.taxId")}
                 </h3>
 
-                <Field label="Nuit (Opcional)" error={fe.nuit}>
+                <Field label={t("form.labels.nuitOptional2")} error={fe.nuit}>
                   <Input
                     icon={FileText}
-                    placeholder="Seu NUIT"
+                    placeholder={t("form.labels.nuitOptional2")}
                     value={form.nuit}
                     onChange={(e) => setField("nuit", e.target.value)}
                   />
                 </Field>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Field label="Tipo Documento" error={fe.tipoDocumento}>
+                  <Field label={t("form.labels.documentType2")} error={fe.tipoDocumento}>
                     <ToggleSelector
                       value={form.tipoDocumento}
                       onChange={(v) => setField("tipoDocumento", v)}
                       options={[
                         { label: "B.I", val: "BI" },
-                        { label: "Passaporte", val: "PASSAPORTE" },
+                        { label: t("form.documentTypes.passport"), val: "PASSAPORTE" },
                         { label: "DIRE", val: "DIRE" },
                       ]}
                     />
                   </Field>
 
-                  <Field label="Nº do Documento" error={fe.numeroDocumento}>
+                  <Field label={t("form.labels.documentNumber2")} error={fe.numeroDocumento}>
                     <Input
-                      placeholder="Número"
+                      placeholder={t("form.labels.documentNumber2")}
                       value={form.numeroDocumento}
                       onChange={(e) => setField("numeroDocumento", e.target.value)}
                     />
@@ -752,16 +746,16 @@ export default function App() {
 
               <div className="py-12 flex flex-col gap-8">
                 <Button type="submit" disabled={loading} loading={loading}>
-                  CRIAR CONTA AGORA
+                  {t("auth.registerButton").toUpperCase()}
                 </Button>
 
                 <p className="text-center font-bold text-sm text-gray-400">
-                  Já é parceiro?{" "}
+                  {t("auth.alreadyPartner")}{" "}
                   <a
                     href="/login"
                     className="text-[#EF6A44] hover:brightness-110 transition-all underline underline-offset-8 decoration-2"
                   >
-                    ENTRAR NO SISTEMA
+                    {t("auth.loginSystem")}
                   </a>
                 </p>
               </div>

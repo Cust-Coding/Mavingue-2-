@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
+import { useI18n } from "@/lib/i18n";
 import { Lock, Eye, EyeOff, AlertCircle, CheckCircle, Mail } from "lucide-react";
 
 export default function ResetPasswordPage() {
+  const { t } = useI18n();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
@@ -24,11 +26,11 @@ export default function ResetPasswordPage() {
   }, [searchParams]);
 
   const validate = () => {
-    if (!email.trim()) return "Email é obrigatório";
-    if (!code.trim()) return "Código é obrigatório";
-    if (!password.trim()) return "Senha é obrigatória";
-    if (password.length < 6) return "Senha deve ter pelo menos 6 caracteres";
-    if (password !== confirmPassword) return "Senhas não coincidem";
+    if (!email.trim()) return t("auth.emailRequired");
+    if (!code.trim()) return t("auth.invalidCode");
+    if (!password.trim()) return t("auth.passwordRequired");
+    if (password.length < 6) return t("auth.passwordRequired");
+    if (password !== confirmPassword) return t("form.errors.required");
     return null;
   };
 
@@ -58,10 +60,10 @@ export default function ResetPasswordPage() {
         setSuccess(true);
       } else {
         const text = await res.text();
-        setError(text || "Erro ao redefinir senha");
+        setError(text || t("auth.resetError"));
       }
     } catch (e) {
-      setError("Falha ao comunicar com o servidor");
+      setError(t("auth.serverError"));
     } finally {
       setLoading(false);
     }
@@ -75,16 +77,16 @@ export default function ResetPasswordPage() {
             <CheckCircle className="w-8 h-8 text-green-600" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            Senha Redefinida!
+            {t("auth.password").split(" ")[0] + " " + t("common.success").toLowerCase()}
           </h1>
           <p className="text-gray-600 mb-6">
-            Sua senha foi alterada com sucesso. Agora você pode fazer login.
+            {t("auth.verificationSuccess")}
           </p>
           <button
             onClick={() => window.location.href = "/auth/login"}
             className="w-full bg-[#EF6A44] text-white font-bold py-3 px-6 rounded-xl hover:bg-[#EF6A44]/90 transition-colors"
           >
-            Ir para Login
+            {t("auth.login")}
           </button>
         </div>
       </div>
@@ -96,10 +98,10 @@ export default function ResetPasswordPage() {
       <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl shadow-[#EF6A44]/10 p-8">
         <div className="text-center mb-6">
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            Redefinir Senha
+            {t("auth.forgotPasswordTitle")}
           </h1>
           <p className="text-gray-600">
-            Digite seu email, o código recebido e sua nova senha.
+            {t("auth.forgotPasswordDesc")}
           </p>
         </div>
 
@@ -113,7 +115,7 @@ export default function ResetPasswordPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email
+              {t("auth.email")}
             </label>
             <div className="relative">
               <input
@@ -121,7 +123,7 @@ export default function ResetPasswordPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-[#EF6A44]/20 focus:border-[#EF6A44] transition-all"
-                placeholder="seu@email.com"
+                placeholder={t("form.placeholders.email")}
               />
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
             </div>
@@ -129,7 +131,7 @@ export default function ResetPasswordPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Código de Verificação
+              {t("auth.sendCode").split(" ")[0]}
             </label>
             <input
               type="text"
@@ -143,7 +145,7 @@ export default function ResetPasswordPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Nova Senha
+              {t("form.labels.password")}
             </label>
             <div className="relative">
               <input
@@ -165,7 +167,7 @@ export default function ResetPasswordPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Confirmar Senha
+              {t("form.labels.confirmPassword")}
             </label>
             <div className="relative">
               <input
@@ -190,7 +192,7 @@ export default function ResetPasswordPage() {
             disabled={loading}
             className="w-full bg-[#EF6A44] text-white font-bold py-3 px-6 rounded-xl hover:bg-[#EF6A44]/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            {loading ? "Redefinindo..." : "Redefinir Senha"}
+            {loading ? t("common.loading") : t("auth.goToReset")}
           </button>
         </form>
 
