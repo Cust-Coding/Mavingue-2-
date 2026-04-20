@@ -20,7 +20,7 @@ spring:
 app:
   jwt:
     secret: ${JWT_SECRET}
-    expirationSeconds: 7200
+    expirationSeconds: 86400
   base-url: ${BASE_URL}
   front-url: ${FRONT_URL}
 
