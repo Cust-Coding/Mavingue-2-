@@ -47,19 +47,4 @@ jobs:
       - name: Build aplicação
         run: mvn package -DskipTests --no-transfer-progress
 
-  deploy-render:
-    name: Deploy no Render
-    runs-on: ubuntu-latest
-    needs: build-test
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-
-    steps:
-      - name: Trigger Render Deploy
-        run: |
-          curl --fail --show-error --location \
-            --retry 3 \
-            --retry-delay 5 \
-            -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
-
-           
-  
+ 
