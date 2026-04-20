@@ -6,15 +6,6 @@ import { Button } from "@/components/ui/Button";
 import { productsApi } from "@/features/products/api";
 import { getErrorMessage } from "@/lib/errors";
 
-async function fileToDataUrl(file: File) {
-  return await new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result || ""));
-    reader.onerror = () => reject(new Error("Nao foi possivel ler a imagem"));
-    reader.readAsDataURL(file);
-  });
-}
-
 export default function NovoProduto() {
   const [form, setForm] = useState({ name: "", description: "", price: "", urlImg: "" });
   const [err, setErr] = useState("");
@@ -25,8 +16,18 @@ export default function NovoProduto() {
     if (!file) return;
     setErr("");
     try {
-      const dataUrl = await fileToDataUrl(file);
-      setForm((current) => ({ ...current, urlImg: dataUrl }));
+      const formData = new FormData();
+      formData.append('file', file);
+      const response = await fetch('/api/proxy/api/files/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setForm((current) => ({ ...current, urlImg: data.url }));
+      } else {
+        setErr(data.error || 'Upload failed');
+      }
     } catch (reason: unknown) {
       setErr(getErrorMessage(reason, "Nao foi possivel carregar a imagem"));
     }

@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/files")
@@ -21,14 +22,14 @@ public class FileControllers {
     private final CloudinaryService cloudinary;
 
     @PostMapping("/upload")
-    public ResponseEntity<String> upload(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<Map<String, String>> upload(@RequestParam("file") MultipartFile file) {
         try{
             String folder = "products_upload";
             String url = cloudinary.uploadFile(file, folder);
-            return ResponseEntity.ok("Upload Realizado com sucesso! URL: " + url);
+            return ResponseEntity.ok(Map.of("url", url));
         }catch (IOException e){
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Falha no Upload: " + e.getMessage());
+                    .body(Map.of("error", "Falha no Upload: " + e.getMessage()));
         }
 
     }
