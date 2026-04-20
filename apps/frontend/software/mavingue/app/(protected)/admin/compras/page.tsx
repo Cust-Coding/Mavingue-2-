@@ -67,7 +67,7 @@ export default function AdminCompras() {
     <main className="grid gap-6">
       <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
         <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Compras</p>
-        <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-900 dark:text-white">
+        <h1 className="mt-3 text-3xl font-black tracking-tight text-orange-600 dark:text-white">
           Compras, facturas e entrada de stock
         </h1>
         <p className="mt-3 max-w-3xl text-base leading-7 text-slate-500 dark:text-slate-400">

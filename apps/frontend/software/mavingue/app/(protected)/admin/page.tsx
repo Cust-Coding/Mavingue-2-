@@ -11,6 +11,21 @@ import { stockApi } from "@/features/stock/api";
 import { listUsers } from "@/features/users/api";
 import { listWaterBills, listWaterContracts, listWaterCustomers, listWaterReadings } from "@/features/water/api";
 import { getErrorMessage } from "@/lib/errors";
+import { 
+  LayoutDashboard, 
+  Users, 
+  Package, 
+  ShoppingBag, 
+  Boxes, 
+  TrendingUp, 
+  TrendingDown,
+  Droplets,
+  ClipboardList,
+  CheckCircle,
+  PlusCircle,
+  Droplet,
+  FileText
+} from "lucide-react";
 
 type Summary = {
   users: number;
@@ -46,8 +61,15 @@ export default function AdminHome() {
   const [summary, setSummary] = useState<Summary>(initialSummary);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+    
     (async () => {
       setLoading(true);
       setErr("");
@@ -87,30 +109,74 @@ export default function AdminHome() {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [mounted]);
 
   const cards = [
-    { label: "Utilizadores", value: summary.users, href: "/admin/utilizadores" },
-    { label: "Produtos", value: summary.products, href: "/admin/produtos" },
-    { label: "Clientes", value: summary.customers, href: "/admin/clientes" },
-    { label: "Stock", value: summary.stock, href: "/admin/stock" },
-    { label: "Compras", value: summary.purchases, href: "/admin/compras" },
-    { label: "Vendas", value: summary.sales, href: "/admin/vendas" },
-    { label: "A Preparar", value: summary.pendingPickup, href: "/admin/vendas" },
-    { label: "Prontas", value: summary.readyPickup, href: "/admin/vendas" },
-    { label: "Clientes de Agua", value: summary.waterCustomers, href: "/admin/agua" },
-    { label: "Ligacoes", value: summary.waterContracts, href: "/admin/agua" },
-    { label: "Leituras", value: summary.waterReadings, href: "/admin/agua" },
-    { label: "Facturas Agua", value: summary.waterBills, href: "/admin/agua" },
+    { label: "Utilizadores", value: summary.users, href: "/admin/utilizadores", icon: Users, color: "blue" },
+    { label: "Produtos", value: summary.products, href: "/admin/produtos", icon: Package, color: "orange" },
+    { label: "Clientes", value: summary.customers, href: "/admin/clientes", icon: ShoppingBag, color: "green" },
+    { label: "Stock", value: summary.stock, href: "/admin/stock", icon: Boxes, color: "purple" },
+    { label: "Compras", value: summary.purchases, href: "/admin/compras", icon: TrendingDown, color: "red" },
+    { label: "Vendas", value: summary.sales, href: "/admin/vendas", icon: TrendingUp, color: "emerald" },
+    { label: "A Preparar", value: summary.pendingPickup, href: "/admin/vendas", icon: ClipboardList, color: "yellow" },
+    { label: "Prontas", value: summary.readyPickup, href: "/admin/vendas", icon: CheckCircle, color: "green" },
+    { label: "Clientes Água", value: summary.waterCustomers, href: "/admin/agua", icon: Droplets, color: "cyan" },
+    { label: "Ligações", value: summary.waterContracts, href: "/admin/agua", icon: Droplet, color: "teal" },
+    { label: "Leituras", value: summary.waterReadings, href: "/admin/agua", icon: ClipboardList, color: "indigo" },
+    { label: "Facturas Água", value: summary.waterBills, href: "/admin/agua", icon: FileText, color: "rose" },
   ];
 
+  const getColorClasses = (color: string) => {
+    const colors: Record<string, { bg: string; icon: string; hover: string }> = {
+      blue: { bg: "bg-blue-50", icon: "text-blue-600", hover: "hover:border-blue-200" },
+      orange: { bg: "bg-orange-50", icon: "text-orange-600", hover: "hover:border-orange-200" },
+      green: { bg: "bg-green-50", icon: "text-green-600", hover: "hover:border-green-200" },
+      purple: { bg: "bg-purple-50", icon: "text-purple-600", hover: "hover:border-purple-200" },
+      red: { bg: "bg-red-50", icon: "text-red-600", hover: "hover:border-red-200" },
+      emerald: { bg: "bg-emerald-50", icon: "text-emerald-600", hover: "hover:border-emerald-200" },
+      yellow: { bg: "bg-yellow-50", icon: "text-yellow-600", hover: "hover:border-yellow-200" },
+      cyan: { bg: "bg-cyan-50", icon: "text-cyan-600", hover: "hover:border-cyan-200" },
+      teal: { bg: "bg-teal-50", icon: "text-teal-600", hover: "hover:border-teal-200" },
+      indigo: { bg: "bg-indigo-50", icon: "text-indigo-600", hover: "hover:border-indigo-200" },
+      rose: { bg: "bg-rose-50", icon: "text-rose-600", hover: "hover:border-rose-200" },
+    };
+    return colors[color] || colors.blue;
+  };
+
+  const actionButtons = [
+    { href: "/admin/produtos/novo", label: "Criar produto", icon: PlusCircle },
+    { href: "/admin/utilizadores/novo", label: "Criar utilizador", icon: Users },
+    { href: "/admin/vendas/nova", label: "Registar venda", icon: TrendingUp },
+    { href: "/admin/agua", label: "Módulo de água", icon: Droplets },
+  ];
+
+  
+  if (!mounted) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-orange-100 rounded-lg">
+              <LayoutDashboard className="w-6 h-6 text-orange-600" />
+            </div>
+            <h2 className="text-xl font-semibold text-slate-800">Painel Administrativo</h2>
+          </div>
+          <p className="text-slate-500 text-sm">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div style={{ display: "grid", gap: 16 }}>
-      <div style={{ background: "white", border: "1px solid #ddd", borderRadius: 10, padding: 16 }}>
-        <h2 style={{ marginTop: 0 }}>Painel Admin</h2>
-        <p style={{ marginBottom: 0, color: "#555" }}>
-          Estado geral das APIs ligadas ao frontend para administracao, operacao e modulo de agua.
-        </p>
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="p-2 bg-orange-100 rounded-lg">
+            <LayoutDashboard className="w-6 h-6 text-orange-600" />
+          </div>
+          <h2 className="text-xl font-semibold text-slate-800">Painel Administrativo</h2>
+        </div>
       </div>
 
       {loading && <Loading />}
@@ -118,63 +184,46 @@ export default function AdminHome() {
 
       {!loading && !err && (
         <>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-              gap: 12,
-            }}
-          >
-            {cards.map((card) => (
-              <Link
-                key={card.label}
-                href={card.href}
-                style={{
-                  display: "block",
-                  background: "white",
-                  border: "1px solid #ddd",
-                  borderRadius: 10,
-                  padding: 16,
-                  color: "inherit",
-                  textDecoration: "none",
-                }}
-              >
-                <div style={{ fontSize: 12, textTransform: "uppercase", color: "#777", marginBottom: 8 }}>{card.label}</div>
-                <div style={{ fontSize: 28, fontWeight: 700 }}>{card.value}</div>
-              </Link>
-            ))}
+          {/* CarDs*/}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {cards.map((card) => {
+              const colors = getColorClasses(card.color);
+              const Icon = card.icon;
+              return (
+                <Link
+                  key={card.label}
+                  href={card.href}
+                  className={`group block bg-white border border-slate-200 rounded-xl p-5 transition-all duration-200 hover:shadow-md ${colors.hover}`}
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div className={`p-2 rounded-lg ${colors.bg}`}>
+                      <Icon className={`w-5 h-5 ${colors.icon}`} />
+                    </div>
+                    <span className="text-2xl font-bold text-slate-800">{card.value}</span>
+                  </div>
+                  <p className="text-sm text-slate-500 group-hover:text-slate-700 transition-colors">
+                    {card.label}
+                  </p>
+                </Link>
+              );
+            })}
           </div>
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-              gap: 12,
-            }}
-          >
-            {[
-              { href: "/admin/produtos/novo", label: "Criar produto" },
-              { href: "/admin/utilizadores/novo", label: "Criar utilizador" },
-              { href: "/admin/vendas/nova", label: "Registar venda" },
-              { href: "/admin/agua", label: "Abrir modulo de agua" },
-            ].map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                style={{
-                  display: "block",
-                  background: "#fff7ed",
-                  border: "1px solid #fed7aa",
-                  borderRadius: 10,
-                  padding: 16,
-                  color: "#9a3412",
-                  textDecoration: "none",
-                  fontWeight: 600,
-                }}
-              >
-                {item.label}
-              </Link>
-            ))}
+          {/* */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {actionButtons.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="group flex items-center justify-center gap-2 bg-orange-50 border border-orange-200 rounded-xl p-4 text-orange-700 font-semibold transition-all duration-200 hover:bg-orange-100 hover:shadow-md"
+                >
+                  <Icon className="w-4 h-4" />
+                  {item.label}
+                </Link>
+              );
+            })}
           </div>
         </>
       )}

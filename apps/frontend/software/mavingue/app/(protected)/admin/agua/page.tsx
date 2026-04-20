@@ -22,6 +22,19 @@ import type { AddressItem, WaterBill, WaterContract, WaterCustomer, WaterReading
 import { printWaterBillDocument } from "@/lib/documents/print";
 import { getErrorMessage } from "@/lib/errors";
 import { formatDateTime, formatMoney } from "@/lib/formatters";
+import { 
+  Droplets, 
+  Users, 
+  Activity, 
+  FileText, 
+  CheckCircle, 
+  XCircle, 
+  PlusCircle, 
+  Printer,
+  CreditCard,
+  Home,
+  MapPin
+} from "lucide-react";
 
 type PaymentMethod = "CARTEIRA_MOVEL" | "CARTAO" | "DINHEIRO_FISICO";
 
@@ -42,6 +55,12 @@ export default function AguaPage() {
   const [ligacaoForm, setLigacaoForm] = useState({ consumidorId: "" });
   const [leituraForm, setLeituraForm] = useState({ ligacaoId: "", leituraActual: "", precoM3: "45" });
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("DINHEIRO_FISICO");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    setRole(getRole());
+  }, []);
 
   async function load() {
     setLoading(true);
@@ -64,20 +83,17 @@ export default function AguaPage() {
       setEnderecos(addressRows);
       setPendentes(pendingRows);
     } catch (reason: unknown) {
-      setError(getErrorMessage(reason, "Nao foi possivel carregar o modulo de agua"));
+      setError(getErrorMessage(reason, "Não foi possível carregar o módulo de água"));
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    setRole(getRole());
-  }, []);
-
-  useEffect(() => {
-    if (!role) return;
-    load();
-  }, [adminMode, role]);
+    if (mounted && role) {
+      load();
+    }
+  }, [adminMode, role, mounted]);
 
   const clientesActivos = useMemo(() => clientes.filter((cliente) => cliente.estado === "ATIVO"), [clientes]);
   const clientePorId = useMemo(() => new Map(clientes.map((cliente) => [cliente.id, cliente])), [clientes]);
@@ -87,10 +103,10 @@ export default function AguaPage() {
     setSuccess("");
     try {
       await approveWaterRequest(id);
-      setSuccess("Pedido de agua aprovado. O cliente ja pode completar os dados da casa.");
+      setSuccess("Pedido de água aprovado. O cliente já pode completar os dados da casa.");
       await load();
     } catch (reason: unknown) {
-      setError(getErrorMessage(reason, "Nao foi possivel aprovar o pedido"));
+      setError(getErrorMessage(reason, "Não foi possível aprovar o pedido"));
     }
   }
 
@@ -99,10 +115,10 @@ export default function AguaPage() {
     setSuccess("");
     try {
       await rejectWaterRequest(id);
-      setSuccess("Pedido de agua rejeitado.");
+      setSuccess("Pedido de água rejeitado.");
       await load();
     } catch (reason: unknown) {
-      setError(getErrorMessage(reason, "Nao foi possivel rejeitar o pedido"));
+      setError(getErrorMessage(reason, "Não foi possível rejeitar o pedido"));
     }
   }
 
@@ -112,10 +128,10 @@ export default function AguaPage() {
     try {
       await createWaterContract({ consumidorId: Number(ligacaoForm.consumidorId) });
       setLigacaoForm({ consumidorId: "" });
-      setSuccess("Ligacao criada com sucesso.");
+      setSuccess("Ligação criada com sucesso.");
       await load();
     } catch (reason: unknown) {
-      setError(getErrorMessage(reason, "Nao foi possivel criar a ligacao"));
+      setError(getErrorMessage(reason, "Não foi possível criar a ligação"));
     }
   }
 
@@ -127,12 +143,12 @@ export default function AguaPage() {
       await updateWaterContractState(contract.id, { estado: novoEstado });
       setSuccess(
         novoEstado === "CORTADA"
-          ? "Servico de agua marcado como cortado. O cadastro foi mantido para futura reactivacao."
-          : "Servico de agua reactivado com sucesso."
+          ? "Serviço de água cortado. O cadastro foi mantido para futura reactivação."
+          : "Serviço de água reactivado com sucesso."
       );
       await load();
     } catch (reason: unknown) {
-      setError(getErrorMessage(reason, "Nao foi possivel actualizar o estado da ligacao"));
+      setError(getErrorMessage(reason, "Não foi possível actualizar o estado da ligação"));
     }
   }
 
@@ -149,7 +165,7 @@ export default function AguaPage() {
       setSuccess("Leitura registada e factura emitida automaticamente.");
       await load();
     } catch (reason: unknown) {
-      setError(getErrorMessage(reason, "Nao foi possivel registar a leitura"));
+      setError(getErrorMessage(reason, "Não foi possível registar a leitura"));
     }
   }
 
@@ -159,285 +175,305 @@ export default function AguaPage() {
     try {
       const updated = await payWaterBill(id, { formaPagamento: paymentMethod });
       setFaturas((current) => current.map((bill) => (bill.id === updated.id ? updated : bill)));
-      setSuccess("Pagamento confirmado no sistema e factura pronta para impressao.");
+      setSuccess("Pagamento confirmado no sistema e factura pronta para impressão.");
       printWaterBillDocument(updated);
     } catch (reason: unknown) {
-      setError(getErrorMessage(reason, "Nao foi possivel confirmar o pagamento"));
+      setError(getErrorMessage(reason, "Não foi possível confirmar o pagamento"));
     }
   }
 
-  return (
-    <main className="grid gap-6">
-      <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Agua</p>
-        <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-900 dark:text-white">
-          {adminMode ? "Pedidos, ligacoes, leituras e faturacao" : "Operacao de agua, leitura, corte e faturacao"}
-        </h1>
-        <p className="mt-3 max-w-4xl text-base leading-7 text-slate-500 dark:text-slate-400">
-          O cliente pode pedir uma ou mais contas de agua. O administrador aprova o pedido, o cliente completa a casa
-          e depois a equipa gere ligacao, corte, reactivacao, leitura, pagamento e impressao da factura.
-        </p>
-      </section>
-
-      {staffMode ? (
-        <div className="rounded-[24px] border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          Os pedidos pendentes sao aprovados apenas pelo administrador. Aqui a equipa trata das operacoes do servico e
-          das facturas.
-        </div>
-      ) : null}
-
-      {error ? <div className="rounded-[24px] border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
-      {success ? <div className="rounded-[24px] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{success}</div> : null}
-
-      <section className="grid gap-4 xl:grid-cols-4">
-        <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-          <div className="text-xs uppercase tracking-[0.2em] text-slate-400">Pendentes</div>
-          <div className="mt-2 text-3xl font-black text-orange-600">{pendentes.length}</div>
-        </div>
-        <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-          <div className="text-xs uppercase tracking-[0.2em] text-slate-400">Clientes activos</div>
-          <div className="mt-2 text-3xl font-black text-slate-900 dark:text-white">{clientesActivos.length}</div>
-        </div>
-        <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-          <div className="text-xs uppercase tracking-[0.2em] text-slate-400">Ligacoes</div>
-          <div className="mt-2 text-3xl font-black text-slate-900 dark:text-white">{contratos.length}</div>
-        </div>
-        <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-          <div className="text-xs uppercase tracking-[0.2em] text-slate-400">Faturas</div>
-          <div className="mt-2 text-3xl font-black text-slate-900 dark:text-white">{faturas.length}</div>
-        </div>
-      </section>
-
-      {adminMode ? (
-        <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-          <h2 className="text-2xl font-black text-slate-900 dark:text-white">Pedidos pendentes</h2>
-          {loading ? <div className="mt-4 text-sm text-slate-500">A carregar pedidos...</div> : null}
-          {!loading && pendentes.length === 0 ? <div className="mt-4 text-sm text-slate-500">Sem pedidos pendentes.</div> : null}
-          {!loading && pendentes.length > 0 ? (
-            <div className="mt-5 grid gap-4">
-              {pendentes.map((pedido) => (
-                <article key={pedido.id} className="rounded-[24px] border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
-                  <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-                    <div className="grid gap-2">
-                      <div className="text-lg font-black text-slate-900 dark:text-white">
-                        Casa ID #{pedido.id} - {pedido.name}
-                      </div>
-                      <div className="text-sm text-slate-500 dark:text-slate-400">{pedido.email} - {pedido.phone}</div>
-                      <div className="text-sm text-slate-500 dark:text-slate-400">
-                        Local pedido: {pedido.referenciaLocal || "Sem referencia"}
-                      </div>
-                      <div className="text-sm text-slate-500 dark:text-slate-400">{pedido.observacoes || "Pedido aguardando aprovacao."}</div>
-                    </div>
-                    <div className="flex gap-3">
-                      <Button type="button" onClick={() => handleApprove(pedido.id)}>Aprovar</Button>
-                      <Button type="button" variant="destructive" onClick={() => handleReject(pedido.id)}>Rejeitar</Button>
-                    </div>
-                  </div>
-                </article>
-              ))}
+  if (!mounted) {
+    return (
+      <div className="p-6">
+        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-cyan-100 rounded-lg">
+              <Droplets className="w-5 h-5 text-cyan-600" />
             </div>
-          ) : null}
-        </section>
-      ) : null}
+            <h2 className="text-xl font-semibold text-slate-800">Módulo de Água</h2>
+          </div>
+          <p className="text-slate-500 text-sm mt-2">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
 
-      <section className="grid gap-6 xl:grid-cols-2">
-        <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-          <h2 className="text-2xl font-black text-slate-900 dark:text-white">Criar ligacao</h2>
-          <div className="mt-4 grid gap-3">
+  return (
+    <main className="p-4 md:p-6 space-y-6">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-cyan-700 to-cyan-600 rounded-xl p-6 text-white shadow-lg">
+        <div className="flex items-center gap-3 mb-2">
+          <Droplets className="w-6 h-6" />
+          <p className="text-xs font-semibold uppercase tracking-wider text-cyan-200">Módulo de Água</p>
+        </div>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+          Gestão de água
+        </h1>
+        <p className="mt-2 text-sm text-cyan-100 max-w-2xl">
+          {adminMode 
+            ? "Pedidos, ligações, leituras e faturação" 
+            : "Operação de água, leitura, corte e faturação"}
+        </p>
+      </div>
+
+      {/* Info da Staff */}
+      {staffMode && !adminMode && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-amber-700 text-sm">
+          Os pedidos pendentes são aprovados apenas pelo administrador. Aqui a equipa trata das operações do serviço e das facturas.
+        </div>
+      )}
+
+      {/* Mg*/}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-red-700 text-sm">
+          {error}
+        </div>
+      )}
+      {success && (
+        <div className="bg-green-50 border border-green-200 rounded-xl p-3 text-green-700 text-sm">
+          {success}
+        </div>
+      )}
+
+      {/* Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs text-slate-400">Pendentes</p>
+            <Activity className="w-4 h-4 text-amber-500" />
+          </div>
+          <p className="text-2xl font-bold text-amber-600">{pendentes.length}</p>
+        </div>
+        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs text-slate-400">Clientes activos</p>
+            <Users className="w-4 h-4 text-green-500" />
+          </div>
+          <p className="text-2xl font-bold text-slate-800">{clientesActivos.length}</p>
+        </div>
+        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs text-slate-400">Ligações</p>
+            <Home className="w-4 h-4 text-cyan-500" />
+          </div>
+          <p className="text-2xl font-bold text-slate-800">{contratos.length}</p>
+        </div>
+        <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs text-slate-400">Faturas</p>
+            <FileText className="w-4 h-4 text-purple-500" />
+          </div>
+          <p className="text-2xl font-bold text-slate-800">{faturas.length}</p>
+        </div>
+      </div>
+
+      {/* Pedidos pendentes (adM) */}
+      {adminMode && pendentes.length > 0 && (
+        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+          <h2 className="text-lg font-semibold text-slate-800 mb-4">Pedidos pendentes</h2>
+          <div className="space-y-3">
+            {pendentes.map((pedido) => (
+              <div key={pedido.id} className="bg-amber-50 rounded-lg p-4 border border-amber-200">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div>
+                    <p className="font-semibold text-slate-800">Casa #{pedido.id} - {pedido.name}</p>
+                    <p className="text-sm text-slate-500">{pedido.email} • {pedido.phone}</p>
+                    <p className="text-xs text-slate-400 mt-1">{pedido.observacoes || "Aguardando aprovação"}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => handleApprove(pedido.id)} className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700">
+                      <CheckCircle className="w-4 h-4 inline mr-1" /> Aprovar
+                    </button>
+                    <button onClick={() => handleReject(pedido.id)} className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700">
+                      <XCircle className="w-4 h-4 inline mr-1" /> Rejeitar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Forms */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* */}
+        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+          <h2 className="text-md font-semibold text-slate-800 mb-4 flex items-center gap-2">
+            <PlusCircle className="w-4 h-4 text-cyan-500" />
+            Criar ligação
+          </h2>
+          <div className="space-y-3">
             <select
               value={ligacaoForm.consumidorId}
               onChange={(event) => setLigacaoForm({ consumidorId: event.target.value })}
-              className="h-11 rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+              className="w-full h-11 rounded-lg border border-slate-200 bg-white px-4 text-sm focus:outline-none focus:border-cyan-500"
             >
-              <option value="">Seleccionar cliente activo</option>
+              <option value="">Selecionar cliente activo</option>
               {clientesActivos.map((cliente) => (
                 <option key={cliente.id} value={cliente.id}>
-                  #{cliente.id} - {cliente.name} - {cliente.referenciaLocal || "Sem local"} - Casa {cliente.houseNR || "sem numero"}
+                  #{cliente.id} - {cliente.name} - Casa {cliente.houseNR || "—"}
                 </option>
               ))}
             </select>
-            <Button type="button" onClick={handleCreateContract}>Criar ligacao activa</Button>
+            <button onClick={handleCreateContract} className="w-full bg-cyan-600 text-white py-2 rounded-lg hover:bg-cyan-700">
+              Criar ligação activa
+            </button>
           </div>
         </div>
 
-        <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-          <h2 className="text-2xl font-black text-slate-900 dark:text-white">Registar leitura</h2>
-          <div className="mt-4 grid gap-3">
+        {/* R.Leitura */}
+        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+          <h2 className="text-md font-semibold text-slate-800 mb-4 flex items-center gap-2">
+            <Activity className="w-4 h-4 text-cyan-500" />
+            Registrar leitura
+          </h2>
+          <div className="space-y-3">
             <select
               value={leituraForm.ligacaoId}
               onChange={(event) => setLeituraForm({ ...leituraForm, ligacaoId: event.target.value })}
-              className="h-11 rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+              className="w-full h-11 rounded-lg border border-slate-200 bg-white px-4 text-sm focus:outline-none focus:border-cyan-500"
             >
-              <option value="">Seleccionar ligacao</option>
+              <option value="">Selecionar ligação</option>
               {contratos
                 .filter((contrato) => contrato.estado === "ATIVA")
-                .map((contrato) => {
-                  const cliente = clientePorId.get(contrato.consumidorId);
-                  return (
-                    <option key={contrato.id} value={contrato.id}>
-                      Ligacao #{contrato.id} - Casa ID #{contrato.consumidorId} - {contrato.consumidorNome} - {cliente?.referenciaLocal || "Sem local"}
-                    </option>
-                  );
-                })}
+                .map((contrato) => (
+                  <option key={contrato.id} value={contrato.id}>
+                    Ligação #{contrato.id} - {contrato.consumidorNome}
+                  </option>
+                ))}
             </select>
             <Input
-              placeholder="Leitura actual"
+              placeholder="Leitura actual (m³)"
               value={leituraForm.leituraActual}
               onChange={(event) => setLeituraForm({ ...leituraForm, leituraActual: event.target.value })}
             />
             <Input
-              placeholder="Preco por m3"
+              placeholder="Preço por m³"
               value={leituraForm.precoM3}
               onChange={(event) => setLeituraForm({ ...leituraForm, precoM3: event.target.value })}
             />
-            <Button type="button" onClick={handleCreateReading}>Registar leitura e emitir fatura</Button>
+            <button onClick={handleCreateReading} className="w-full bg-cyan-600 text-white py-2 rounded-lg hover:bg-cyan-700">
+              Registrar e emitir fatura
+            </button>
           </div>
         </div>
-      </section>
+      </div>
 
-      <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-        <h2 className="text-2xl font-black text-slate-900 dark:text-white">Clientes de agua</h2>
-        <div className="mt-5 overflow-x-auto rounded-[24px] border border-slate-200 dark:border-slate-800">
-          <table className="min-w-full border-collapse">
-            <thead className="bg-slate-50 dark:bg-slate-950">
+      {/* Cliente water */}
+      <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+        <h2 className="text-md font-semibold text-slate-800 mb-4">Clientes de água</h2>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-slate-50">
               <tr>
-                <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.2em] text-slate-400">Casa ID</th>
-                <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.2em] text-slate-400">Proprietario</th>
-                <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.2em] text-slate-400">Local</th>
-                <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.2em] text-slate-400">Estado</th>
-                <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.2em] text-slate-400">Casa</th>
-                <th className="px-4 py-3 text-left text-xs uppercase tracking-[0.2em] text-slate-400">Zona</th>
+                <th className="px-3 py-2 text-left">ID</th>
+                <th className="px-3 py-2 text-left">Proprietário</th>
+                <th className="px-3 py-2 text-left">Local</th>
+                <th className="px-3 py-2 text-left">Estado</th>
+                <th className="px-3 py-2 text-left">Casa</th>
               </tr>
             </thead>
-            <tbody>
-              {clientes.map((cliente) => (
-                <tr key={cliente.id} className="border-t border-slate-200 dark:border-slate-800">
-                  <td className="px-4 py-3 text-sm font-bold text-slate-900 dark:text-white">#{cliente.id}</td>
-                  <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-300">{cliente.name}</td>
-                  <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-300">{cliente.referenciaLocal || "-"}</td>
-                  <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-300">{cliente.estado}</td>
-                  <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-300">{cliente.houseNR || "-"}</td>
-                  <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-300">{cliente.adress || "-"}</td>
+            <tbody className="divide-y divide-slate-100">
+              {clientes.slice(0, 5).map((cliente) => (
+                <tr key={cliente.id} className="hover:bg-slate-50">
+                  <td className="px-3 py-2 font-mono">#{cliente.id}</td>
+                  <td className="px-3 py-2">{cliente.name}</td>
+                  <td className="px-3 py-2">{cliente.referenciaLocal || "-"}</td>
+                  <td className="px-3 py-2">
+                    <span className={`px-2 py-0.5 rounded-full text-xs ${
+                      cliente.estado === "ATIVO" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                    }`}>
+                      {cliente.estado}
+                    </span>
+                  </td>
+                  <td className="px-3 py-2">{cliente.houseNR || "-"}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-      </section>
+      </div>
 
-      <section className="grid gap-6 xl:grid-cols-2">
-        <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-          <h2 className="text-2xl font-black text-slate-900 dark:text-white">Ligacoes activas e cortadas</h2>
-          <div className="mt-5 grid gap-3">
-            {contratos.length === 0 ? <div className="text-sm text-slate-500">Sem ligacoes registadas.</div> : contratos.map((contrato) => {
+      {/* Ligacao */}
+      <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+        <h2 className="text-md font-semibold text-slate-800 mb-4">Ligações activas e cortadas</h2>
+        <div className="space-y-3">
+          {contratos.length === 0 ? (
+            <p className="text-slate-500 text-sm">Sem ligações registadas.</p>
+          ) : (
+            contratos.map((contrato) => {
               const cliente = clientePorId.get(contrato.consumidorId);
               return (
-                <article key={contrato.id} className="rounded-[24px] border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
-                  <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+                <div key={contrato.id} className="bg-slate-50 rounded-lg p-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div>
-                      <div className="text-base font-black text-slate-900 dark:text-white">
-                        Ligacao #{contrato.id} - Casa ID #{contrato.consumidorId}
-                      </div>
-                      <div className="text-sm text-slate-500 dark:text-slate-400">
-                        Proprietario: {contrato.consumidorNome} - Local: {cliente?.referenciaLocal || "Sem local"}
-                      </div>
-                      <div className="text-sm text-slate-500 dark:text-slate-400">
-                        Casa {contrato.houseNR || "-"} - Estado {contrato.estado} - Operador {contrato.funcionarioNome}
-                      </div>
+                      <p className="font-semibold text-slate-800">Ligação #{contrato.id}</p>
+                      <p className="text-sm text-slate-500">{contrato.consumidorNome}</p>
+                      <p className="text-xs text-slate-400">Casa {contrato.houseNR || "-"} • {contrato.estado}</p>
                     </div>
-                    <Button type="button" variant={contrato.estado === "ATIVA" ? "destructive" : "secondary"} onClick={() => handleToggleContract(contrato)}>
-                      {contrato.estado === "ATIVA" ? "Cortar agua" : "Reactivar agua"}
-                    </Button>
+                    <button
+                      onClick={() => handleToggleContract(contrato)}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                        contrato.estado === "ATIVA" 
+                          ? "bg-red-600 text-white hover:bg-red-700" 
+                          : "bg-green-600 text-white hover:bg-green-700"
+                      }`}
+                    >
+                      {contrato.estado === "ATIVA" ? "Cortar água" : "Reactivar água"}
+                    </button>
                   </div>
-                </article>
+                </div>
               );
-            })}
-          </div>
+            })
+          )}
         </div>
+      </div>
 
-        <div className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-          <h2 className="text-2xl font-black text-slate-900 dark:text-white">Enderecos disponiveis</h2>
-          <div className="mt-5 grid gap-3">
-            {enderecos.map((endereco) => (
-              <article key={endereco.id} className="rounded-[24px] border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
-                <div className="text-base font-black text-slate-900 dark:text-white">{endereco.name}</div>
-                <div className="text-sm text-slate-500 dark:text-slate-400">{endereco.bairro}</div>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-          <h2 className="text-2xl font-black text-slate-900 dark:text-white">Faturas emitidas</h2>
+      {/* Faturas */}
+      <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+          <h2 className="text-md font-semibold text-slate-800">Faturas emitidas</h2>
           <select
             value={paymentMethod}
             onChange={(event) => setPaymentMethod(event.target.value as PaymentMethod)}
-            className="h-11 rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
+            className="h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm"
           >
-            <option value="DINHEIRO_FISICO">Dinheiro fisico</option>
-            <option value="CARTEIRA_MOVEL">Carteira movel</option>
-            <option value="CARTAO">Cartao</option>
+            <option value="DINHEIRO_FISICO">Dinheiro físico</option>
+            <option value="CARTEIRA_MOVEL">Carteira móvel</option>
+            <option value="CARTAO">Cartão</option>
           </select>
         </div>
 
-        <div className="mt-5 grid gap-4">
-          {faturas.length === 0 ? <div className="text-sm text-slate-500">Sem faturas emitidas.</div> : faturas.map((fatura) => {
-            const cliente = clientePorId.get(fatura.consumidorId);
-            return (
-              <article key={fatura.id} className="rounded-[24px] border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
-                <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+        <div className="space-y-3">
+          {faturas.length === 0 ? (
+            <p className="text-slate-500 text-sm">Sem faturas emitidas.</p>
+          ) : (
+            faturas.map((fatura) => (
+              <div key={fatura.id} className="bg-slate-50 rounded-lg p-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div>
-                    <div className="text-lg font-black text-slate-900 dark:text-white">
-                      Factura #{fatura.id} - Casa ID #{fatura.consumidorId}
-                    </div>
-                    <div className="text-sm text-slate-500 dark:text-slate-400">
-                      Proprietario: {fatura.consumidorNome} - Local: {cliente?.referenciaLocal || "Sem local"}
-                    </div>
-                    <div className="text-sm text-slate-500 dark:text-slate-400">
-                      Casa {fatura.houseNR || "-"} - {formatDateTime(fatura.data)} - {formatMoney(fatura.valorTotal)}
-                    </div>
-                    <div className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                      Estado: {fatura.estadoPagamento} - Pagamento: {fatura.formaPagamento}
-                    </div>
+                    <p className="font-semibold text-slate-800">Factura #{fatura.id}</p>
+                    <p className="text-sm text-slate-500">{fatura.consumidorNome}</p>
+                    <p className="text-sm font-bold text-cyan-600">{formatMoney(fatura.valorTotal)}</p>
+                    <p className="text-xs text-slate-400">{formatDateTime(fatura.data)} • {fatura.estadoPagamento}</p>
                   </div>
-                  <div className="flex gap-3">
-                    <Button type="button" variant="secondary" onClick={() => printWaterBillDocument(fatura)}>
-                      Imprimir PDF
-                    </Button>
-                    {fatura.estadoPagamento !== "PAGO" ? (
-                      <Button type="button" onClick={() => handlePay(fatura.id)}>
-                        Marcar como pago
-                      </Button>
-                    ) : null}
+                  <div className="flex gap-2">
+                    <button onClick={() => printWaterBillDocument(fatura)} className="px-3 py-2 border border-slate-300 rounded-lg text-sm hover:bg-slate-100">
+                      <Printer className="w-4 h-4 inline mr-1" /> PDF
+                    </button>
+                    {fatura.estadoPagamento !== "PAGO" && (
+                      <button onClick={() => handlePay(fatura.id)} className="px-3 py-2 bg-green-600 text-white rounded-lg text-sm hover:bg-green-700">
+                        <CreditCard className="w-4 h-4 inline mr-1" /> Pagar
+                      </button>
+                    )}
                   </div>
                 </div>
-              </article>
-            );
-          })}
+              </div>
+            ))
+          )}
         </div>
-      </section>
-
-      <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-        <h2 className="text-2xl font-black text-slate-900 dark:text-white">Leituras registadas</h2>
-        <div className="mt-5 grid gap-3">
-          {leituras.length === 0 ? <div className="text-sm text-slate-500">Sem leituras ainda.</div> : leituras.map((leitura) => {
-            const contrato = contratos.find((item) => item.id === leitura.ligacaoId);
-            return (
-              <article key={leitura.id} className="rounded-[24px] border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
-                <div className="text-base font-black text-slate-900 dark:text-white">{formatDateTime(leitura.data)}</div>
-                <div className="text-sm text-slate-500 dark:text-slate-400">
-                  Ligacao #{leitura.ligacaoId} - Casa ID #{contrato?.consumidorId || "-"} - {contrato?.consumidorNome || "Consumidor"}
-                </div>
-                <div className="text-sm text-slate-500 dark:text-slate-400">
-                  Actual: {leitura.leituraActual} - Consumo: {leitura.consumoM3} m3 - Valor: {formatMoney(leitura.valorPagar)}
-                </div>
-              </article>
-            );
-          })}
-        </div>
-      </section>
+      </div>
     </main>
   );
 }

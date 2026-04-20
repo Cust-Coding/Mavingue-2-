@@ -36,6 +36,7 @@ function firstName(full?: string) {
 }
 
 export default function Topbar() {
+  const [mounted, setMounted] = useState(false);
   const role = getRole();
   const normalizedRole = normalizeRole(role);
   const quickLinks = useMemo(() => getQuickLinks(role, 5), [role]);
@@ -44,28 +45,40 @@ export default function Topbar() {
   const showCart = !role || normalizedRole === "CLIENTE";
   const { locale, setLocale } = useI18n();
 
-  const [darkMode, setDarkMode] = useState(() => {
-    if (typeof window === "undefined") return false;
-    const savedTheme = localStorage.getItem("theme");
-    return savedTheme === "dark" || document.documentElement.classList.contains("dark");
-  });
+  const [darkMode, setDarkMode] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
   const [langOpen, setLangOpen] = useState(false);
-  const [meName, setMeName] = useState(() => {
-    if (typeof window === "undefined") return "";
-    return localStorage.getItem("me_name") ?? "";
-  });
+  const [meName, setMeName] = useState("");
 
   const accountRef = useRef<HTMLDivElement | null>(null);
   const langRef = useRef<HTMLDivElement | null>(null);
 
+  // Marcar componente como montado
   useEffect(() => {
-    document.documentElement.classList.toggle("dark", darkMode);
+    setMounted(true);
+    
+    // Ler tema do localStorage apenas no cliente
+    const savedTheme = localStorage.getItem("theme");
+    const isDark = savedTheme === "dark" || document.documentElement.classList.contains("dark");
+    setDarkMode(isDark);
+    document.documentElement.classList.toggle("dark", isDark);
+    
+    // Ler nome do localStorage apenas no cliente
+    const savedName = localStorage.getItem("me_name");
+    if (savedName) {
+      setMeName(savedName);
+    }
   }, []);
 
+  // Efeito separado para o tema
   useEffect(() => {
-    if (!role) return;
+    if (!mounted) return;
+    document.documentElement.classList.toggle("dark", darkMode);
+  }, [darkMode, mounted]);
+
+  useEffect(() => {
+    if (!mounted || !role) return;
 
     (async () => {
       try {
@@ -86,9 +99,11 @@ export default function Topbar() {
         console.error(error);
       }
     })();
-  }, [role]);
+  }, [role, mounted]);
 
   useEffect(() => {
+    if (!mounted) return;
+    
     function handleOutsideClick(event: MouseEvent) {
       if (accountRef.current && !accountRef.current.contains(event.target as Node)) {
         setAccountOpen(false);
@@ -101,16 +116,38 @@ export default function Topbar() {
 
     document.addEventListener("mousedown", handleOutsideClick);
     return () => document.removeEventListener("mousedown", handleOutsideClick);
-  }, []);
+  }, [mounted]);
 
   const displayName = firstName(meName) || (normalizedRole === "CLIENTE" ? "Cliente" : normalizedRole === "ADMIN" ? "Admin" : "Staff");
 
   const toggleDarkMode = () => {
     const nextMode = !darkMode;
     setDarkMode(nextMode);
-    document.documentElement.classList.toggle("dark", nextMode);
     localStorage.setItem("theme", nextMode ? "dark" : "light");
   };
+
+  // Placeholder durante hidratação
+  if (!mounted) {
+    return (
+      <header className="fixed inset-x-0 top-0 z-50 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
+        <div className="mx-auto flex max-w-7xl items-center px-4 py-3">
+          <div className="flex min-w-0 flex-1 items-center gap-3">
+            <div className="h-11 w-11 rounded-2xl bg-slate-200 animate-pulse"></div>
+            <div className="hidden sm:block">
+              <div className="h-4 w-20 bg-slate-200 rounded animate-pulse"></div>
+              <div className="h-3 w-16 bg-slate-100 rounded mt-1 animate-pulse"></div>
+            </div>
+          </div>
+          <div className="ml-3 flex items-center gap-2">
+            <div className="h-11 w-11 rounded-2xl bg-slate-200 animate-pulse"></div>
+            <div className="h-11 w-11 rounded-2xl bg-slate-200 animate-pulse"></div>
+            <div className="h-11 w-11 rounded-2xl bg-slate-200 animate-pulse"></div>
+            <div className="h-11 w-28 rounded-2xl bg-slate-200 animate-pulse hidden sm:block"></div>
+          </div>
+        </div>
+      </header>
+    );
+  }
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
