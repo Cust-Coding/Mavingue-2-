@@ -7,6 +7,10 @@ spring:
     username: ${SPRING_DATASOURCE_USERNAME}
     password:  ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
 
   jpa:
     hibernate:
@@ -30,3 +34,7 @@ resend:
 
 email:
   from: ${EMAIL_FROM}
+
+
+cloudinary:
+  url: ${CLOUDINARY_URL}
