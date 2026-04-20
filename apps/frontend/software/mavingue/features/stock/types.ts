@@ -1,15 +1,12 @@
 export type StockItem = {
-  id: number;
+  produtoId: number;
+  produtoNome: string;
   quantidade: number;
-  stockMinimo: number;
-  produto?: any;
-  ferragem?: any;
 };
 
 export type StockAdjust = {
   produtoId: number;
   quantidade: number;
-  tipo: "ENTRADA" | "SAIDA" | "AJUSTE";
+  tipo: "ENTRADA" | "SAIDA";
   motivo?: string;
-  ferragemId?: number;
 };

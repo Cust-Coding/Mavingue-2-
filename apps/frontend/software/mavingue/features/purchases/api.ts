@@ -1,9 +1,9 @@
 import { apiGet, apiPost } from "@/lib/http/client";
 import { endpoints } from "@/lib/http/endpoints";
-import type { FacturaCompraCreate } from "./types";
+import type { FacturaCompra, FacturaCompraCreate } from "./types";
 
 export const purchasesApi = {
-  list: () => apiGet<any[]>(endpoints.compras),
-  get: (id: number) => apiGet<any>(`${endpoints.compras}/${id}`),
-  create: (body: FacturaCompraCreate) => apiPost<any>(endpoints.compras, body),
+  list: () => apiGet<FacturaCompra[]>(endpoints.compras),
+  get: (id: number) => apiGet<FacturaCompra>(`${endpoints.compras}/${id}`),
+  create: (body: FacturaCompraCreate) => apiPost<FacturaCompra>(endpoints.compras, body),
 };

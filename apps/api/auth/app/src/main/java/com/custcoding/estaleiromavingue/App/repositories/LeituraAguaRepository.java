@@ -8,5 +8,6 @@ import java.util.Optional;
 
 public interface LeituraAguaRepository extends JpaRepository<LeituraAgua, Long> {
     List<LeituraAgua> findByLigacao_IdOrderByDataDesc(Long ligacaoId);
+    List<LeituraAgua> findByLigacao_Consumidor_IdOrderByDataDesc(Long consumidorId);
     Optional<LeituraAgua> findTopByLigacao_IdOrderByDataDesc(Long ligacaoId);
 }

@@ -1,34 +1,46 @@
 export interface WaterCustomer {
-  id: string;
-  nome: string;
-  contacto: string;
-  ferragemId: string;
+  id: number;
+  name: string;
+  phone: string;
+  email: string;
+  houseNR: string;
+  adress: string | null;
+  created?: string;
 }
 
 export interface WaterContract {
-  id: string;
-  customerId: string;
-  meterNumber: string;
-  active: boolean;
+  id: number;
+  data: string;
+  estado: "ATIVA" | "INATIVA" | "SUSPENSA" | string;
+  consumidorId: number;
+  consumidorNome: string;
+  funcionarioId: number;
+  funcionarioNome: string;
 }
 
 export interface WaterReading {
-  id: string;
-  contractId: string;
-  readingDate: string;
-  value: number;
+  id: number;
+  data: string;
+  leituraAnterior: number;
+  leituraActual: number;
+  consumoM3: number;
+  valorPagar: number;
+  ligacaoId: number;
 }
 
 export interface WaterBill {
-  id: string;
-  contractId: string;
-  amount: number;
-  dueDate: string;
-  status: "PENDING" | "PAID";
+  id: number;
+  data: string;
+  taxaFixa: number;
+  valor: number;
+  valorTotal: number;
+  estadoPagamento: "PENDENTE" | "PAGO" | "ATRASADO" | string;
+  formaPagamento: "CARTEIRA_MOVEL" | "CARTAO" | "DINHEIRO_FISICO" | string;
+  consumidorId: number;
+  consumidorNome: string;
+  leituraId: number;
 }
 
-export interface WaterPaymentCreate {
-  billId: string;
-  amount: number;
-  method: "MPESA" | "EMOLA" | "CASH" | "BANK";
+export interface WaterBillPaymentCreate {
+  formaPagamento: "CARTEIRA_MOVEL" | "CARTAO" | "DINHEIRO_FISICO";
 }

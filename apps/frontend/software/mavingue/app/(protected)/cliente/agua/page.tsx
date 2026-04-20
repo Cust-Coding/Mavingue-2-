@@ -1,16 +1,30 @@
 "use client";
+
 import { useEffect, useState } from "react";
-import { Loading, ErrorBox, Empty } from "@/components/ui/State";
-import { listWaterContracts, listWaterReadings, listWaterBills } from "@/features/water/api";
-import type { WaterContract, WaterReading, WaterBill } from "@/features/water/types";
+import { Button } from "@/components/ui/Button";
+import { Empty, ErrorBox, Loading } from "@/components/ui/State";
+import { listClientWaterBills, listClientWaterContracts, listClientWaterReadings, payClientWaterBill } from "@/features/water/api";
+import type { WaterBill, WaterContract, WaterReading } from "@/features/water/types";
 
 type Tab = "contratos" | "leituras" | "faturas";
+
+const paymentOptions = [
+  { value: "CARTEIRA_MOVEL", label: "Carteira Movel" },
+  { value: "CARTAO", label: "Cartao" },
+  { value: "DINHEIRO_FISICO", label: "Dinheiro Fisico" },
+] as const;
+
+function money(value: number) {
+  return `${Number(value || 0).toFixed(2)} MT`;
+}
 
 export default function ClienteAguaPage() {
   const [tab, setTab] = useState<Tab>("contratos");
   const [loading, setLoading] = useState(false);
+  const [payingId, setPayingId] = useState<number | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<(typeof paymentOptions)[number]["value"]>("CARTEIRA_MOVEL");
   const [err, setErr] = useState("");
-  
+
   const [contratos, setContratos] = useState<WaterContract[]>([]);
   const [leituras, setLeituras] = useState<WaterReading[]>([]);
   const [faturas, setFaturas] = useState<WaterBill[]>([]);
@@ -19,16 +33,16 @@ export default function ClienteAguaPage() {
     setErr("");
     setLoading(true);
     try {
-      const [ct, l, f] = await Promise.all([
-        listWaterContracts(),
-        listWaterReadings(),
-        listWaterBills(),
+      const [contractData, readingData, billData] = await Promise.all([
+        listClientWaterContracts(),
+        listClientWaterReadings(),
+        listClientWaterBills(),
       ]);
-      setContratos(ct);
-      setLeituras(l);
-      setFaturas(f);
-    } catch (e: any) {
-      setErr(e?.message ?? "Erro ao carregar");
+      setContratos(contractData);
+      setLeituras(readingData);
+      setFaturas(billData);
+    } catch (error: any) {
+      setErr(error?.message ?? "Erro ao carregar");
     } finally {
       setLoading(false);
     }
@@ -38,32 +52,44 @@ export default function ClienteAguaPage() {
     load();
   }, []);
 
-  const tabs: { key: Tab; label: string }[] = [
-    { key: "contratos", label: "Meus Contratos" },
-    { key: "leituras", label: "Minhas Leituras" },
-    { key: "faturas", label: "Minhas Faturas" },
-  ];
+  async function handlePay(id: number) {
+    setPayingId(id);
+    setErr("");
+
+    try {
+      const updated = await payClientWaterBill(id, { formaPagamento: paymentMethod });
+      setFaturas((current) => current.map((bill) => (bill.id === updated.id ? updated : bill)));
+    } catch (error: any) {
+      setErr(error?.message ?? "Erro ao pagar a factura");
+    } finally {
+      setPayingId(null);
+    }
+  }
 
   return (
     <div>
-      <h2>Água</h2>
+      <h2>Agua</h2>
       {err && <ErrorBox text={err} />}
 
       <div style={{ display: "flex", gap: 8, marginBottom: 16, borderBottom: "1px solid #eee", paddingBottom: 8 }}>
-        {tabs.map((t) => (
+        {[
+          { key: "contratos", label: "Meus Contratos" },
+          { key: "leituras", label: "Minhas Leituras" },
+          { key: "faturas", label: "Minhas Faturas" },
+        ].map((item) => (
           <button
-            key={t.key}
-            onClick={() => setTab(t.key)}
+            key={item.key}
+            onClick={() => setTab(item.key as Tab)}
             style={{
               padding: "8px 16px",
               border: "none",
-              background: tab === t.key ? "#EF6A44" : "transparent",
-              color: tab === t.key ? "white" : "#333",
+              background: tab === item.key ? "#EF6A44" : "transparent",
+              color: tab === item.key ? "white" : "#333",
               borderRadius: 6,
               cursor: "pointer",
             }}
           >
-            {t.label}
+            {item.label}
           </button>
         ))}
       </div>
@@ -76,19 +102,19 @@ export default function ClienteAguaPage() {
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr>
-                  <th style={{ textAlign: "left", padding: 10, borderBottom: "1px solid #eee" }}>Nº Contador</th>
+                  <th style={{ textAlign: "left", padding: 10, borderBottom: "1px solid #eee" }}>ID</th>
                   <th style={{ textAlign: "left", padding: 10, borderBottom: "1px solid #eee" }}>Estado</th>
+                  <th style={{ textAlign: "left", padding: 10, borderBottom: "1px solid #eee" }}>Funcionario</th>
+                  <th style={{ textAlign: "left", padding: 10, borderBottom: "1px solid #eee" }}>Data</th>
                 </tr>
               </thead>
               <tbody>
-                {contratos.map((c) => (
-                  <tr key={c.id}>
-                    <td style={{ padding: 10, borderBottom: "1px solid #f3f3f3" }}>{c.meterNumber}</td>
-                    <td style={{ padding: 10, borderBottom: "1px solid #f3f3f3" }}>
-                      <span style={{ background: c.active ? "#dcfce7" : "#fee2e2", color: c.active ? "#16a34a" : "#dc2626", padding: "2px 8px", borderRadius: 4, fontSize: 12 }}>
-                        {c.active ? "Ativo" : "Inativo"}
-                      </span>
-                    </td>
+                {contratos.map((contrato) => (
+                  <tr key={contrato.id}>
+                    <td style={{ padding: 10, borderBottom: "1px solid #f3f3f3" }}>{contrato.id}</td>
+                    <td style={{ padding: 10, borderBottom: "1px solid #f3f3f3" }}>{contrato.estado}</td>
+                    <td style={{ padding: 10, borderBottom: "1px solid #f3f3f3" }}>{contrato.funcionarioNome}</td>
+                    <td style={{ padding: 10, borderBottom: "1px solid #f3f3f3" }}>{new Date(contrato.data).toLocaleString()}</td>
                   </tr>
                 ))}
               </tbody>
@@ -104,14 +130,18 @@ export default function ClienteAguaPage() {
               <thead>
                 <tr>
                   <th style={{ textAlign: "left", padding: 10, borderBottom: "1px solid #eee" }}>Data</th>
+                  <th style={{ textAlign: "left", padding: 10, borderBottom: "1px solid #eee" }}>Leitura Actual</th>
+                  <th style={{ textAlign: "left", padding: 10, borderBottom: "1px solid #eee" }}>Consumo</th>
                   <th style={{ textAlign: "left", padding: 10, borderBottom: "1px solid #eee" }}>Valor</th>
                 </tr>
               </thead>
               <tbody>
-                {leituras.map((l) => (
-                  <tr key={l.id}>
-                    <td style={{ padding: 10, borderBottom: "1px solid #f3f3f3" }}>{new Date(l.readingDate).toLocaleDateString()}</td>
-                    <td style={{ padding: 10, borderBottom: "1px solid #f3f3f3" }}>{l.value}</td>
+                {leituras.map((leitura) => (
+                  <tr key={leitura.id}>
+                    <td style={{ padding: 10, borderBottom: "1px solid #f3f3f3" }}>{new Date(leitura.data).toLocaleString()}</td>
+                    <td style={{ padding: 10, borderBottom: "1px solid #f3f3f3" }}>{leitura.leituraActual}</td>
+                    <td style={{ padding: 10, borderBottom: "1px solid #f3f3f3" }}>{leitura.consumoM3} m3</td>
+                    <td style={{ padding: 10, borderBottom: "1px solid #f3f3f3" }}>{money(leitura.valorPagar)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -122,29 +152,54 @@ export default function ClienteAguaPage() {
 
       {!loading && tab === "faturas" && (
         faturas.length === 0 ? <Empty text="Sem faturas." /> : (
-          <div style={{ border: "1px solid #ddd", borderRadius: 10, background: "white", overflow: "hidden" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr>
-                  <th style={{ textAlign: "left", padding: 10, borderBottom: "1px solid #eee" }}>Valor</th>
-                  <th style={{ textAlign: "left", padding: 10, borderBottom: "1px solid #eee" }}>Vencimento</th>
-                  <th style={{ textAlign: "left", padding: 10, borderBottom: "1px solid #eee" }}>Estado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {faturas.map((f) => (
-                  <tr key={f.id}>
-                    <td style={{ padding: 10, borderBottom: "1px solid #f3f3f3" }}>{f.amount} MT</td>
-                    <td style={{ padding: 10, borderBottom: "1px solid #f3f3f3" }}>{new Date(f.dueDate).toLocaleDateString()}</td>
-                    <td style={{ padding: 10, borderBottom: "1px solid #f3f3f3" }}>
-                      <span style={{ background: f.status === "PAID" ? "#dcfce7" : "#fef3c7", color: f.status === "PAID" ? "#16a34a" : "#d97706", padding: "2px 8px", borderRadius: 4, fontSize: 12 }}>
-                        {f.status === "PAID" ? "Pago" : "Pendente"}
-                      </span>
-                    </td>
-                  </tr>
+          <div style={{ display: "grid", gap: 12 }}>
+            <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+              <span style={{ color: "#555" }}>Metodo de pagamento:</span>
+              <select
+                value={paymentMethod}
+                onChange={(event) => setPaymentMethod(event.target.value as (typeof paymentOptions)[number]["value"])}
+                style={{ padding: 10, borderRadius: 8, border: "1px solid #ddd", minWidth: 220 }}
+              >
+                {paymentOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
                 ))}
-              </tbody>
-            </table>
+              </select>
+            </div>
+
+            <div style={{ border: "1px solid #ddd", borderRadius: 10, background: "white", overflow: "hidden" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr>
+                    <th style={{ textAlign: "left", padding: 10, borderBottom: "1px solid #eee" }}>Factura</th>
+                    <th style={{ textAlign: "left", padding: 10, borderBottom: "1px solid #eee" }}>Data</th>
+                    <th style={{ textAlign: "left", padding: 10, borderBottom: "1px solid #eee" }}>Valor</th>
+                    <th style={{ textAlign: "left", padding: 10, borderBottom: "1px solid #eee" }}>Estado</th>
+                    <th style={{ textAlign: "left", padding: 10, borderBottom: "1px solid #eee" }}>Pagamento</th>
+                    <th style={{ padding: 10, borderBottom: "1px solid #eee" }}></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {faturas.map((fatura) => (
+                    <tr key={fatura.id}>
+                      <td style={{ padding: 10, borderBottom: "1px solid #f3f3f3" }}>#{fatura.id}</td>
+                      <td style={{ padding: 10, borderBottom: "1px solid #f3f3f3" }}>{new Date(fatura.data).toLocaleString()}</td>
+                      <td style={{ padding: 10, borderBottom: "1px solid #f3f3f3" }}>{money(fatura.valorTotal)}</td>
+                      <td style={{ padding: 10, borderBottom: "1px solid #f3f3f3" }}>{fatura.estadoPagamento}</td>
+                      <td style={{ padding: 10, borderBottom: "1px solid #f3f3f3" }}>{fatura.formaPagamento}</td>
+                      <td style={{ padding: 10, borderBottom: "1px solid #f3f3f3", textAlign: "right" }}>
+                        {fatura.estadoPagamento !== "PAGO" && (
+                          <Button onClick={() => handlePay(fatura.id)} disabled={payingId === fatura.id}>
+                            {payingId === fatura.id ? "A pagar..." : "Pagar"}
+                          </Button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )
       )}

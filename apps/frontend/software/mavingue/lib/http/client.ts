@@ -20,35 +20,52 @@ async function toErr(res: Response): Promise<Error> {
 }
 
 export async function apiGet<T>(path: string): Promise<T> {
-  const res = await fetch(proxy(path), { method: "GET", credentials: "include" });
-  if (!res.ok) throw await toErr(res);
-  return res.json();
+  return apiRequest<T>(path, { method: "GET" });
 }
 
-export async function apiPost<T>(path: string, body?: any): Promise<T> {
+async function apiRequest<T>(path: string, init: RequestInit): Promise<T> {
   const res = await fetch(proxy(path), {
+    credentials: "include",
+    ...init,
+  });
+  if (!res.ok) throw await toErr(res);
+
+  if (res.status === 204) {
+    return null as T;
+  }
+
+  const text = await res.text();
+  if (!text) {
+    return null as T;
+  }
+
+  return JSON.parse(text) as T;
+}
+
+export async function apiPost<T>(path: string, body?: unknown): Promise<T> {
+  return apiRequest<T>(path, {
     method: "POST",
-    credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
-  if (!res.ok) throw await toErr(res);
-  return res.status === 204 ? (null as any) : res.json();
 }
 
-export async function apiPut<T>(path: string, body?: any): Promise<T> {
-  const res = await fetch(proxy(path), {
+export async function apiPut<T>(path: string, body?: unknown): Promise<T> {
+  return apiRequest<T>(path, {
     method: "PUT",
-    credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
-  if (!res.ok) throw await toErr(res);
-  return res.status === 204 ? (null as any) : res.json();
+}
+
+export async function apiPatch<T>(path: string, body?: unknown): Promise<T> {
+  return apiRequest<T>(path, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: body === undefined ? undefined : JSON.stringify(body),
+  });
 }
 
 export async function apiDelete<T>(path: string): Promise<T> {
-  const res = await fetch(proxy(path), { method: "DELETE", credentials: "include" });
-  if (!res.ok) throw await toErr(res);
-  return res.status === 204 ? (null as any) : res.json();
+  return apiRequest<T>(path, { method: "DELETE" });
 }

@@ -1,11 +1,21 @@
 "use client";
+
 import { useState } from "react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { salesApi } from "@/features/sales/api";
+import type { FormaPagamento } from "@/features/sales/types";
+
+const paymentOptions: FormaPagamento[] = ["CARTEIRA_MOVEL", "CARTAO", "DINHEIRO_FISICO"];
 
 export default function NovaVenda() {
-  const [form, setForm] = useState({ produtoId: "", clienteId: "", funcionarioId: "", quantidade: "", formaPagamento: "DINHEIRO" });
+  const [form, setForm] = useState({
+    produtoId: "",
+    clienteId: "",
+    funcionarioId: "",
+    quantidade: "",
+    formaPagamento: "DINHEIRO_FISICO" as FormaPagamento,
+  });
   const [err, setErr] = useState("");
   const [ok, setOk] = useState("");
 
@@ -23,9 +33,9 @@ export default function NovaVenda() {
         formaPagamento: form.formaPagamento,
       });
       setOk("Venda registada.");
-      setForm({ produtoId: "", clienteId: "", funcionarioId: "", quantidade: "", formaPagamento: "DINHEIRO" });
-    } catch (e: any) {
-      setErr(e?.message ?? "Erro");
+      setForm({ produtoId: "", clienteId: "", funcionarioId: "", quantidade: "", formaPagamento: "DINHEIRO_FISICO" });
+    } catch (error: any) {
+      setErr(error?.message ?? "Erro");
     }
   }
 
@@ -40,7 +50,13 @@ export default function NovaVenda() {
         <Input placeholder="clienteId" value={form.clienteId} onChange={(e) => setForm({ ...form, clienteId: e.target.value })} />
         <Input placeholder="funcionarioId" value={form.funcionarioId} onChange={(e) => setForm({ ...form, funcionarioId: e.target.value })} />
         <Input placeholder="quantidade" value={form.quantidade} onChange={(e) => setForm({ ...form, quantidade: e.target.value })} />
-        <Input placeholder="formaPagamento" value={form.formaPagamento} onChange={(e) => setForm({ ...form, formaPagamento: e.target.value })} />
+        <select value={form.formaPagamento} onChange={(e) => setForm({ ...form, formaPagamento: e.target.value as FormaPagamento })} style={{ padding: 10, borderRadius: 8, border: "1px solid #ddd" }}>
+          {paymentOptions.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
         <Button type="submit">Registar</Button>
       </form>
     </div>

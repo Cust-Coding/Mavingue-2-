@@ -1,3 +1,1 @@
-export default function AguaLeituras() {
-  return <div>Água leituras (placeholder)</div>;
-}
+export { default } from "@/app/(protected)/admin/agua/page";

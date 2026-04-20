@@ -65,6 +65,7 @@ public class SecurityConfig {
                         // --------------------
                         // USERS (ADMIN)
                         // --------------------
+                        .requestMatchers(HttpMethod.POST, "/api/users", "/api/users/").hasAnyRole("ADMIN", "FUNCIONARIO")
                         .requestMatchers("/api/users/**").hasRole("ADMIN")
 
                         // --------------------
@@ -91,6 +92,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/customer-water/**").hasAnyRole("ADMIN", "FUNCIONARIO")
                         .requestMatchers("/api/ligacoes-agua/**").hasAnyRole("ADMIN", "FUNCIONARIO")
                         .requestMatchers("/api/leituras-agua/**").hasAnyRole("ADMIN", "FUNCIONARIO")
+                        .requestMatchers("/api/facturas-agua/**").hasAnyRole("ADMIN", "FUNCIONARIO")
+
+                        // Área do cliente autenticado
+                        .requestMatchers("/api/client-area/**").hasRole("CLIENTE")
 
                         // Endereços: admin/staff
                         .requestMatchers("/api/address/**").hasAnyRole("ADMIN", "FUNCIONARIO")

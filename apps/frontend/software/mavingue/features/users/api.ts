@@ -1,38 +1,23 @@
-import type { UserCreateFullRequest, UserResponse } from "./types";
-
-async function parseError(res: Response) {
-  const txt = await res.text().catch(() => "");
-  try {
-    const j = JSON.parse(txt);
-    return j?.message ?? j;
-  } catch {
-    return txt || `Erro HTTP ${res.status}`;
-  }
-}
+import { apiDelete, apiGet, apiPost, apiPut } from "@/lib/http/client";
+import { endpoints } from "@/lib/http/endpoints";
+import type { UserCreateFullRequest, UserResponse, UserUpdateRequest } from "./types";
 
 export async function listUsers(): Promise<UserResponse[]> {
-  const res = await fetch("/api/proxy/api/users", {
-    method: "GET",
-    credentials: "include",
-  });
-  if (!res.ok) throw new Error(String(await parseError(res)));
-  return res.json();
+  return apiGet<UserResponse[]>(endpoints.users);
+}
+
+export async function getUser(id: number): Promise<UserResponse> {
+  return apiGet<UserResponse>(`${endpoints.users}/${id}`);
 }
 
 export async function createUser(payload: UserCreateFullRequest): Promise<UserResponse> {
-  const res = await fetch("/api/proxy/api/users", {
-    method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
+  return apiPost<UserResponse>(endpoints.users, payload);
+}
 
-  if (!res.ok) {
-    const err = await parseError(res);
-    // Se backend devolve mapa {campo: "erro"}
-    if (err && typeof err === "object" && !Array.isArray(err)) throw err;
-    throw new Error(String(err));
-  }
+export async function updateUser(id: number, payload: UserUpdateRequest): Promise<UserResponse> {
+  return apiPut<UserResponse>(`${endpoints.users}/${id}`, payload);
+}
 
-  return res.json();
+export async function deleteUser(id: number): Promise<void> {
+  return apiDelete<void>(`${endpoints.users}/${id}`);
 }

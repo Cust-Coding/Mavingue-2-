@@ -1,14 +1,18 @@
-import { apiGet, apiPost } from "@/lib/http/client";
+import { apiGet, apiPatch } from "@/lib/http/client";
 import { endpoints } from "@/lib/http/endpoints";
-import type { WaterBill, WaterContract, WaterCustomer, WaterPaymentCreate, WaterReading } from "./types";
+import type { WaterBill, WaterBillPaymentCreate, WaterContract, WaterCustomer, WaterReading } from "./types";
 
-const base = "/api/proxy";
+export const listWaterCustomers = () => apiGet<WaterCustomer[]>(endpoints.customerWater);
+export const listWaterContracts = () => apiGet<WaterContract[]>(endpoints.ligacoesAgua);
+export const listWaterReadings = (ligacaoId?: number) =>
+  apiGet<WaterReading[]>(ligacaoId ? endpoints.leiturasAguaByLigacao(ligacaoId) : endpoints.leiturasAgua);
+export const listWaterBills = () => apiGet<WaterBill[]>(endpoints.facturasAgua);
+export const getWaterBill = (id: number) => apiGet<WaterBill>(endpoints.facturaAguaById(id));
+export const payWaterBill = (id: number, payload: WaterBillPaymentCreate) =>
+  apiPatch<WaterBill>(endpoints.facturaAguaPagamento(id), payload);
 
-export const listWaterCustomers = () => apiGet<WaterCustomer[]>(`${base}${endpoints.water.customers}`);
-export const listWaterContracts = () => apiGet<WaterContract[]>(`${base}${endpoints.water.contracts}`);
-export const listWaterReadings = () => apiGet<WaterReading[]>(`${base}${endpoints.water.readings}`);
-export const listWaterBills = () => apiGet<WaterBill[]>(`${base}${endpoints.water.bills}`);
-export const getWaterBill = (id: string) => apiGet<WaterBill>(`${base}${endpoints.water.billById(id)}`);
-
-export const createWaterPayment = (payload: WaterPaymentCreate) =>
-  apiPost<{ ok: true }>(`${base}${endpoints.water.payments}`, payload);
+export const listClientWaterContracts = () => apiGet<WaterContract[]>(endpoints.clientArea.aguaLigacoes);
+export const listClientWaterReadings = () => apiGet<WaterReading[]>(endpoints.clientArea.aguaLeituras);
+export const listClientWaterBills = () => apiGet<WaterBill[]>(endpoints.clientArea.aguaFacturas);
+export const payClientWaterBill = (id: number, payload: WaterBillPaymentCreate) =>
+  apiPatch<WaterBill>(endpoints.clientArea.aguaFacturaPagamento(id), payload);

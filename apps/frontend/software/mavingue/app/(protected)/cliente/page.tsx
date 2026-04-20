@@ -1,235 +1,231 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useRef } from 'react';
-import gsap from 'gsap';
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+import { Button } from "@/components/ui/Button";
+import { Empty, ErrorBox, Loading } from "@/components/ui/State";
+import { clientApi } from "@/features/client/api";
+import type { ClientOrder, ClientProfile } from "@/features/client/types";
+import { listClientWaterBills, listClientWaterContracts, listClientWaterReadings, payClientWaterBill } from "@/features/water/api";
+import type { WaterBill, WaterContract, WaterReading } from "@/features/water/types";
+
+const paymentOptions = [
+  { value: "CARTEIRA_MOVEL", label: "Carteira Movel" },
+  { value: "CARTAO", label: "Cartao" },
+  { value: "DINHEIRO_FISICO", label: "Dinheiro Fisico" },
+] as const;
+
+function money(value: number) {
+  return `${Number(value || 0).toFixed(2)} MT`;
+}
 
 export default function ClienteHome() {
-  const [modalAberto, setModalAberto] = useState(false);
-  const [metodoSelecionado, setMetodoSelecionado] = useState<string | null>(null);
-  const [aguardandoConfirmacao, setAguardandoConfirmacao] = useState(false);
+  const [profile, setProfile] = useState<ClientProfile | null>(null);
+  const [orders, setOrders] = useState<ClientOrder[]>([]);
+  const [contracts, setContracts] = useState<WaterContract[]>([]);
+  const [readings, setReadings] = useState<WaterReading[]>([]);
+  const [bills, setBills] = useState<WaterBill[]>([]);
+  const [paymentMethod, setPaymentMethod] = useState<(typeof paymentOptions)[number]["value"]>("CARTEIRA_MOVEL");
+  const [paying, setPaying] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState("");
 
-  // Refs 
-  const headerRef = useRef<HTMLDivElement>(null);
-  const historicoRef = useRef<HTMLDivElement>(null);
-  const avisoRef = useRef<HTMLDivElement>(null);
-  const consumoRef = useRef<HTMLDivElement>(null);
-  const facturaRef = useRef<HTMLDivElement>(null);
-  const modalRef = useRef<HTMLDivElement>(null);
+  async function load() {
+    setLoading(true);
+    setErr("");
 
-  // Anim para carregar
+    try {
+      const [profileData, orderData, contractData, readingData, billData] = await Promise.all([
+        clientApi.profile(),
+        clientApi.listOrders(),
+        listClientWaterContracts(),
+        listClientWaterReadings(),
+        listClientWaterBills(),
+      ]);
+
+      setProfile(profileData);
+      setOrders(orderData);
+      setContracts(contractData);
+      setReadings(readingData);
+      setBills(billData);
+    } catch (error: any) {
+      setErr(error?.message ?? "Erro ao carregar a area do cliente");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
-    const tl = gsap.timeline();
-    
-    tl.fromTo(headerRef.current,
-      { opacity: 0, y: -20 },
-      { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }
-    )
-    .fromTo(historicoRef.current,
-      { opacity: 0, x: -30 },
-      { opacity: 1, x: 0, duration: 0.5, ease: "back.out(0.3)" },
-      "-=0.3"
-    )
-    .fromTo(avisoRef.current,
-      { opacity: 0, scale: 0.95 },
-      { opacity: 1, scale: 1, duration: 0.4, ease: "power2.out" },
-      "-=0.2"
-    )
-    .fromTo([consumoRef.current, facturaRef.current],
-      { opacity: 0, y: 30 },
-      { opacity: 1, y: 0, duration: 0.5, stagger: 0.15, ease: "power2.out" },
-      "-=0.2"
-    );
+    load();
   }, []);
 
-  // Anim
-  useEffect(() => {
-    if (modalAberto && modalRef.current) {
-      gsap.fromTo(modalRef.current,
-        { opacity: 0, scale: 0.9, y: 20 },
-        { opacity: 1, scale: 1, y: 0, duration: 0.3, ease: "back.out(0.4)" }
-      );
-    }
-  }, [modalAberto]);
-
-  const handleAbrirModal = () => {
-    setModalAberto(true);
-    setMetodoSelecionado(null);
-    setAguardandoConfirmacao(false);
-  };
-
-  const handleEscolherMetodo = (metodo: string) => {
-    setMetodoSelecionado(metodo);
-    setAguardandoConfirmacao(true);
-    
-    // animacao no botAo
-    gsap.to(`.btn-${metodo.replace('-', '')}`, {
-      scale: 0.98,
-      duration: 0.1,
-      yoyo: true,
-      repeat: 1
-    });
-  };
-
-  const handleFecharModal = () => {
-    gsap.to(modalRef.current, {
-      opacity: 0,
-      scale: 0.9,
-      duration: 0.2,
-      onComplete: () => {
-        setModalAberto(false);
-        setMetodoSelecionado(null);
-        setAguardandoConfirmacao(false);
-      }
-    });
-  };
-
-  // Card mini
-  const Card = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
-    <div className={`bg-white rounded-xl border border-gray-100 shadow-sm p-6 transition-all duration-300 hover:shadow-md hover:-translate-y-1 ${className}`}>
-      {children}
-    </div>
+  const orderTotal = useMemo(
+    () => orders.reduce((sum, order) => sum + Number(order.total || 0), 0),
+    [orders]
   );
 
-  // Badge mini
-  const Badge = ({ children, type = "success" }: { children: React.ReactNode; type?: "success" | "danger" | "warning" }) => {
-    const cores = {
-      success: "bg-emerald-50 text-emerald-700",
-      danger: "bg-red-50 text-red-700",
-      warning: "bg-amber-50 text-amber-700",
-    };
-    return (
-      <span className={`px-3 py-1 rounded-full text-xs font-medium ${cores[type]} transition-all duration-200 hover:scale-105 inline-block`}>
-        {children}
-      </span>
-    );
-  };
+  const latestReading = readings[0] ?? null;
+  const pendingBill = bills.find((bill) => bill.estadoPagamento !== "PAGO") ?? null;
+
+  async function handlePayBill() {
+    if (!pendingBill) return;
+
+    setPaying(true);
+    setErr("");
+    try {
+      const updated = await payClientWaterBill(pendingBill.id, { formaPagamento: paymentMethod });
+      setBills((current) => current.map((bill) => (bill.id === updated.id ? updated : bill)));
+    } catch (error: any) {
+      setErr(error?.message ?? "Nao foi possivel pagar a factura");
+    } finally {
+      setPaying(false);
+    }
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 md:p-8">
-      <div className="max-w-6xl mx-auto space-y-6">
-        {/* Cabecalho */}
-        <div ref={headerRef} className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-semibold text-gray-800">Olá, Cliente</h1>
-            <p className="text-gray-400 text-sm mt-1">Área do cliente</p>
-          </div>
-        </div>
-
-        {/* Grid principal */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Historico de compras */}
-          <div ref={historicoRef} className="lg:col-span-2">
-            <Card>
-              <h3 className="font-semibold text-gray-800 mb-4">Histórico de Compras</h3>
-              <div className="space-y-2">
-                <div className="flex justify-between p-3 bg-gray-50 rounded-lg text-sm transition-all duration-200 hover:bg-gray-100">
-                  <span>Venda #102 — Entregue</span>
-                  <span className="font-medium">---</span>
-                </div>
-                <div className="flex justify-between p-3 bg-gray-50 rounded-lg text-sm text-amber-600 transition-all duration-200 hover:bg-gray-100">
-                  <span>Venda #105 — Pendente de Entrega</span>
-                  <span className="font-medium">---</span>
-                </div>
-              </div>
-              <button className="mt-4 text-sm text-gray-400 hover:text-gray-600 transition-all duration-200 hover:translate-x-1">
-                Ver todas →
-              </button>
-            </Card>
-          </div>
-
-          {/* Aviso */}
-          <div ref={avisoRef}>
-            <Card className="bg-amber-50/50 border-amber-100">
-              <h3 className="font-semibold text-amber-800 mb-1">Aviso</h3>
-              <p className="text-sm text-amber-700">
-                Após a venda, não aceitamos devoluções. Pode comprar mesmo sem stock para reserva.
-              </p>
-            </Card>
-          </div>
-        </div>
-
-        {/* Segunda linha */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Consumo mensal */}
-          <div ref={consumoRef}>
-            <Card>
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="font-semibold text-gray-800">Consumo Mensal</h3>
-                  <p className="text-xs text-gray-400">Contador: ------</p>
-                </div>
-                <Badge>Ligação Activa</Badge>
-              </div>
-              <div className="text-3xl font-bold text-gray-800">42.5 m³</div>
-              <p className="text-sm text-gray-500">Referente a Janeiro 2026</p>
-            </Card>
-          </div>
-
-          {/* Ultima factura ++++ botao pagar */}
-          <div ref={facturaRef}>
-            <Card>
-              <h3 className="font-semibold text-gray-800 mb-4">Última Factura</h3>
-              <div className="flex justify-between items-center border-b border-gray-100 pb-3">
-                <span className="text-2xl font-bold">---</span>
-                <Badge type="warning">Pendente</Badge>
-              </div>
-              <button
-                onClick={handleAbrirModal}
-                className="w-full mt-5 bg-gray-900 text-white py-2 rounded-lg text-sm font-medium transition-all duration-200 hover:bg-gray-800 active:scale-95"
-              >
-                Pagar
-              </button>
-            </Card>
-          </div>
-        </div>
+    <div style={{ display: "grid", gap: 16 }}>
+      <div style={{ background: "white", border: "1px solid #ddd", borderRadius: 10, padding: 16 }}>
+        <h2 style={{ marginTop: 0 }}>Area do Cliente</h2>
+        <p style={{ marginBottom: 0, color: "#555" }}>
+          {profile ? `Sessao activa para ${profile.account.nome} (${profile.account.email})` : "A carregar dados da sua conta..."}
+        </p>
       </div>
 
-      {/* MODAL */}
-      {modalAberto && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4 transition-all duration-200">
-          <div ref={modalRef} className="bg-white rounded-2xl max-w-sm w-full shadow-xl">
-            <div className="p-6">
-              {!aguardandoConfirmacao ? (
-                <>
-                  <h2 className="text-xl font-semibold text-gray-800 mb-2">Escolha o método</h2>
-                  <p className="text-sm text-gray-400 mb-5">Selecione a forma de pagamento</p>
-                  <div className="space-y-3">
-                    {["M-PESA", "E-MOLA", "MKESH"].map((metodo) => (
-                      <button
-                        key={metodo}
-                        onClick={() => handleEscolherMetodo(metodo)}
-                        className={`btn-${metodo.replace('-', '')} w-full text-left px-4 py-3 border border-gray-100 rounded-xl transition-all duration-200 hover:bg-gray-50 hover:border-gray-200 hover:translate-x-1 flex justify-between items-center`}
-                      >
-                        <span className="font-medium text-gray-700">{metodo}</span>
-                        <span className="text-gray-300 transition-all duration-200 group-hover:translate-x-1">→</span>
-                      </button>
-                    ))}
-                  </div>
-                </>
+      {loading && <Loading />}
+      {err && <ErrorBox text={err} />}
+
+      {!loading && !err && (
+        <>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+              gap: 12,
+            }}
+          >
+            {[
+              { label: "Compras", value: orders.length, hint: "Pedidos registados" },
+              { label: "Total Comprado", value: money(orderTotal), hint: "Acumulado das compras" },
+              { label: "Ligacoes de Agua", value: contracts.length, hint: "Contratos activos ou historicos" },
+              {
+                label: "Facturas Pendentes",
+                value: bills.filter((bill) => bill.estadoPagamento !== "PAGO").length,
+                hint: "Faturas por regularizar",
+              },
+            ].map((card) => (
+              <div key={card.label} style={{ background: "white", border: "1px solid #ddd", borderRadius: 10, padding: 16 }}>
+                <div style={{ fontSize: 12, textTransform: "uppercase", color: "#777", marginBottom: 8 }}>{card.label}</div>
+                <div style={{ fontSize: 24, fontWeight: 700 }}>{card.value}</div>
+                <div style={{ color: "#666", marginTop: 6 }}>{card.hint}</div>
+              </div>
+            ))}
+          </div>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+              gap: 16,
+            }}
+          >
+            <div style={{ background: "white", border: "1px solid #ddd", borderRadius: 10, padding: 16 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+                <h3 style={{ margin: 0 }}>Ultimas Compras</h3>
+                <Link href="/cliente/compras" style={{ color: "#9a3412", textDecoration: "none", fontWeight: 600 }}>
+                  Ver tudo
+                </Link>
+              </div>
+
+              {orders.length === 0 ? (
+                <Empty text="Ainda nao existem compras associadas a esta conta." />
               ) : (
-                <div className="text-center py-4">
-                  <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4 animate-pulse">
-                    <span className="text-xl">📱</span>
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-800">Verifique o seu celular</h3>
-                  <p className="text-sm text-gray-500 mt-2">
-                    Enviamos uma notificação via <span className="font-medium">{metodoSelecionado}</span>.
-                    <br />
-                    Confirme a transação no seu dispositivo.
-                  </p>
+                <div style={{ display: "grid", gap: 10 }}>
+                  {orders.slice(0, 3).map((order) => (
+                    <Link
+                      key={order.id}
+                      href={`/cliente/compras/${order.id}`}
+                      style={{
+                        display: "block",
+                        padding: 12,
+                        borderRadius: 8,
+                        border: "1px solid #eee",
+                        textDecoration: "none",
+                        color: "inherit",
+                      }}
+                    >
+                      <div style={{ fontWeight: 600 }}>{order.produtoNome}</div>
+                      <div style={{ color: "#666" }}>
+                        Quantidade {order.quantidade} · Total {money(order.total)}
+                      </div>
+                    </Link>
+                  ))}
                 </div>
               )}
             </div>
-            <div className="border-t border-gray-100 p-4 flex justify-end">
-              <button
-                onClick={handleFecharModal}
-                className="text-sm text-gray-400 transition-all duration-200 hover:text-gray-600 hover:scale-105"
-              >
-                {aguardandoConfirmacao ? "Fechar" : "Cancelar"}
-              </button>
+
+            <div style={{ background: "white", border: "1px solid #ddd", borderRadius: 10, padding: 16 }}>
+              <h3 style={{ marginTop: 0 }}>Consumo de Agua</h3>
+
+              {latestReading ? (
+                <div style={{ display: "grid", gap: 10 }}>
+                  <div>
+                    <strong>Ligacao:</strong> #{latestReading.ligacaoId}
+                  </div>
+                  <div>
+                    <strong>Consumo:</strong> {latestReading.consumoM3} m3
+                  </div>
+                  <div>
+                    <strong>Valor:</strong> {money(latestReading.valorPagar)}
+                  </div>
+                  <div>
+                    <strong>Data:</strong> {new Date(latestReading.data).toLocaleString()}
+                  </div>
+                  <Link href="/cliente/agua" style={{ color: "#9a3412", textDecoration: "none", fontWeight: 600 }}>
+                    Abrir modulo de agua
+                  </Link>
+                </div>
+              ) : (
+                <Empty text="Sem leituras de agua registadas para esta conta." />
+              )}
             </div>
           </div>
-        </div>
+
+          <div style={{ background: "white", border: "1px solid #ddd", borderRadius: 10, padding: 16 }}>
+            <h3 style={{ marginTop: 0 }}>Factura de Agua em Aberto</h3>
+
+            {!pendingBill ? (
+              <Empty text="Nao ha facturas de agua pendentes neste momento." />
+            ) : (
+              <div style={{ display: "grid", gap: 12 }}>
+                <div style={{ color: "#444" }}>
+                  Factura #{pendingBill.id} · {money(pendingBill.valorTotal)} · Estado {pendingBill.estadoPagamento}
+                </div>
+
+                <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+                  <select
+                    value={paymentMethod}
+                    onChange={(event) => setPaymentMethod(event.target.value as (typeof paymentOptions)[number]["value"])}
+                    style={{ padding: 10, borderRadius: 8, border: "1px solid #ddd", minWidth: 220 }}
+                  >
+                    {paymentOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+
+                  <Button onClick={handlePayBill} disabled={paying}>
+                    {paying ? "A pagar..." : "Pagar agora"}
+                  </Button>
+
+                  <Link href="/cliente/agua" style={{ color: "#9a3412", textDecoration: "none", fontWeight: 600 }}>
+                    Ver historico completo
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
+        </>
       )}
     </div>
   );

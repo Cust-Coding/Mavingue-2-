@@ -2,13 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 
 const BACKEND = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
-function urlFor(parts: string[]) {
-  return `${BACKEND}/${parts.join("/")}`;
+function urlFor(req: NextRequest, parts: string[]) {
+  const base = BACKEND.replace(/\/+$/, "");
+  const pathname = parts.join("/");
+  return `${base}/${pathname}${req.nextUrl.search}`;
 }
 
 async function handler(req: NextRequest, ctx: { params: Promise<{ path: string[] }> }) {
   const { path } = await ctx.params;
-  const url = urlFor(path);
+  const url = urlFor(req, path);
 
   const headers = new Headers();
   const ct = req.headers.get("content-type");
@@ -41,3 +43,4 @@ export const GET = handler;
 export const POST = handler;
 export const PUT = handler;
 export const DELETE = handler;
+export const PATCH = handler;

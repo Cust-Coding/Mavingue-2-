@@ -1,7 +1,7 @@
 "use client";
 import { create } from "zustand";
 
-export type Role = "ADMIN" | "STAFF" | "CLIENTE";
+export type Role = "ADMIN" | "STAFF" | "FUNCIONARIO" | "CLIENTE";
 
 type AuthState = {
   token: string | null;

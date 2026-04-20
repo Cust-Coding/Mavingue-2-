@@ -1,4 +1,5 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { Input } from "@/components/ui/Input";
@@ -9,30 +10,39 @@ export default function EditarProduto() {
   const params = useParams();
   const id = Number(params.id);
 
-  const [form, setForm] = useState({ name: "", description: "", price: "" });
+  const [form, setForm] = useState({ name: "", description: "", price: "", urlImg: "" });
   const [err, setErr] = useState("");
   const [ok, setOk] = useState("");
 
   useEffect(() => {
     productsApi
       .get(id)
-      .then((p) => setForm({ name: p.name, description: p.description ?? "", price: String(p.price) }))
-      .catch((e: any) => setErr(e?.message ?? "Erro"));
+      .then((product) =>
+        setForm({
+          name: product.name,
+          description: product.description,
+          price: String(product.price),
+          urlImg: product.urlImg,
+        })
+      )
+      .catch((error: any) => setErr(error?.message ?? "Erro"));
   }, [id]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setErr("");
     setOk("");
+
     try {
       await productsApi.update(id, {
-        name: form.name,
-        description: form.description || undefined,
+        name: form.name.trim(),
+        description: form.description.trim(),
         price: Number(form.price),
+        urlImg: form.urlImg.trim(),
       });
       setOk("Actualizado.");
-    } catch (e: any) {
-      setErr(e?.message ?? "Erro");
+    } catch (error: any) {
+      setErr(error?.message ?? "Erro");
     }
   }
 
@@ -41,10 +51,12 @@ export default function EditarProduto() {
       <h2>Editar Produto #{id}</h2>
       {err && <div style={{ color: "crimson" }}>{err}</div>}
       {ok && <div style={{ color: "green" }}>{ok}</div>}
+
       <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
         <Input placeholder="Nome" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-        <Input placeholder="Descrição" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-        <Input placeholder="Preço" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
+        <Input placeholder="Descricao" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+        <Input placeholder="Preco" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
+        <Input placeholder="URL da imagem" value={form.urlImg} onChange={(e) => setForm({ ...form, urlImg: e.target.value })} />
         <Button type="submit">Guardar</Button>
       </form>
     </div>

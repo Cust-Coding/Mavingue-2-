@@ -1,28 +1,30 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import { Loading, ErrorBox, Empty } from "@/components/ui/State";
+import { Empty, ErrorBox, Loading } from "@/components/ui/State";
 import { ferragemApi } from "@/features/ferragem/api";
-import { Ferragem } from "@/features/ferragem/types";
+import type { Ferragem } from "@/features/ferragem/types";
 
 export default function AdminFerragem() {
   const [rows, setRows] = useState<Ferragem[]>([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
-  const [form, setForm] = useState({ nome: "", endereco: "" });
+  const [form, setForm] = useState({ name: "", bairro: "", ownerId: "" });
 
   async function load() {
     setErr("");
     setLoading(true);
     try {
       setRows(await ferragemApi.list());
-    } catch (e: any) {
-      setErr(e?.message ?? "Erro");
+    } catch (error: any) {
+      setErr(error?.message ?? "Erro");
     } finally {
       setLoading(false);
     }
   }
+
   useEffect(() => {
     load();
   }, []);
@@ -30,11 +32,15 @@ export default function AdminFerragem() {
   async function create() {
     setErr("");
     try {
-      await ferragemApi.create(form);
-      setForm({ nome: "", endereco: "" });
+      await ferragemApi.create({
+        name: form.name.trim(),
+        bairro: form.bairro.trim(),
+        ownerId: form.ownerId ? Number(form.ownerId) : undefined,
+      });
+      setForm({ name: "", bairro: "", ownerId: "" });
       await load();
-    } catch (e: any) {
-      setErr(e?.message ?? "Erro");
+    } catch (error: any) {
+      setErr(error?.message ?? "Erro");
     }
   }
 
@@ -49,9 +55,10 @@ export default function AdminFerragem() {
       <h2>Ferragem</h2>
       {err && <ErrorBox text={err} />}
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: 10, maxWidth: 900, marginBottom: 12 }}>
-        <Input placeholder="Nome" value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })} />
-        <Input placeholder="Endereço" value={form.endereco} onChange={(e) => setForm({ ...form, endereco: e.target.value })} />
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr auto", gap: 10, maxWidth: 1000, marginBottom: 12 }}>
+        <Input placeholder="Nome" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+        <Input placeholder="Bairro" value={form.bairro} onChange={(e) => setForm({ ...form, bairro: e.target.value })} />
+        <Input placeholder="ownerId (opcional)" value={form.ownerId} onChange={(e) => setForm({ ...form, ownerId: e.target.value })} />
         <Button onClick={create}>Criar</Button>
       </div>
 
@@ -65,18 +72,20 @@ export default function AdminFerragem() {
               <tr>
                 <th style={{ textAlign: "left", padding: 10, borderBottom: "1px solid #eee" }}>ID</th>
                 <th style={{ textAlign: "left", padding: 10, borderBottom: "1px solid #eee" }}>Nome</th>
-                <th style={{ textAlign: "left", padding: 10, borderBottom: "1px solid #eee" }}>Endereço</th>
+                <th style={{ textAlign: "left", padding: 10, borderBottom: "1px solid #eee" }}>Bairro</th>
+                <th style={{ textAlign: "left", padding: 10, borderBottom: "1px solid #eee" }}>Owner</th>
                 <th style={{ padding: 10, borderBottom: "1px solid #eee" }}></th>
               </tr>
             </thead>
             <tbody>
-              {rows.map((r) => (
-                <tr key={r.id}>
-                  <td style={{ padding: 10, borderBottom: "1px solid #f3f3f3" }}>{r.id}</td>
-                  <td style={{ padding: 10, borderBottom: "1px solid #f3f3f3" }}>{r.nome}</td>
-                  <td style={{ padding: 10, borderBottom: "1px solid #f3f3f3" }}>{r.endereco}</td>
+              {rows.map((row) => (
+                <tr key={row.id}>
+                  <td style={{ padding: 10, borderBottom: "1px solid #f3f3f3" }}>{row.id}</td>
+                  <td style={{ padding: 10, borderBottom: "1px solid #f3f3f3" }}>{row.name}</td>
+                  <td style={{ padding: 10, borderBottom: "1px solid #f3f3f3" }}>{row.bairro}</td>
+                  <td style={{ padding: 10, borderBottom: "1px solid #f3f3f3" }}>{row.owner || "-"}</td>
                   <td style={{ padding: 10, borderBottom: "1px solid #f3f3f3", textAlign: "right" }}>
-                    <Button variant="destructive" onClick={() => del(r.id)}>
+                    <Button variant="destructive" onClick={() => del(row.id)}>
                       Apagar
                     </Button>
                   </td>

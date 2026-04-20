@@ -25,3 +25,10 @@ export type UserCreateFullRequest = {
   tipoDocumento?: string | null;
   numeroDocumento?: string | null;
 };
+
+export type UserUpdateRequest = {
+  nome?: string;
+  email?: string;
+  password?: string;
+  role?: Role;
+};

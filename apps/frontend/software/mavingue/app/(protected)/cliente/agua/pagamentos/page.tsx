@@ -1,3 +1,1 @@
-export default function AguaP() {
-  return <div>Água pagamentos (placeholder)</div>;
-}
+export { default } from "@/app/(protected)/cliente/agua/page";

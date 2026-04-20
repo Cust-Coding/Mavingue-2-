@@ -1,68 +1,77 @@
-'use client';
+"use client";
+
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { Empty, ErrorBox, Loading } from "@/components/ui/State";
+import { clientApi } from "@/features/client/api";
+import type { ClientOrder } from "@/features/client/types";
+
+function money(value: number) {
+  return `${Number(value || 0).toFixed(2)} MT`;
+}
 
 export default function ClienteCompras() {
-  return (
-    <div 
-      className="group"
-      style={{ 
-        background: "white", 
-        border: "1px solid #e5e7eb", 
-        borderRadius: 12, 
-        padding: 20,
-        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-        cursor: "pointer"
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.transform = "translateY(-4px)";
-        e.currentTarget.style.boxShadow = "0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.02)";
-        e.currentTarget.style.borderColor = "#f97316";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = "translateY(0)";
-        e.currentTarget.style.boxShadow = "none";
-        e.currentTarget.style.borderColor = "#e5e7eb";
-      }}
-    >
-      <h2 
-        style={{ 
-          margin: 0, 
-          marginBottom: 12,
-          fontSize: "1.25rem",
-          fontWeight: 600,
-          color: "#1f2937",
-          transition: "color 0.2s ease"
-        }}
-        onMouseEnter={(e) => e.currentTarget.style.color = "#f97316"}
-        onMouseLeave={(e) => e.currentTarget.style.color = "#1f2937"}
-      >
-        Compras
-      </h2>
-      
-      <p 
-        style={{ 
-          margin: 0,
-          color: "#6b7280",
-          fontSize: "0.875rem",
-          lineHeight: 1.6,
-          transition: "color 0.2s ease"
-        }}
-      >
-        Precisa endpoint dedicado no backend para listar compras do cliente por token/clienteId.
-      </p>
+  const [orders, setOrders] = useState<ClientOrder[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState("");
 
-   
-      <div 
-        style={{
-          marginTop: 16,
-          height: 2,
-          width: 40,
-          background: "#f97316",
-          borderRadius: 2,
-          transition: "width 0.3s ease"
-        }}
-        onMouseEnter={(e) => e.currentTarget.style.width = "80px"}
-        onMouseLeave={(e) => e.currentTarget.style.width = "40px"}
-      />
+  useEffect(() => {
+    (async () => {
+      setLoading(true);
+      setErr("");
+
+      try {
+        setOrders(await clientApi.listOrders());
+      } catch (error: any) {
+        setErr(error?.message ?? "Erro ao carregar compras");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  return (
+    <div style={{ display: "grid", gap: 16 }}>
+      <div style={{ background: "white", border: "1px solid #ddd", borderRadius: 10, padding: 16 }}>
+        <h2 style={{ marginTop: 0 }}>Minhas Compras</h2>
+        <p style={{ marginBottom: 0, color: "#555" }}>Pedidos ligados ao backend pela sua conta autenticada.</p>
+      </div>
+
+      {loading && <Loading />}
+      {err && <ErrorBox text={err} />}
+
+      {!loading && !err && orders.length === 0 && <Empty text="Ainda nao existem compras associadas a esta conta." />}
+
+      {!loading && !err && orders.length > 0 && (
+        <div style={{ border: "1px solid #ddd", borderRadius: 10, background: "white", overflow: "hidden" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead>
+              <tr>
+                <th style={{ textAlign: "left", padding: 10, borderBottom: "1px solid #eee" }}>Pedido</th>
+                <th style={{ textAlign: "left", padding: 10, borderBottom: "1px solid #eee" }}>Produto</th>
+                <th style={{ textAlign: "left", padding: 10, borderBottom: "1px solid #eee" }}>Quantidade</th>
+                <th style={{ textAlign: "left", padding: 10, borderBottom: "1px solid #eee" }}>Pagamento</th>
+                <th style={{ textAlign: "left", padding: 10, borderBottom: "1px solid #eee" }}>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {orders.map((order) => (
+                <tr key={order.id}>
+                  <td style={{ padding: 10, borderBottom: "1px solid #f3f3f3" }}>
+                    <Link href={`/cliente/compras/${order.id}`} style={{ color: "#9a3412", textDecoration: "none", fontWeight: 600 }}>
+                      #{order.id}
+                    </Link>
+                  </td>
+                  <td style={{ padding: 10, borderBottom: "1px solid #f3f3f3" }}>{order.produtoNome}</td>
+                  <td style={{ padding: 10, borderBottom: "1px solid #f3f3f3" }}>{order.quantidade}</td>
+                  <td style={{ padding: 10, borderBottom: "1px solid #f3f3f3" }}>{order.formaPagamento}</td>
+                  <td style={{ padding: 10, borderBottom: "1px solid #f3f3f3" }}>{money(order.total)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
