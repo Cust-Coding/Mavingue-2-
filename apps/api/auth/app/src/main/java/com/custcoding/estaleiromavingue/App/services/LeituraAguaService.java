@@ -2,14 +2,19 @@ package com.custcoding.estaleiromavingue.App.services;
 
 import com.custcoding.estaleiromavingue.App.dtos.leitura_agua.LeituraAguaCreateDTO;
 import com.custcoding.estaleiromavingue.App.dtos.leitura_agua.LeituraAguaResponseDTO;
+import com.custcoding.estaleiromavingue.App.models.FacturaAgua;
 import com.custcoding.estaleiromavingue.App.models.LeituraAgua;
 import com.custcoding.estaleiromavingue.App.models.LigacaoAgua;
 import com.custcoding.estaleiromavingue.App.models.status.EstadoLigacao;
+import com.custcoding.estaleiromavingue.App.models.status.EstadoPagamento;
+import com.custcoding.estaleiromavingue.App.models.status.FormaPagamento;
+import com.custcoding.estaleiromavingue.App.repositories.FacturaAguaRepository;
 import com.custcoding.estaleiromavingue.App.repositories.LeituraAguaRepository;
 import com.custcoding.estaleiromavingue.App.repositories.LigacaoAguaRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -20,11 +25,14 @@ public class LeituraAguaService {
 
     private final LeituraAguaRepository leituraAguaRepository;
     private final LigacaoAguaRepository ligacaoAguaRepository;
+    private final FacturaAguaRepository facturaAguaRepository;
 
+    @Transactional(readOnly = true)
     public List<LeituraAguaResponseDTO> list() {
         return leituraAguaRepository.findAll().stream().map(this::toDTO).toList();
     }
 
+    @Transactional(readOnly = true)
     public List<LeituraAguaResponseDTO> listByLigacao(Long ligacaoId) {
         ensureLigacaoExists(ligacaoId);
         return leituraAguaRepository.findByLigacao_IdOrderByDataDesc(ligacaoId).stream()
@@ -32,6 +40,7 @@ public class LeituraAguaService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public LeituraAguaResponseDTO get(Long id) {
         return toDTO(findLeitura(id));
     }
@@ -64,7 +73,21 @@ public class LeituraAguaService {
                 .ligacao(ligacao)
                 .build();
 
-        return toDTO(leituraAguaRepository.save(leitura));
+        LeituraAgua saved = leituraAguaRepository.save(leitura);
+
+        FacturaAgua factura = FacturaAgua.builder()
+                .data(LocalDateTime.now())
+                .taxaFixa(150)
+                .valor(valorPagar)
+                .valorTotal(valorPagar + 150)
+                .estadoPagamento(EstadoPagamento.PENDENTE)
+                .formaPagamento(FormaPagamento.DINHEIRO_FISICO)
+                .consumidor(ligacao.getConsumidor())
+                .leitura(saved)
+                .build();
+        facturaAguaRepository.save(factura);
+
+        return toDTO(saved);
     }
 
     private void ensureLigacaoExists(Long ligacaoId) {
@@ -86,7 +109,7 @@ public class LeituraAguaService {
                 leitura.getLeituraActual(),
                 leitura.getConsumoM3(),
                 leitura.getValorPagar(),
-                leitura.getLigacao().getId()
+                leitura.getLigacao() == null ? null : leitura.getLigacao().getId()
         );
     }
 }

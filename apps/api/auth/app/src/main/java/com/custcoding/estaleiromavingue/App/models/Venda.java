@@ -1,5 +1,6 @@
 package com.custcoding.estaleiromavingue.App.models;
 
+import com.custcoding.estaleiromavingue.App.models.status.EstadoLevantamento;
 import com.custcoding.estaleiromavingue.App.models.status.FormaPagamento;
 import jakarta.persistence.*;
 import lombok.*;
@@ -45,4 +46,17 @@ public class Venda {
 
     @Column(name = "criado_em", nullable = false)
     private Instant criadoEm = Instant.now();
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "estado_levantamento", length = 40)
+    private EstadoLevantamento estadoLevantamento = EstadoLevantamento.AGUARDANDO_PREPARACAO;
+
+    @Column(name = "levantamento_notas", length = 500)
+    private String levantamentoNotas;
+
+    @Column(name = "atualizado_em")
+    private Instant atualizadoEm = Instant.now();
+
+    @Column(name = "levantado_em")
+    private Instant levantadoEm;
 }

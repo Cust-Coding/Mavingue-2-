@@ -1,12 +1,16 @@
 package com.custcoding.estaleiromavingue.App.products;
 
 import com.custcoding.estaleiromavingue.App.models.Product;
+import com.custcoding.estaleiromavingue.App.models.Stock;
 import com.custcoding.estaleiromavingue.App.products.dto.ProductCreateRequest;
 import com.custcoding.estaleiromavingue.App.products.dto.ProductUpdateRequest;
+import com.custcoding.estaleiromavingue.App.repositories.FerragemRepository;
 import com.custcoding.estaleiromavingue.App.repositories.ProductRepository;
+import com.custcoding.estaleiromavingue.App.repositories.StockRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -15,6 +19,8 @@ import java.util.List;
 public class ProductService {
 
     private final ProductRepository repo;
+    private final StockRepository stockRepository;
+    private final FerragemRepository ferragemRepository;
 
     public Product create(ProductCreateRequest req) {
         Product p = new Product();
@@ -22,13 +28,28 @@ public class ProductService {
         p.setDescription(req.description());
         p.setPrice(req.price());
         p.setUrlImg(req.urlImg());
-        return repo.save(p);
+        Product saved = repo.save(p);
+
+        ferragemRepository.findAll().stream().findFirst().ifPresent(ferragem -> {
+            if (stockRepository.findByProduto_Id(saved.getId()).isEmpty()) {
+                Stock stock = new Stock();
+                stock.setProduto(saved);
+                stock.setFerragem(ferragem);
+                stock.setQuantidade(0);
+                stock.setStockMinimo(0);
+                stockRepository.save(stock);
+            }
+        });
+
+        return saved;
     }
 
+    @Transactional(readOnly = true)
     public List<Product> list() {
         return repo.findAll();
     }
 
+    @Transactional(readOnly = true)
     public Product get(Long id) {
         return repo.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Produto não encontrado: " + id));
@@ -50,5 +71,10 @@ public class ProductService {
             throw new EntityNotFoundException("Produto não encontrado: " + id);
         }
         repo.deleteById(id);
+    }
+    public Integer getAvailableStock(Long productId) {
+        return stockRepository.findByProduto_Id(productId)
+                .map(stock -> stock.getQuantidade() == null ? 0 : stock.getQuantidade())
+                .orElse(0);
     }
 }

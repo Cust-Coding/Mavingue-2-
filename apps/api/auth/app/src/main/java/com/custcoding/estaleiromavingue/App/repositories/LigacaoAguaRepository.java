@@ -9,4 +9,5 @@ import java.util.List;
 public interface LigacaoAguaRepository extends JpaRepository<LigacaoAgua, Long> {
     boolean existsByConsumidor_IdAndEstado(Long consumidorId, EstadoLigacao estado);
     List<LigacaoAgua> findByConsumidor_IdOrderByDataDesc(Long consumidorId);
+    List<LigacaoAgua> findByConsumidor_IdInOrderByDataDesc(List<Long> consumidorIds);
 }

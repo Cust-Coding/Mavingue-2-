@@ -7,7 +7,7 @@ import jakarta.validation.constraints.NotNull;
 public record VendaCreateDTO(
         @NotNull Long produtoId,
         @NotNull Long clienteId,        // CustomerProduct (ou o teu id de cliente)
-        @NotNull Long funcionarioId,    // quem registou a venda
+        Long funcionarioId,             // opcional: usa o operador autenticado quando vazio
         @NotNull @Min(1) Integer quantidade,
         @NotNull FormaPagamento formaPagamento
 ) {}

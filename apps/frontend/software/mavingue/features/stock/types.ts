@@ -10,3 +10,15 @@ export type StockAdjust = {
   tipo: "ENTRADA" | "SAIDA";
   motivo?: string;
 };
+
+export type StockMovement = {
+  id: number;
+  produtoId: number;
+  produtoNome: string;
+  ferragemId: number;
+  ferragemNome: string;
+  tipo: "ENTRADA" | "SAIDA";
+  quantidade: number;
+  motivo?: string | null;
+  criadoEm?: string | null;
+};

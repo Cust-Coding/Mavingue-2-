@@ -7,6 +7,7 @@ import com.custcoding.estaleiromavingue.App.services.LigacaoAguaService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -30,8 +31,8 @@ public class LigacaoAguaController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public LigacaoAguaResponseDTO create(@Valid @RequestBody LigacaoAguaCreateDTO dto) {
-        return ligacaoAguaService.create(dto);
+    public LigacaoAguaResponseDTO create(@Valid @RequestBody LigacaoAguaCreateDTO dto, Authentication authentication) {
+        return ligacaoAguaService.create(authentication.getName(), dto);
     }
 
     @PatchMapping("/{id}/estado")

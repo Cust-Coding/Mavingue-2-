@@ -19,7 +19,7 @@ public record ProductCreateRequest(
         @DecimalMin(value = "0.0", inclusive = false)
         BigDecimal price,
         @NotBlank
-        @Size(max = 500)
-        @Pattern(regexp = "^(https?://).+", message = "urlImg deve começar com http:// ou https://")
+        @Size(max = 5000000)
+        @Pattern(regexp = "^(https?://.+|data:image/.+)$", message = "urlImg deve ser uma URL valida ou uma imagem carregada")
         String urlImg
 ) {}

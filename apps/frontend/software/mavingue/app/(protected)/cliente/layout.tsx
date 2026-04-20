@@ -4,15 +4,16 @@ import Sidebar from "@/components/layout/Sidebar";
 export default function ClienteLayout({ children }: { children: React.ReactNode }) {
   return (
     <RoleGate allow={["CLIENTE"]}>
-      <div style={{ minHeight: "calc(100vh - 55px)" }}>
+      <div className="min-h-[calc(100vh-var(--app-topbar-offset))]">
         <Sidebar />
 
         <div
           style={{
-            marginLeft: "var(--sidebar-offset, 80px)",
+            marginLeft: "var(--sidebar-offset, 0px)",
             transition: "margin-left 300ms",
             padding: 16,
           }}
+          className="pb-10 lg:px-6"
         >
           {children}
         </div>

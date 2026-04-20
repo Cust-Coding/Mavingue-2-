@@ -10,6 +10,7 @@ import { salesApi } from "@/features/sales/api";
 import { stockApi } from "@/features/stock/api";
 import { listUsers } from "@/features/users/api";
 import { listWaterBills, listWaterContracts, listWaterCustomers, listWaterReadings } from "@/features/water/api";
+import { getErrorMessage } from "@/lib/errors";
 
 type Summary = {
   users: number;
@@ -18,6 +19,8 @@ type Summary = {
   stock: number;
   purchases: number;
   sales: number;
+  pendingPickup: number;
+  readyPickup: number;
   waterCustomers: number;
   waterContracts: number;
   waterReadings: number;
@@ -31,6 +34,8 @@ const initialSummary: Summary = {
   stock: 0,
   purchases: 0,
   sales: 0,
+  pendingPickup: 0,
+  readyPickup: 0,
   waterCustomers: 0,
   waterContracts: 0,
   waterReadings: 0,
@@ -69,13 +74,15 @@ export default function AdminHome() {
           stock: stock.length,
           purchases: purchases.length,
           sales: sales.length,
+          pendingPickup: sales.filter((sale) => sale.estadoLevantamento === "AGUARDANDO_PREPARACAO").length,
+          readyPickup: sales.filter((sale) => sale.estadoLevantamento === "PRONTO_PARA_LEVANTAMENTO").length,
           waterCustomers: waterCustomers.length,
           waterContracts: waterContracts.length,
           waterReadings: waterReadings.length,
           waterBills: waterBills.length,
         });
-      } catch (error: any) {
-        setErr(error?.message ?? "Erro ao carregar o painel");
+      } catch (error: unknown) {
+        setErr(getErrorMessage(error, "Erro ao carregar o painel"));
       } finally {
         setLoading(false);
       }
@@ -89,6 +96,8 @@ export default function AdminHome() {
     { label: "Stock", value: summary.stock, href: "/admin/stock" },
     { label: "Compras", value: summary.purchases, href: "/admin/compras" },
     { label: "Vendas", value: summary.sales, href: "/admin/vendas" },
+    { label: "A Preparar", value: summary.pendingPickup, href: "/admin/vendas" },
+    { label: "Prontas", value: summary.readyPickup, href: "/admin/vendas" },
     { label: "Clientes de Agua", value: summary.waterCustomers, href: "/admin/agua" },
     { label: "Ligacoes", value: summary.waterContracts, href: "/admin/agua" },
     { label: "Leituras", value: summary.waterReadings, href: "/admin/agua" },

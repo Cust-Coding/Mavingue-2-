@@ -1,4 +1,6 @@
 package com.custcoding.estaleiromavingue.App.models;
+
+import com.custcoding.estaleiromavingue.App.models.status.EstadoServicoAgua;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -25,15 +27,33 @@ public class CustomerWater {
     @Column(nullable = false)
     private String email;
 
-    @Column(name = "nr_casa", nullable = false, length = 20)
+    @Column(name = "nr_casa", length = 20)
     private String houseNR;
+
+    @Column(name = "referencia_local", length = 180)
+    private String referenciaLocal;
     
     @ManyToOne
     @JoinColumn(name = "id_zona", nullable = true)
     private Adress adressId;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 40)
+    private EstadoServicoAgua estado = EstadoServicoAgua.PENDENTE_APROVACAO;
+
+    @Column(name = "pedido_agua", nullable = false)
+    private Boolean pedidoAgua = Boolean.TRUE;
+
+    @Column(name = "activo", nullable = false)
+    private Boolean activo = Boolean.FALSE;
+
+    @Column(name = "observacoes", length = 255)
+    private String observacoes;
+
     @Column(name = "data_criacao", nullable = true)
     @CreationTimestamp
     private LocalDateTime created;
-  
+
+    @Column(name = "data_actualizacao")
+    private LocalDateTime updated;
 }

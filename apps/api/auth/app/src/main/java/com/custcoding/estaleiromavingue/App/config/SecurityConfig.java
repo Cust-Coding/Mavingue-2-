@@ -71,8 +71,8 @@ public class SecurityConfig {
                         // --------------------
                         // PRODUCTS
                         // --------------------
-                        .requestMatchers(HttpMethod.POST, "/api/products/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PUT, "/api/products/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/products/**").hasAnyRole("ADMIN", "FUNCIONARIO")
+                        .requestMatchers(HttpMethod.PUT, "/api/products/**").hasAnyRole("ADMIN", "FUNCIONARIO")
                         .requestMatchers(HttpMethod.DELETE, "/api/products/**").hasRole("ADMIN")
                         // GET já está permitAll acima
 
@@ -98,6 +98,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/client-area/**").hasRole("CLIENTE")
 
                         // Endereços: admin/staff
+                        .requestMatchers(HttpMethod.GET, "/api/address", "/api/address/", "/api/address/**").authenticated()
                         .requestMatchers("/api/address/**").hasAnyRole("ADMIN", "FUNCIONARIO")
 
                         // Ferragem: escrever só admin (GET já é público)

@@ -9,15 +9,17 @@ public record ProductResponse(
         String name,
         String description,
         BigDecimal price,
-        String urlImg
+        String urlImg,
+        Integer stockDisponivel
 ) {
-    public static ProductResponse from(Product p) {
+    public static ProductResponse from(Product p, Integer stockDisponivel) {
         return new ProductResponse(
                 p.getId(),
                 p.getName(),
                 p.getDescription(),
                 p.getPrice(),
-                p.getUrlImg()
+                p.getUrlImg(),
+                stockDisponivel
         );
     }
 }

@@ -1,6 +1,7 @@
 package com.custcoding.estaleiromavingue.App.services;
 
 import com.custcoding.estaleiromavingue.App.dtos.stock.StockAdjustDTO;
+import com.custcoding.estaleiromavingue.App.dtos.stock.MovimentoStockResponseDTO;
 import com.custcoding.estaleiromavingue.App.dtos.stock.StockResponseDTO;
 import com.custcoding.estaleiromavingue.App.models.MovimentoStock;
 import com.custcoding.estaleiromavingue.App.models.Product;
@@ -28,12 +29,32 @@ public class StockService {
         this.movRepo = movRepo;
     }
 
+    @Transactional(readOnly = true)
     public List<StockResponseDTO> list() {
         return stockRepo.findAll().stream()
                 .map(s -> new StockResponseDTO(s.getProduto().getId(), s.getProduto().getName(), s.getQuantidade()))
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<MovimentoStockResponseDTO> listMovements() {
+        return movRepo.findAll().stream()
+                .sorted((left, right) -> right.getCriadoEm().compareTo(left.getCriadoEm()))
+                .map(movimento -> new MovimentoStockResponseDTO(
+                        movimento.getId(),
+                        movimento.getProduto().getId(),
+                        movimento.getProduto().getName(),
+                        movimento.getFerragem().getId(),
+                        movimento.getFerragem().getName(),
+                        movimento.getTipo(),
+                        movimento.getQuantidade(),
+                        movimento.getMotivo(),
+                        movimento.getCriadoEm()
+                ))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public StockResponseDTO getByProduto(Long produtoId) {
         Stock s = stockRepo.findByProduto_Id(produtoId)
                 .orElseThrow(() -> new EntityNotFoundException("Stock não encontrado para produto: " + produtoId));

@@ -1,6 +1,7 @@
 package com.custcoding.estaleiromavingue.App.common;
 
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -39,6 +40,22 @@ public class GlobalExceptionHandler {
                 : "Falha ao processar a requisicao";
         return ResponseEntity.status(e.getStatusCode())
                 .body(new ApiError(msg, e.getStatusCode().value(), Instant.now()));
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiError> dataIntegrity(DataIntegrityViolationException e) {
+        String raw = e.getMostSpecificCause() == null ? "" : e.getMostSpecificCause().getMessage();
+        String lower = raw.toLowerCase();
+
+        String msg;
+        if (lower.contains("customer_water") && lower.contains("email")) {
+            msg = "Nao foi possivel criar o pedido de agua com os dados actuais. Reinicie a API e tente novamente.";
+        } else {
+            msg = "Operacao rejeitada por conflito de dados";
+        }
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ApiError(msg, HttpStatus.BAD_REQUEST.value(), Instant.now()));
     }
 
     @ExceptionHandler(Exception.class)

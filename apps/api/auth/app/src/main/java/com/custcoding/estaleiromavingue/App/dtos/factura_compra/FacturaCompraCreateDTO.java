@@ -6,5 +6,5 @@ import jakarta.validation.constraints.NotNull;
 public record FacturaCompraCreateDTO(
         @NotNull Long produtoId,
         @NotNull @Min(1) Integer quantidade,
-        @NotNull Long funcionarioId
+        Long funcionarioId
 ) {}

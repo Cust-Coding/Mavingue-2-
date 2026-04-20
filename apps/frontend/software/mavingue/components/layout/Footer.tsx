@@ -70,7 +70,7 @@ export default function Footer() {
   const productLinks = [
     { label: t("common.catalog"), href: "/catalogo?cat=construcao" },
     { label: t("footer.productCategories.hardware"), href: "/catalogo?cat=ferragem" },
-    { label: t("footer.productCategories.water"), href: "/admin/agua" },
+    { label: t("footer.productCategories.water"), href: "/catalogo?cat=agua" },
     { label: t("footer.productCategories.premium"), href: "/catalogo?cat=premium" },
   ];
 

@@ -2,22 +2,20 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { Button } from "@/components/ui/Button";
-import { Empty, ErrorBox, Loading } from "@/components/ui/State";
+import { StatusPill } from "@/components/ui/StatusPill";
 import { clientApi } from "@/features/client/api";
 import type { ClientOrder, ClientProfile } from "@/features/client/types";
-import { listClientWaterBills, listClientWaterContracts, listClientWaterReadings, payClientWaterBill } from "@/features/water/api";
+import { listClientWaterBills, listClientWaterContracts, listClientWaterReadings } from "@/features/water/api";
 import type { WaterBill, WaterContract, WaterReading } from "@/features/water/types";
-
-const paymentOptions = [
-  { value: "CARTEIRA_MOVEL", label: "Carteira Movel" },
-  { value: "CARTAO", label: "Cartao" },
-  { value: "DINHEIRO_FISICO", label: "Dinheiro Fisico" },
-] as const;
-
-function money(value: number) {
-  return `${Number(value || 0).toFixed(2)} MT`;
-}
+import { printSaleDocument, printWaterBillDocument } from "@/lib/documents/print";
+import { getErrorMessage } from "@/lib/errors";
+import {
+  formatDateTime,
+  formatMoney,
+  formatPaymentMethod,
+  formatPickupStatus,
+  pickupTone,
+} from "@/lib/formatters";
 
 export default function ClienteHome() {
   const [profile, setProfile] = useState<ClientProfile | null>(null);
@@ -25,38 +23,34 @@ export default function ClienteHome() {
   const [contracts, setContracts] = useState<WaterContract[]>([]);
   const [readings, setReadings] = useState<WaterReading[]>([]);
   const [bills, setBills] = useState<WaterBill[]>([]);
-  const [paymentMethod, setPaymentMethod] = useState<(typeof paymentOptions)[number]["value"]>("CARTEIRA_MOVEL");
-  const [paying, setPaying] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState("");
-
-  async function load() {
-    setLoading(true);
-    setErr("");
-
-    try {
-      const [profileData, orderData, contractData, readingData, billData] = await Promise.all([
-        clientApi.profile(),
-        clientApi.listOrders(),
-        listClientWaterContracts(),
-        listClientWaterReadings(),
-        listClientWaterBills(),
-      ]);
-
-      setProfile(profileData);
-      setOrders(orderData);
-      setContracts(contractData);
-      setReadings(readingData);
-      setBills(billData);
-    } catch (error: any) {
-      setErr(error?.message ?? "Erro ao carregar a area do cliente");
-    } finally {
-      setLoading(false);
-    }
-  }
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    load();
+    (async () => {
+      setLoading(true);
+      setError("");
+
+      try {
+        const [profileData, orderData, contractData, readingData, billData] = await Promise.all([
+          clientApi.profile(),
+          clientApi.listOrders(),
+          listClientWaterContracts(),
+          listClientWaterReadings(),
+          listClientWaterBills(),
+        ]);
+
+        setProfile(profileData);
+        setOrders(orderData);
+        setContracts(contractData);
+        setReadings(readingData);
+        setBills(billData);
+      } catch (reason: unknown) {
+        setError(getErrorMessage(reason, "Erro ao carregar a area do cliente"));
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
   const orderTotal = useMemo(
@@ -64,169 +58,240 @@ export default function ClienteHome() {
     [orders]
   );
 
+  const pendingOrders = orders.filter((order) => order.estadoLevantamento !== "LEVANTADO");
+  const readyOrders = orders.filter((order) => order.estadoLevantamento === "PRONTO_PARA_LEVANTAMENTO");
   const latestReading = readings[0] ?? null;
   const pendingBill = bills.find((bill) => bill.estadoPagamento !== "PAGO") ?? null;
-
-  async function handlePayBill() {
-    if (!pendingBill) return;
-
-    setPaying(true);
-    setErr("");
-    try {
-      const updated = await payClientWaterBill(pendingBill.id, { formaPagamento: paymentMethod });
-      setBills((current) => current.map((bill) => (bill.id === updated.id ? updated : bill)));
-    } catch (error: any) {
-      setErr(error?.message ?? "Nao foi possivel pagar a factura");
-    } finally {
-      setPaying(false);
-    }
-  }
+  const waterAccounts = profile?.waterCustomers ?? [];
 
   return (
-    <div style={{ display: "grid", gap: 16 }}>
-      <div style={{ background: "white", border: "1px solid #ddd", borderRadius: 10, padding: 16 }}>
-        <h2 style={{ marginTop: 0 }}>Area do Cliente</h2>
-        <p style={{ marginBottom: 0, color: "#555" }}>
-          {profile ? `Sessao activa para ${profile.account.nome} (${profile.account.email})` : "A carregar dados da sua conta..."}
+    <main className="grid gap-6">
+      <section className="rounded-[32px] border border-slate-200 bg-gradient-to-br from-slate-950 via-slate-900 to-orange-950 px-8 py-10 text-white shadow-2xl shadow-slate-900/10">
+        <p className="text-xs font-semibold uppercase tracking-[0.35em] text-orange-300">Area do cliente</p>
+        <h1 className="mt-4 text-4xl font-black tracking-tight lg:text-5xl">
+          Compras, levantamento, agua e historico no mesmo painel.
+        </h1>
+        <p className="mt-4 max-w-3xl text-base leading-7 text-slate-300">
+          {profile
+            ? `Sessao activa para ${profile.account.nome} (${profile.account.email}).`
+            : "A ligar a conta autenticada ao historico de compras e ao modulo de agua."}
         </p>
-      </div>
+      </section>
 
-      {loading && <Loading />}
-      {err && <ErrorBox text={err} />}
+      {loading && (
+        <div className="rounded-[28px] border border-slate-200 bg-slate-50 px-6 py-14 text-center text-slate-500 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400">
+          A carregar dados da dashboard...
+        </div>
+      )}
 
-      {!loading && !err && (
+      {error && (
+        <div className="rounded-[28px] border border-rose-200 bg-rose-50 px-6 py-10 text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/20 dark:text-rose-300">
+          {error}
+        </div>
+      )}
+
+      {!loading && !error && (
         <>
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-              gap: 12,
-            }}
-          >
+          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
             {[
-              { label: "Compras", value: orders.length, hint: "Pedidos registados" },
-              { label: "Total Comprado", value: money(orderTotal), hint: "Acumulado das compras" },
-              { label: "Ligacoes de Agua", value: contracts.length, hint: "Contratos activos ou historicos" },
-              {
-                label: "Facturas Pendentes",
-                value: bills.filter((bill) => bill.estadoPagamento !== "PAGO").length,
-                hint: "Faturas por regularizar",
-              },
+              { label: "Compras registadas", value: orders.length, hint: "Historico total do cliente" },
+              { label: "Total comprado", value: formatMoney(orderTotal), hint: "Acumulado das compras" },
+              { label: "Levantamentos por tratar", value: pendingOrders.length, hint: "Pedidos ainda em fluxo" },
+              { label: "Pedidos prontos", value: readyOrders.length, hint: "Ja pode levantar na loja" },
+              { label: "Contas de agua", value: waterAccounts.length, hint: "Pedidos e casas associados a conta" },
             ].map((card) => (
-              <div key={card.label} style={{ background: "white", border: "1px solid #ddd", borderRadius: 10, padding: 16 }}>
-                <div style={{ fontSize: 12, textTransform: "uppercase", color: "#777", marginBottom: 8 }}>{card.label}</div>
-                <div style={{ fontSize: 24, fontWeight: 700 }}>{card.value}</div>
-                <div style={{ color: "#666", marginTop: 6 }}>{card.hint}</div>
+              <div
+                key={card.label}
+                className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/70"
+              >
+                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">{card.label}</p>
+                <div className="mt-3 text-3xl font-black tracking-tight text-slate-900 dark:text-white">
+                  {card.value}
+                </div>
+                <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{card.hint}</p>
               </div>
             ))}
-          </div>
+          </section>
 
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-              gap: 16,
-            }}
-          >
-            <div style={{ background: "white", border: "1px solid #ddd", borderRadius: 10, padding: 16 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                <h3 style={{ margin: 0 }}>Ultimas Compras</h3>
-                <Link href="/cliente/compras" style={{ color: "#9a3412", textDecoration: "none", fontWeight: 600 }}>
-                  Ver tudo
-                </Link>
+          <section className="grid gap-6 xl:grid-cols-[1.3fr_420px]">
+            <div className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+              <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Compras recentes</p>
+                  <h2 className="mt-2 text-2xl font-black text-slate-900 dark:text-white">Historico de pedidos</h2>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Link
+                    href="/catalogo"
+                    className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 px-4 text-sm font-bold text-slate-700 transition hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600 dark:border-slate-700 dark:text-slate-200"
+                  >
+                    Comprar mais
+                  </Link>
+                  <Link
+                    href="/cliente/compras"
+                    className="inline-flex h-11 items-center justify-center rounded-2xl bg-slate-950 px-4 text-sm font-bold text-white transition hover:bg-orange-600 dark:bg-white dark:text-slate-950"
+                  >
+                    Ver historico completo
+                  </Link>
+                </div>
               </div>
 
               {orders.length === 0 ? (
-                <Empty text="Ainda nao existem compras associadas a esta conta." />
+                <div className="mt-4 rounded-[24px] border border-dashed border-slate-200 bg-slate-50 px-6 py-14 text-center text-slate-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400">
+                  Ainda nao existem compras associadas a esta conta.
+                </div>
               ) : (
-                <div style={{ display: "grid", gap: 10 }}>
-                  {orders.slice(0, 3).map((order) => (
-                    <Link
+                <div className="mt-4 grid gap-4">
+                  {orders.slice(0, 4).map((order) => (
+                    <article
                       key={order.id}
-                      href={`/cliente/compras/${order.id}`}
-                      style={{
-                        display: "block",
-                        padding: 12,
-                        borderRadius: 8,
-                        border: "1px solid #eee",
-                        textDecoration: "none",
-                        color: "inherit",
-                      }}
+                      className="rounded-[28px] border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950"
                     >
-                      <div style={{ fontWeight: 600 }}>{order.produtoNome}</div>
-                      <div style={{ color: "#666" }}>
-                        Quantidade {order.quantidade} · Total {money(order.total)}
+                      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="text-lg font-black text-slate-900 dark:text-white">
+                              #{order.id} {order.produtoNome}
+                            </h3>
+                            <StatusPill
+                              label={formatPickupStatus(order.estadoLevantamento)}
+                              tone={pickupTone(order.estadoLevantamento)}
+                            />
+                          </div>
+                          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                            {formatDateTime(order.criadoEm)} | {order.quantidade} unidade(s) |{" "}
+                            {formatPaymentMethod(order.formaPagamento)}
+                          </p>
+                          {order.levantamentoNotas && (
+                            <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
+                              Nota da equipa: {order.levantamentoNotas}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="flex flex-col items-start gap-3 lg:items-end">
+                          <p className="text-2xl font-black text-orange-600">{formatMoney(order.total)}</p>
+                          <div className="flex flex-wrap gap-2">
+                            <Link
+                              href={`/cliente/compras/${order.id}`}
+                              className="inline-flex h-10 items-center justify-center rounded-2xl border border-slate-200 px-4 text-sm font-bold text-slate-700 transition hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600 dark:border-slate-700 dark:text-slate-200"
+                            >
+                              Detalhe
+                            </Link>
+                            <button
+                              type="button"
+                              onClick={() => printSaleDocument(order)}
+                              className="inline-flex h-10 items-center justify-center rounded-2xl bg-slate-950 px-4 text-sm font-bold text-white transition hover:bg-orange-600 dark:bg-white dark:text-slate-950"
+                            >
+                              Baixar PDF
+                            </button>
+                          </div>
+                        </div>
                       </div>
-                    </Link>
+                    </article>
                   ))}
                 </div>
               )}
             </div>
 
-            <div style={{ background: "white", border: "1px solid #ddd", borderRadius: 10, padding: 16 }}>
-              <h3 style={{ marginTop: 0 }}>Consumo de Agua</h3>
+            <div className="grid gap-6">
+              <section className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Levantamento</p>
+                <h2 className="mt-2 text-2xl font-black text-slate-900 dark:text-white">Estado dos pedidos</h2>
 
-              {latestReading ? (
-                <div style={{ display: "grid", gap: 10 }}>
-                  <div>
-                    <strong>Ligacao:</strong> #{latestReading.ligacaoId}
-                  </div>
-                  <div>
-                    <strong>Consumo:</strong> {latestReading.consumoM3} m3
-                  </div>
-                  <div>
-                    <strong>Valor:</strong> {money(latestReading.valorPagar)}
-                  </div>
-                  <div>
-                    <strong>Data:</strong> {new Date(latestReading.data).toLocaleString()}
-                  </div>
-                  <Link href="/cliente/agua" style={{ color: "#9a3412", textDecoration: "none", fontWeight: 600 }}>
-                    Abrir modulo de agua
-                  </Link>
-                </div>
-              ) : (
-                <Empty text="Sem leituras de agua registadas para esta conta." />
-              )}
-            </div>
-          </div>
-
-          <div style={{ background: "white", border: "1px solid #ddd", borderRadius: 10, padding: 16 }}>
-            <h3 style={{ marginTop: 0 }}>Factura de Agua em Aberto</h3>
-
-            {!pendingBill ? (
-              <Empty text="Nao ha facturas de agua pendentes neste momento." />
-            ) : (
-              <div style={{ display: "grid", gap: 12 }}>
-                <div style={{ color: "#444" }}>
-                  Factura #{pendingBill.id} · {money(pendingBill.valorTotal)} · Estado {pendingBill.estadoPagamento}
-                </div>
-
-                <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-                  <select
-                    value={paymentMethod}
-                    onChange={(event) => setPaymentMethod(event.target.value as (typeof paymentOptions)[number]["value"])}
-                    style={{ padding: 10, borderRadius: 8, border: "1px solid #ddd", minWidth: 220 }}
-                  >
-                    {paymentOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
+                {readyOrders.length === 0 ? (
+                  <p className="mt-4 text-sm leading-6 text-slate-500 dark:text-slate-400">
+                    Ainda nao existem pedidos prontos para levantamento.
+                  </p>
+                ) : (
+                  <div className="mt-4 grid gap-3">
+                    {readyOrders.slice(0, 3).map((order) => (
+                      <div
+                        key={order.id}
+                        className="rounded-[24px] border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/40 dark:bg-amber-950/20"
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div>
+                            <p className="font-black text-slate-900 dark:text-white">Pedido #{order.id}</p>
+                            <p className="text-sm text-slate-600 dark:text-slate-300">{order.produtoNome}</p>
+                          </div>
+                          <StatusPill
+                            label={formatPickupStatus(order.estadoLevantamento)}
+                            tone={pickupTone(order.estadoLevantamento)}
+                          />
+                        </div>
+                      </div>
                     ))}
-                  </select>
+                  </div>
+                )}
+              </section>
 
-                  <Button onClick={handlePayBill} disabled={paying}>
-                    {paying ? "A pagar..." : "Pagar agora"}
-                  </Button>
+              <section className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Modulo de agua</p>
+                <h2 className="mt-2 text-2xl font-black text-slate-900 dark:text-white">Agua e facturacao</h2>
 
-                  <Link href="/cliente/agua" style={{ color: "#9a3412", textDecoration: "none", fontWeight: 600 }}>
-                    Ver historico completo
-                  </Link>
+                <div className="mt-4 grid gap-3">
+                  <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
+                    <div className="text-sm text-slate-500 dark:text-slate-400">Contratos</div>
+                    <div className="mt-2 text-2xl font-black text-slate-900 dark:text-white">{contracts.length}</div>
+                  </div>
+                  <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
+                    <div className="text-sm text-slate-500 dark:text-slate-400">Ultima leitura</div>
+                    <div className="mt-2 text-base font-black text-slate-900 dark:text-white">
+                      {latestReading
+                        ? `${latestReading.consumoM3} m3 | ${formatMoney(latestReading.valorPagar)}`
+                        : "Sem leituras"}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
+
+                {!pendingBill ? (
+                  <p className="mt-4 text-sm leading-6 text-slate-500 dark:text-slate-400">
+                    Nao ha facturas pendentes neste momento.
+                  </p>
+                ) : (
+                  <div className="mt-5 rounded-[24px] border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/40 dark:bg-amber-950/20">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-black text-slate-900 dark:text-white">
+                          Factura #{pendingBill.id}
+                        </p>
+                        <p className="text-sm text-slate-600 dark:text-slate-300">
+                          {formatMoney(pendingBill.valorTotal)} | {formatDateTime(pendingBill.data)}
+                        </p>
+                      </div>
+                      <StatusPill label={pendingBill.estadoPagamento} tone="amber" />
+                    </div>
+
+                    <div className="mt-4 grid gap-3">
+                      <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">
+                        O pagamento desta factura e confirmado pela equipa no sistema. Depois disso, o estado muda para
+                        pago e pode imprimir o documento actualizado.
+                      </p>
+
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => printWaterBillDocument(pendingBill)}
+                          className="inline-flex h-9 items-center justify-center rounded-md border border-slate-200 px-4 text-sm font-bold text-slate-700 transition hover:bg-white dark:border-slate-700 dark:text-slate-200"
+                        >
+                          Baixar PDF
+                        </button>
+                        <Link
+                          href="/cliente/agua"
+                          className="inline-flex h-9 items-center justify-center rounded-md border border-slate-200 px-4 text-sm font-bold text-slate-700 transition hover:bg-white dark:border-slate-700 dark:text-slate-200"
+                        >
+                          Abrir modulo de agua
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </section>
+            </div>
+          </section>
         </>
       )}
-    </div>
+    </main>
   );
 }

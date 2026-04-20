@@ -2,7 +2,10 @@ package com.custcoding.estaleiromavingue.App.auth;
 
 import com.custcoding.estaleiromavingue.App.auth.dto.*;
 import com.custcoding.estaleiromavingue.App.models.CustomerProduct;
+import com.custcoding.estaleiromavingue.App.models.CustomerWater;
+import com.custcoding.estaleiromavingue.App.models.status.EstadoServicoAgua;
 import com.custcoding.estaleiromavingue.App.repositories.CustomerRepository;
+import com.custcoding.estaleiromavingue.App.repositories.CustomerWaterRepository;
 import com.custcoding.estaleiromavingue.App.security.JwtService;
 import com.custcoding.estaleiromavingue.App.security.tokens.resetpassword.ResetPassowordTokenRepository;
 import com.custcoding.estaleiromavingue.App.security.tokens.resetpassword.ResetPasswordToken;
@@ -32,6 +35,7 @@ public class AuthService {
 
     private final AppUserRepository userRepo;
     private final CustomerRepository customerRepo;
+    private final CustomerWaterRepository customerWaterRepository;
     private final PasswordEncoder encoder;
     private final JwtService jwt;
 
@@ -113,6 +117,19 @@ public class AuthService {
         c.setTipoDocumento(req.tipoDocumento());
         c.setNumeroDocumento(req.numeroDocumento());
         customerRepo.save(c);
+
+        if (Boolean.TRUE.equals(req.pedirAgua())) {
+            CustomerWater water = new CustomerWater();
+            water.setName(req.nome());
+            water.setPhone(req.telefone());
+            water.setEmail(req.email());
+            water.setReferenciaLocal("Pedido inicial criado no registo");
+            water.setEstado(EstadoServicoAgua.PENDENTE_APROVACAO);
+            water.setPedidoAgua(true);
+            water.setActivo(false);
+            water.setObservacoes("Pedido criado no registo da conta");
+            customerWaterRepository.save(water);
+        }
 
         // 3) Envia email de verificacao
         sendVerification(u);

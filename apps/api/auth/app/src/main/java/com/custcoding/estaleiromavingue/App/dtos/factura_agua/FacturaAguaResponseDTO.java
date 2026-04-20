@@ -15,5 +15,6 @@ public record FacturaAguaResponseDTO(
         FormaPagamento formaPagamento,
         Long consumidorId,
         String consumidorNome,
+        String houseNR,
         Long leituraId
 ) {}

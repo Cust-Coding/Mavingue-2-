@@ -24,10 +24,8 @@ const DEFAULT_LOCALE = "pt";
 
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [locale, setLocaleState] = useState(DEFAULT_LOCALE);
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
     const stored = localStorage.getItem(LOCALE_KEY);
     if (stored && (stored === "pt" || stored === "en")) {
       setLocaleState(stored);
@@ -68,10 +66,6 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     
     return result;
   };
-
-  if (!mounted) {
-    return <>{children}</>;
-  }
 
   return (
     <I18nContext.Provider value={{ locale, setLocale, t }}>

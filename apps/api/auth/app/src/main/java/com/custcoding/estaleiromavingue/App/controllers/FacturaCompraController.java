@@ -5,6 +5,7 @@ import com.custcoding.estaleiromavingue.App.dtos.factura_compra.FacturaCompraRes
 import com.custcoding.estaleiromavingue.App.services.FacturaCompraService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,8 +22,8 @@ public class FacturaCompraController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public FacturaCompraResponseDTO create(@Valid @RequestBody FacturaCompraCreateDTO dto) {
-        return service.create(dto);
+    public FacturaCompraResponseDTO create(@Valid @RequestBody FacturaCompraCreateDTO dto, Authentication authentication) {
+        return service.create(authentication.getName(), dto);
     }
 
     @GetMapping

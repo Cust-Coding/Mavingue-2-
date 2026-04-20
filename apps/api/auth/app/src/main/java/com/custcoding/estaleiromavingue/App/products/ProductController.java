@@ -22,22 +22,27 @@ public class ProductController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ProductResponse create(@Valid @RequestBody ProductCreateRequest req) {
-        return ProductResponse.from(service.create(req));
+        var product = service.create(req);
+        return ProductResponse.from(product, service.getAvailableStock(product.getId()));
     }
 
     @GetMapping
     public List<ProductResponse> list() {
-        return service.list().stream().map(ProductResponse::from).toList();
+        return service.list().stream()
+                .map(product -> ProductResponse.from(product, service.getAvailableStock(product.getId())))
+                .toList();
     }
 
     @GetMapping("/{id}")
     public ProductResponse get(@PathVariable Long id) {
-        return ProductResponse.from(service.get(id));
+        var product = service.get(id);
+        return ProductResponse.from(product, service.getAvailableStock(product.getId()));
     }
 
     @PutMapping("/{id}")
     public ProductResponse update(@PathVariable Long id, @Valid @RequestBody ProductUpdateRequest req) {
-        return ProductResponse.from(service.update(id, req));
+        var product = service.update(id, req);
+        return ProductResponse.from(product, service.getAvailableStock(product.getId()));
     }
 
     @DeleteMapping("/{id}")

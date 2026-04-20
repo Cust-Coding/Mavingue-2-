@@ -1,6 +1,7 @@
 package com.custcoding.estaleiromavingue.App.controllers;
 
 import com.custcoding.estaleiromavingue.App.dtos.stock.StockAdjustDTO;
+import com.custcoding.estaleiromavingue.App.dtos.stock.MovimentoStockResponseDTO;
 import com.custcoding.estaleiromavingue.App.dtos.stock.StockResponseDTO;
 import com.custcoding.estaleiromavingue.App.services.StockService;
 import jakarta.validation.Valid;
@@ -22,6 +23,11 @@ public class StockController {
     @GetMapping
     public List<StockResponseDTO> list() {
         return service.list();
+    }
+
+    @GetMapping("/movimentos")
+    public List<MovimentoStockResponseDTO> listMovements() {
+        return service.listMovements();
     }
 
     @GetMapping("/produto/{produtoId}")

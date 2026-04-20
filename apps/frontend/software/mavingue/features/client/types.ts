@@ -14,6 +14,17 @@ export type ClientProfile = {
   account: ClientAccount;
   customer: Customer | null;
   waterCustomer: WaterCustomer | null;
+  waterCustomers: WaterCustomer[];
 };
 
 export type ClientOrder = Venda;
+
+export type ClientCheckoutItem = {
+  produtoId: number;
+  quantidade: number;
+};
+
+export type ClientCheckoutRequest = {
+  items: ClientCheckoutItem[];
+  formaPagamento: "CARTEIRA_MOVEL" | "CARTAO" | "DINHEIRO_FISICO";
+};

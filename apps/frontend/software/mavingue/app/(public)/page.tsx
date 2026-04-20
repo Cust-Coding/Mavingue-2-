@@ -1,8 +1,11 @@
 'use client';
 
 import Link from "next/link";
-import { useEffect, useRef } from 'react';
-import gsap from 'gsap';
+import { useEffect, useRef, useState } from "react";
+import gsap from "gsap";
+import { ProductCard } from "@/components/catalog/ProductCard";
+import type { Product } from "@/features/products/types";
+import { productsApi } from "@/features/products/api";
 import { useI18n } from "@/lib/i18n";
 
 export default function Landing() {
@@ -11,139 +14,161 @@ export default function Landing() {
   const textRef = useRef<HTMLDivElement>(null);
   const buttonsRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const [products, setProducts] = useState<Product[]>([]);
 
   useEffect(() => {
-    // Animação do título
     if (!titleRef.current) return;
-    gsap.fromTo(titleRef.current,
+
+    gsap.fromTo(
+      titleRef.current,
       { opacity: 0, x: -50 },
       { opacity: 1, x: 0, duration: 0.8, ease: "power2.out" }
     );
-    
-    // Animação do texto (todas as frases vêm da esquerda)
-    if (!textRef.current?.children) return;
-    gsap.fromTo(textRef.current.children,
-      { opacity: 0, x: -50 },
-      { opacity: 1, x: 0, duration: 0.6, stagger: 0.2, ease: "power2.out" }
-    );
-    
-    // Animação dos botões
-    if (!buttonsRef.current?.children) return;
-    gsap.fromTo(buttonsRef.current.children,
-      { opacity: 0, scale: 0.8 },
-      { opacity: 1, scale: 1, duration: 0.5, stagger: 0.1, ease: "back.out(0.5)" }
-    );
-    
-    // Animação da secção inferior
-    if (!bottomRef.current) return;
-    gsap.fromTo(bottomRef.current,
-      { opacity: 0, y: 30 },
-      { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }
-    );
+
+    if (textRef.current?.children) {
+      gsap.fromTo(
+        textRef.current.children,
+        { opacity: 0, x: -50 },
+        { opacity: 1, x: 0, duration: 0.6, stagger: 0.2, ease: "power2.out" }
+      );
+    }
+
+    if (buttonsRef.current?.children) {
+      gsap.fromTo(
+        buttonsRef.current.children,
+        { opacity: 0, scale: 0.8 },
+        { opacity: 1, scale: 1, duration: 0.5, stagger: 0.1, ease: "back.out(0.5)" }
+      );
+    }
+
+    if (bottomRef.current) {
+      gsap.fromTo(
+        bottomRef.current,
+        { opacity: 0, y: 30 },
+        { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }
+      );
+    }
+  }, []);
+
+  useEffect(() => {
+    productsApi
+      .list()
+      .then((rows) => setProducts(rows.slice(0, 6)))
+      .catch(() => setProducts([]));
   }, []);
 
   return (
-    <main className="bg-white">
-      
-      {/* HERO */}
-      <div
-        className="w-screen min-h-[85vh] flex items-center justify-start relative px-6 lg:px-20 py-20 overflow-hidden"
+    <main className="bg-white dark:bg-slate-950">
+      <section
+        className="relative flex min-h-[78vh] items-center overflow-hidden px-6 py-20 lg:px-20"
         style={{
           backgroundImage:
-            "linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0.6)), url('https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=2070&auto=format&fit=crop')",
+            "linear-gradient(rgba(15,23,42,0.75), rgba(15,23,42,0.68)), url('https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80&w=2070&auto=format&fit=crop')",
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundAttachment: "fixed",
         }}
       >
-        <div className="max-w-4xl relative z-10">
-          {/* Título */}
-          <h1 
+        <div className="relative z-10 max-w-4xl">
+          <h1
             ref={titleRef}
-            className="text-[#FF4500] text-5xl lg:text-7xl font-black mb-6 tracking-tight leading-[1.05]"
+            className="text-5xl font-black leading-[1.02] tracking-tight text-orange-500 lg:text-7xl"
           >
-            {t("hero.title")} <br />
+            {t("hero.title")}
+            <br />
             <span className="text-white">{t("hero.subtitle")}</span>
           </h1>
 
-          {/* Texto com animação da esquerda */}
-          <div ref={textRef} className="text-white text-xl lg:text-2xl leading-relaxed font-medium max-w-2xl">
-            <p className="mb-6">
-              {t("hero.heroText")}
-            </p>
-
-            <div className="border-l-4 border-[#FF4500] pl-6 text-orange-100 text-lg lg:text-xl italic">
+          <div
+            ref={textRef}
+            className="mt-8 max-w-2xl space-y-6 text-lg leading-8 text-slate-100 lg:text-xl"
+          >
+            <p>{t("hero.heroText")}</p>
+            <div className="border-l-4 border-orange-500 pl-6 text-orange-100">
               {t("hero.transparencyText")}
             </div>
           </div>
 
-          {/* Botões */}
-          <div 
-            ref={buttonsRef}
-            className="mt-10 flex flex-wrap gap-4"
-          >
+          <div ref={buttonsRef} className="mt-10 flex flex-wrap gap-4">
             <Link
               href="/catalogo"
-              className="px-6 h-14 flex items-center justify-center rounded-2xl bg-[#FF4500] text-white font-bold shadow-xl shadow-[#FF4500]/30 hover:shadow-[#FF4500]/50 hover:-translate-y-1 transition-all duration-300"
+              className="inline-flex h-14 items-center justify-center rounded-2xl bg-orange-600 px-6 text-sm font-bold text-white transition hover:-translate-y-1 hover:bg-orange-700"
             >
               {t("hero.cta")}
             </Link>
-
             <Link
               href="/auth/register"
-              className="px-6 h-14 flex items-center justify-center rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 text-white font-bold hover:bg-white/20 hover:-translate-y-1 transition-all duration-300"
+              className="inline-flex h-14 items-center justify-center rounded-2xl border border-white/20 bg-white/10 px-6 text-sm font-bold text-white transition hover:-translate-y-1 hover:bg-white/20"
             >
               {t("hero.createAccount")}
             </Link>
-
             <Link
               href="/auth/login"
-              className="px-6 h-14 flex items-center justify-center rounded-2xl text-white/80 font-bold hover:text-white hover:-translate-y-1 transition-all duration-300"
+              className="inline-flex h-14 items-center justify-center rounded-2xl px-6 text-sm font-bold text-white/80 transition hover:-translate-y-1 hover:text-white"
             >
               {t("hero.alreadyHaveAccount")}
             </Link>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* SECÇÃO INFERIOR */}
-      <div 
-        ref={bottomRef}
-        className="py-16 px-6 lg:px-20 bg-gradient-to-b from-white to-gray-50"
-      >
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-2xl lg:text-3xl font-extrabold text-gray-900 mb-4">
+      <section ref={bottomRef} className="bg-gradient-to-b from-white to-slate-50 px-6 py-16 lg:px-20 dark:from-slate-950 dark:to-slate-900">
+        <div className="mx-auto max-w-4xl text-center">
+          <h2 className="text-3xl font-black tracking-tight text-slate-900 dark:text-white">
             {t("landing.publicCatalog")}
           </h2>
-
-          <p className="text-gray-500 font-medium mb-8">
+          <p className="mt-4 text-base leading-7 text-slate-500 dark:text-slate-400">
             {t("landing.catalogDesc")}
           </p>
-
-          <div className="flex flex-wrap justify-center gap-4">
+          <div className="mt-8 flex flex-wrap justify-center gap-4">
             <Link
               href="/catalogo"
-              className="px-6 h-12 flex items-center rounded-xl bg-gray-900 text-white font-bold hover:bg-black hover:-translate-y-1 transition-all duration-300"
+              className="inline-flex h-12 items-center rounded-2xl bg-slate-950 px-6 text-sm font-bold text-white transition hover:-translate-y-1 hover:bg-orange-600 dark:bg-white dark:text-slate-950"
             >
               {t("common.explore")}
             </Link>
-
             <Link
               href="/auth/register"
-              className="px-6 h-12 flex items-center rounded-xl border border-gray-200 font-bold text-gray-700 hover:bg-gray-100 hover:-translate-y-1 transition-all duration-300"
+              className="inline-flex h-12 items-center rounded-2xl border border-slate-200 px-6 text-sm font-bold text-slate-700 transition hover:-translate-y-1 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900"
             >
               {t("landing.register")}
             </Link>
-
-            <Link
-              href="/auth/login"
-              className="px-6 h-12 flex items-center rounded-xl text-gray-500 font-bold hover:text-gray-900 hover:-translate-y-1 transition-all duration-300"
-            >
-              {t("hero.login")}
-            </Link>
           </div>
         </div>
-      </div>
+      </section>
+
+      <section className="px-6 py-18 lg:px-20">
+        <div className="mx-auto max-w-7xl">
+          <div className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.35em] text-orange-500">
+                Catalogo em destaque
+              </p>
+              <h2 className="mt-3 text-3xl font-black tracking-tight text-slate-900 dark:text-white">
+                Produtos visiveis logo na pagina inicial
+              </h2>
+            </div>
+            <Link
+              href="/catalogo"
+              className="inline-flex h-12 items-center justify-center rounded-2xl border border-slate-200 px-6 text-sm font-bold text-slate-700 transition hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900"
+            >
+              Ver catalogo completo
+            </Link>
+          </div>
+
+          {products.length === 0 ? (
+            <div className="rounded-[28px] border border-slate-200 bg-slate-50 px-6 py-12 text-center text-slate-500 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400">
+              Ainda nao existem produtos carregados no catalogo.
+            </div>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+              {products.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
     </main>
   );
 }

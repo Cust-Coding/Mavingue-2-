@@ -4,5 +4,5 @@ import jakarta.validation.constraints.NotNull;
 
 public record LigacaoAguaCreateDTO(
         @NotNull Long consumidorId,
-        @NotNull Long funcionarioId
+        Long funcionarioId
 ) {}

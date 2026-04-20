@@ -1,14 +1,17 @@
 package com.custcoding.estaleiromavingue.App.services;
 
+import com.custcoding.estaleiromavingue.App.dtos.stock.StockAdjustDTO;
 import com.custcoding.estaleiromavingue.App.dtos.venda.VendaCreateDTO;
 import com.custcoding.estaleiromavingue.App.dtos.venda.VendaResponseDTO;
+import com.custcoding.estaleiromavingue.App.dtos.venda.VendaStatusUpdateDTO;
 import com.custcoding.estaleiromavingue.App.models.CustomerProduct;
 import com.custcoding.estaleiromavingue.App.models.Funcionario;
 import com.custcoding.estaleiromavingue.App.models.Product;
 import com.custcoding.estaleiromavingue.App.models.Venda;
+import com.custcoding.estaleiromavingue.App.models.status.EstadoLevantamento;
+import com.custcoding.estaleiromavingue.App.models.status.FormaPagamento;
 import com.custcoding.estaleiromavingue.App.models.status.TipoMovimento;
 import com.custcoding.estaleiromavingue.App.repositories.CustomerRepository;
-import com.custcoding.estaleiromavingue.App.repositories.FuncionarioRepository;
 import com.custcoding.estaleiromavingue.App.repositories.ProductRepository;
 import com.custcoding.estaleiromavingue.App.repositories.VendaRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -16,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 
 @Service
@@ -24,72 +28,128 @@ public class VendaService {
     private final VendaRepository vendaRepo;
     private final ProductRepository productRepo;
     private final CustomerRepository customerRepo;
-    private final FuncionarioRepository funcionarioRepo;
     private final StockService stockService;
+    private final OperationActorService operationActorService;
 
     public VendaService(
             VendaRepository vendaRepo,
             ProductRepository productRepo,
             CustomerRepository customerRepo,
-            FuncionarioRepository funcionarioRepo,
-            StockService stockService
+            StockService stockService,
+            OperationActorService operationActorService
     ) {
         this.vendaRepo = vendaRepo;
         this.productRepo = productRepo;
         this.customerRepo = customerRepo;
-        this.funcionarioRepo = funcionarioRepo;
         this.stockService = stockService;
+        this.operationActorService = operationActorService;
     }
 
+    @Transactional(readOnly = true)
     public List<VendaResponseDTO> list() {
         return vendaRepo.findAll().stream().map(this::toDTO).toList();
     }
 
+    @Transactional(readOnly = true)
     public VendaResponseDTO get(Long id) {
-        Venda v = vendaRepo.findById(id).orElseThrow(() -> new EntityNotFoundException("Venda não encontrada: " + id));
-        return toDTO(v);
+        Venda venda = vendaRepo.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Venda nao encontrada: " + id));
+        return toDTO(venda);
     }
 
     @Transactional
-    public VendaResponseDTO create(VendaCreateDTO dto) {
-        Product p = productRepo.findById(dto.produtoId())
-                .orElseThrow(() -> new EntityNotFoundException("Produto não encontrado: " + dto.produtoId()));
-
-        // Ajusta stock (SAÍDA)
-        stockService.adjust(new com.custcoding.estaleiromavingue.App.dtos.stock.StockAdjustDTO(
-                p.getId(), TipoMovimento.SAIDA, dto.quantidade(), "Venda"
-        ));
-
-        CustomerProduct cliente = customerRepo.findById(dto.clienteId())
-                .orElseThrow(() -> new EntityNotFoundException("Cliente não encontrado: " + dto.clienteId()));
-
-        Funcionario func = funcionarioRepo.findById(dto.funcionarioId())
-                .orElseThrow(() -> new EntityNotFoundException("Funcionário não encontrado: " + dto.funcionarioId()));
-
-        Venda v = new Venda();
-        v.setProduto(p);
-        v.setCliente(cliente);
-        v.setFuncionario(func);
-        v.setQuantidade(dto.quantidade());
-        v.setFormaPagamento(dto.formaPagamento());
-
-        v = vendaRepo.save(v);
-        return toDTO(v);
+    public VendaResponseDTO create(String userIdFromAuth, VendaCreateDTO dto) {
+        Funcionario funcionario = operationActorService.resolveFuncionario(userIdFromAuth, dto.funcionarioId());
+        return createInternal(dto.produtoId(), dto.clienteId(), funcionario.getId(), dto.quantidade(), dto.formaPagamento());
     }
 
-    private VendaResponseDTO toDTO(Venda v) {
-        BigDecimal unit = v.getProduto().getPrice();
-        BigDecimal total = unit.multiply(BigDecimal.valueOf(v.getQuantidade() == null ? 0 : v.getQuantidade()));
+    @Transactional
+    public VendaResponseDTO createForClientCheckout(
+            Long produtoId,
+            Long clienteId,
+            Long funcionarioId,
+            Integer quantidade,
+            FormaPagamento formaPagamento
+    ) {
+        return createInternal(produtoId, clienteId, funcionarioId, quantidade, formaPagamento);
+    }
+
+    @Transactional
+    public VendaResponseDTO updatePickupStatus(Long id, VendaStatusUpdateDTO dto) {
+        Venda venda = vendaRepo.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Venda nao encontrada: " + id));
+
+        venda.setEstadoLevantamento(dto.estadoLevantamento());
+        venda.setLevantamentoNotas(dto.levantamentoNotas());
+        venda.setAtualizadoEm(Instant.now());
+
+        if (dto.estadoLevantamento() == EstadoLevantamento.LEVANTADO) {
+            venda.setLevantadoEm(Instant.now());
+        } else {
+            venda.setLevantadoEm(null);
+        }
+
+        return toDTO(vendaRepo.save(venda));
+    }
+
+    @Transactional
+    public VendaResponseDTO createInternal(
+            Long produtoId,
+            Long clienteId,
+            Long funcionarioId,
+            Integer quantidade,
+            FormaPagamento formaPagamento
+    ) {
+        Product produto = productRepo.findById(produtoId)
+                .orElseThrow(() -> new EntityNotFoundException("Produto nao encontrado: " + produtoId));
+
+        stockService.adjust(new StockAdjustDTO(produto.getId(), TipoMovimento.SAIDA, quantidade, "Venda"));
+
+        CustomerProduct cliente = customerRepo.findById(clienteId)
+                .orElseThrow(() -> new EntityNotFoundException("Cliente nao encontrado: " + clienteId));
+
+        Funcionario funcionario = operationActorService.resolveFuncionario(null, funcionarioId);
+
+        Venda venda = new Venda();
+        venda.setProduto(produto);
+        venda.setCliente(cliente);
+        venda.setFuncionario(funcionario);
+        venda.setQuantidade(quantidade);
+        venda.setFormaPagamento(formaPagamento);
+        venda.setTotal(produto.getPrice().multiply(BigDecimal.valueOf(quantidade == null ? 0 : quantidade)));
+        venda.setEstadoLevantamento(EstadoLevantamento.AGUARDANDO_PREPARACAO);
+        venda.setAtualizadoEm(Instant.now());
+
+        return toDTO(vendaRepo.save(venda));
+    }
+
+    public VendaResponseDTO toDTO(Venda venda) {
+        BigDecimal precoUnitario = venda.getProduto() != null && venda.getProduto().getPrice() != null
+                ? venda.getProduto().getPrice()
+                : BigDecimal.ZERO;
+        BigDecimal total = venda.getTotal() != null
+                ? venda.getTotal()
+                : precoUnitario.multiply(BigDecimal.valueOf(venda.getQuantidade() == null ? 0 : venda.getQuantidade()));
+
         return new VendaResponseDTO(
-                v.getId(),
-                v.getProduto().getId(),
-                v.getProduto().getName(),
-                v.getCliente().getId(),
-                v.getFuncionario().getId(),
-                v.getQuantidade(),
-                unit,
+                venda.getId(),
+                venda.getProduto() == null ? null : venda.getProduto().getId(),
+                venda.getProduto() == null ? "Produto removido" : venda.getProduto().getName(),
+                venda.getCliente() == null ? null : venda.getCliente().getId(),
+                venda.getCliente() == null ? "Cliente removido" : venda.getCliente().getName(),
+                venda.getFuncionario() == null ? null : venda.getFuncionario().getId(),
+                venda.getFuncionario() == null ? "Operador nao identificado" : venda.getFuncionario().getNome(),
+                venda.getQuantidade(),
+                precoUnitario,
                 total,
-                v.getFormaPagamento()
+                venda.getFormaPagamento(),
+                venda.getEstadoLevantamento() == null
+                        ? EstadoLevantamento.AGUARDANDO_PREPARACAO
+                        : venda.getEstadoLevantamento(),
+                venda.getLevantamentoNotas(),
+                venda.getCriadoEm(),
+                venda.getAtualizadoEm(),
+                venda.getLevantadoEm()
         );
     }
 }

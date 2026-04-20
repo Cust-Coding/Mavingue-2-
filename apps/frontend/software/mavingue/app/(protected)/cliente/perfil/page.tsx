@@ -73,21 +73,34 @@ export default function Perfil() {
           </div>
 
           <div style={{ background: "white", border: "1px solid #ddd", borderRadius: 10, padding: 16 }}>
-            <h3 style={{ marginTop: 0 }}>Consumidor de Agua</h3>
-            {profile.waterCustomer ? (
-              <div style={{ display: "grid", gap: 10 }}>
-                <div>
-                  <strong>Nome:</strong> {profile.waterCustomer.name}
-                </div>
-                <div>
-                  <strong>Telefone:</strong> {profile.waterCustomer.phone}
-                </div>
-                <div>
-                  <strong>Casa:</strong> {profile.waterCustomer.houseNR}
-                </div>
-                <div>
-                  <strong>Zona:</strong> {profile.waterCustomer.adress || "-"}
-                </div>
+            <h3 style={{ marginTop: 0 }}>Contas e Pedidos de Agua</h3>
+            {profile.waterCustomers.length > 0 ? (
+              <div style={{ display: "grid", gap: 12 }}>
+                {profile.waterCustomers.map((waterCustomer) => (
+                  <div key={waterCustomer.id} style={{ border: "1px solid #eee", borderRadius: 10, padding: 12, display: "grid", gap: 8 }}>
+                    <div>
+                      <strong>Casa ID:</strong> #{waterCustomer.id}
+                    </div>
+                    <div>
+                      <strong>Proprietario:</strong> {waterCustomer.name}
+                    </div>
+                    <div>
+                      <strong>Telefone:</strong> {waterCustomer.phone}
+                    </div>
+                    <div>
+                      <strong>Local:</strong> {waterCustomer.referenciaLocal || "-"}
+                    </div>
+                    <div>
+                      <strong>Estado:</strong> {waterCustomer.estado}
+                    </div>
+                    <div>
+                      <strong>Casa:</strong> {waterCustomer.houseNR || "-"}
+                    </div>
+                    <div>
+                      <strong>Zona:</strong> {waterCustomer.adress || "-"}
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : (
               <Empty text="Nao existe cadastro de agua ligado a este email." />

@@ -7,12 +7,13 @@ import com.custcoding.estaleiromavingue.App.models.CustomerWater;
 import com.custcoding.estaleiromavingue.App.models.Funcionario;
 import com.custcoding.estaleiromavingue.App.models.LigacaoAgua;
 import com.custcoding.estaleiromavingue.App.models.status.EstadoLigacao;
+import com.custcoding.estaleiromavingue.App.models.status.EstadoServicoAgua;
 import com.custcoding.estaleiromavingue.App.repositories.CustomerWaterRepository;
-import com.custcoding.estaleiromavingue.App.repositories.FuncionarioRepository;
 import com.custcoding.estaleiromavingue.App.repositories.LigacaoAguaRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -23,21 +24,26 @@ public class LigacaoAguaService {
 
     private final LigacaoAguaRepository ligacaoAguaRepository;
     private final CustomerWaterRepository customerWaterRepository;
-    private final FuncionarioRepository funcionarioRepository;
+    private final OperationActorService operationActorService;
 
+    @Transactional(readOnly = true)
     public List<LigacaoAguaResponseDTO> list() {
         return ligacaoAguaRepository.findAll().stream().map(this::toDTO).toList();
     }
 
+    @Transactional(readOnly = true)
     public LigacaoAguaResponseDTO get(Long id) {
         return toDTO(findLigacao(id));
     }
 
-    public LigacaoAguaResponseDTO create(LigacaoAguaCreateDTO dto) {
+    public LigacaoAguaResponseDTO create(String userIdFromAuth, LigacaoAguaCreateDTO dto) {
         CustomerWater consumidor = customerWaterRepository.findById(dto.consumidorId())
                 .orElseThrow(() -> new EntityNotFoundException("Consumidor de agua nao encontrado: " + dto.consumidorId()));
-        Funcionario funcionario = funcionarioRepository.findById(dto.funcionarioId())
-                .orElseThrow(() -> new EntityNotFoundException("Funcionario nao encontrado: " + dto.funcionarioId()));
+        Funcionario funcionario = operationActorService.resolveFuncionario(userIdFromAuth, dto.funcionarioId());
+
+        if (consumidor.getEstado() != EstadoServicoAgua.ATIVO || !Boolean.TRUE.equals(consumidor.getActivo())) {
+            throw new IllegalArgumentException("O cliente de agua ainda nao esta activo para gerar ligacao");
+        }
 
         if (ligacaoAguaRepository.existsByConsumidor_IdAndEstado(consumidor.getId(), EstadoLigacao.ATIVA)) {
             throw new IllegalArgumentException("O consumidor ja possui uma ligacao ativa");
@@ -72,14 +78,17 @@ public class LigacaoAguaService {
     }
 
     private LigacaoAguaResponseDTO toDTO(LigacaoAgua ligacao) {
+        CustomerWater consumidor = ligacao.getConsumidor();
+        Funcionario funcionario = ligacao.getFuncionario();
         return new LigacaoAguaResponseDTO(
                 ligacao.getId(),
                 ligacao.getData(),
                 ligacao.getEstado(),
-                ligacao.getConsumidor().getId(),
-                ligacao.getConsumidor().getName(),
-                ligacao.getFuncionario().getId(),
-                ligacao.getFuncionario().getNome()
+                consumidor == null ? null : consumidor.getId(),
+                consumidor == null ? "Consumidor nao identificado" : consumidor.getName(),
+                consumidor == null ? null : consumidor.getHouseNR(),
+                funcionario == null ? null : funcionario.getId(),
+                funcionario == null ? "Operador nao identificado" : funcionario.getNome()
         );
     }
 }

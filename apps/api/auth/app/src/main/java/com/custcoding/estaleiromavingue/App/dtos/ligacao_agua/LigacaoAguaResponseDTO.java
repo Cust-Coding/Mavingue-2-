@@ -10,6 +10,7 @@ public record LigacaoAguaResponseDTO(
         EstadoLigacao estado,
         Long consumidorId,
         String consumidorNome,
+        String houseNR,
         Long funcionarioId,
         String funcionarioNome
 ) {}

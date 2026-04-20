@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface FacturaAguaRepository extends JpaRepository<FacturaAgua, Long> {
     List<FacturaAgua> findByConsumidor_IdOrderByDataDesc(Long consumidorId);
+    List<FacturaAgua> findByConsumidor_IdInOrderByDataDesc(List<Long> consumidorIds);
 }

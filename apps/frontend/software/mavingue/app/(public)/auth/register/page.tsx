@@ -36,6 +36,7 @@ type FormState = {
   nuit: string;
   tipoDocumento: TipoDocumento;
   numeroDocumento: string;
+  pedirAgua: "SIM" | "NAO";
 };
 
 type FieldErrors = Partial<Record<keyof FormState, string>>;
@@ -298,6 +299,7 @@ export default function App() {
     nuit: "",
     tipoDocumento: "BI",
     numeroDocumento: "",
+    pedirAgua: "NAO",
   });
 
   function setField<K extends keyof FormState>(k: K, v: FormState[K]) {
@@ -412,6 +414,7 @@ export default function App() {
           nuit: form.nuit.trim() || null,
           tipoDocumento: form.tipoDocumento,
           numeroDocumento: form.numeroDocumento.trim(),
+          pedirAgua: form.pedirAgua === "SIM",
         }),
       });
 
@@ -742,6 +745,27 @@ export default function App() {
                     />
                   </Field>
                 </div>
+              </div>
+
+              <div className="space-y-6">
+                <h3 className="text-xs font-black text-gray-300 uppercase tracking-[3px] mb-8">
+                  Pedido de Agua
+                </h3>
+
+                <Field label="Pretende activar o servico de agua depois do cadastro?">
+                  <ToggleSelector
+                    value={form.pedirAgua}
+                    onChange={(v) => setField("pedirAgua", v)}
+                    options={[
+                      { label: "Nao", val: "NAO" },
+                      { label: "Sim", val: "SIM" },
+                    ]}
+                  />
+                </Field>
+
+                <p className="text-sm leading-7 text-gray-500">
+                  Se escolher "Sim", o pedido fica pendente para aprovacao do administrador. Depois disso vai poder completar os dados da casa na sua area e, se precisar, pedir outras contas de agua para mais casas.
+                </p>
               </div>
 
               <div className="py-12 flex flex-col gap-8">
