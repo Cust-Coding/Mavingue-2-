@@ -16,6 +16,16 @@ import {
   formatPickupStatus,
   pickupTone,
 } from "@/lib/formatters";
+import { 
+  ShoppingBag, 
+  TrendingUp, 
+  Package, 
+  CheckCircle, 
+  Droplets,
+  FileText,
+  Download,
+  ExternalLink
+} from "lucide-react";
 
 export default function ClienteHome() {
   const [profile, setProfile] = useState<ClientProfile | null>(null);
@@ -25,8 +35,15 @@ export default function ClienteHome() {
   const [bills, setBills] = useState<WaterBill[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+    
     (async () => {
       setLoading(true);
       setError("");
@@ -51,7 +68,7 @@ export default function ClienteHome() {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [mounted]);
 
   const orderTotal = useMemo(
     () => orders.reduce((sum, order) => sum + Number(order.total || 0), 0),
@@ -64,232 +81,231 @@ export default function ClienteHome() {
   const pendingBill = bills.find((bill) => bill.estadoPagamento !== "PAGO") ?? null;
   const waterAccounts = profile?.waterCustomers ?? [];
 
+  if (!mounted) {
+    return (
+      <div className="p-6">
+        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-orange-100 rounded-lg">
+              <ShoppingBag className="w-5 h-5 text-orange-600" />
+            </div>
+            <h2 className="text-xl font-semibold text-slate-800">Área do Cliente</h2>
+          </div>
+          <p className="text-slate-500 text-sm mt-2">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <main className="grid gap-6">
-      <section className="rounded-[32px] border border-slate-200 bg-gradient-to-br from-slate-950 via-slate-900 to-orange-950 px-8 py-10 text-white shadow-2xl shadow-slate-900/10">
-        <p className="text-xs font-semibold uppercase tracking-[0.35em] text-orange-300">Area do cliente</p>
-        <h1 className="mt-4 text-4xl font-black tracking-tight lg:text-5xl">
-          Compras, levantamento, agua e historico no mesmo painel.
+    <main className="p-4 md:p-6 space-y-6">
+      {/* Header */}
+      <section className="rounded-xl bg-gradient-to-r from-slate-800 to-slate-900 p-6 text-white shadow-lg">
+        <p className="text-xs font-semibold uppercase tracking-wider text-orange-300">
+          Área do cliente
+        </p>
+        <h1 className="mt-3 text-2xl md:text-3xl font-bold tracking-tight">
+          Compras, levantamento, água e histórico
         </h1>
-        <p className="mt-4 max-w-3xl text-base leading-7 text-slate-300">
+        <p className="mt-2 text-sm text-slate-300 max-w-2xl">
           {profile
-            ? `Sessao activa para ${profile.account.nome} (${profile.account.email}).`
-            : "A ligar a conta autenticada ao historico de compras e ao modulo de agua."}
+            ? `Sessão activa para ${profile.account.nome} (${profile.account.email})`
+            : "A carregar dados da sua conta..."}
         </p>
       </section>
 
       {loading && (
-        <div className="rounded-[28px] border border-slate-200 bg-slate-50 px-6 py-14 text-center text-slate-500 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400">
-          A carregar dados da dashboard...
+        <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto mb-3"></div>
+          <p className="text-slate-500 text-sm">A carregar dados da dashboard...</p>
         </div>
       )}
 
       {error && (
-        <div className="rounded-[28px] border border-rose-200 bg-rose-50 px-6 py-10 text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/20 dark:text-rose-300">
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 text-sm">
           {error}
         </div>
       )}
 
       {!loading && !error && (
         <>
-          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+          {/* Stats Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {[
-              { label: "Compras registadas", value: orders.length, hint: "Historico total do cliente" },
-              { label: "Total comprado", value: formatMoney(orderTotal), hint: "Acumulado das compras" },
-              { label: "Levantamentos por tratar", value: pendingOrders.length, hint: "Pedidos ainda em fluxo" },
-              { label: "Pedidos prontos", value: readyOrders.length, hint: "Ja pode levantar na loja" },
-              { label: "Contas de agua", value: waterAccounts.length, hint: "Pedidos e casas associados a conta" },
-            ].map((card) => (
-              <div
-                key={card.label}
-                className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/70"
-              >
-                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">{card.label}</p>
-                <div className="mt-3 text-3xl font-black tracking-tight text-slate-900 dark:text-white">
-                  {card.value}
+              { label: "Compras", value: orders.length, icon: ShoppingBag, hint: "Total de compras" },
+              { label: "Total gasto", value: formatMoney(orderTotal), icon: TrendingUp, hint: "Acumulado" },
+              { label: "Por tratar", value: pendingOrders.length, icon: Package, hint: "Pedidos em andamento" },
+              { label: "Prontos", value: readyOrders.length, icon: CheckCircle, hint: "Para levantar" },
+              { label: "Contas água", value: waterAccounts.length, icon: Droplets, hint: "Ligações activas" },
+            ].map((card) => {
+              const Icon = card.icon;
+              return (
+                <div
+                  key={card.label}
+                  className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-medium text-slate-400">{card.label}</p>
+                    <Icon className="w-4 h-4 text-orange-500" />
+                  </div>
+                  <div className="text-2xl font-bold text-slate-800">{card.value}</div>
+                  <p className="text-xs text-slate-400 mt-1">{card.hint}</p>
                 </div>
-                <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{card.hint}</p>
-              </div>
-            ))}
-          </section>
+              );
+            })}
+          </div>
 
-          <section className="grid gap-6 xl:grid-cols-[1.3fr_420px]">
-            <div className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-              <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between dark:border-slate-800">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Compras recentes</p>
-                  <h2 className="mt-2 text-2xl font-black text-slate-900 dark:text-white">Historico de pedidos</h2>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  <Link
-                    href="/catalogo"
-                    className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 px-4 text-sm font-bold text-slate-700 transition hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600 dark:border-slate-700 dark:text-slate-200"
-                  >
-                    Comprar mais
-                  </Link>
-                  <Link
-                    href="/cliente/compras"
-                    className="inline-flex h-11 items-center justify-center rounded-2xl bg-slate-950 px-4 text-sm font-bold text-white transition hover:bg-orange-600 dark:bg-white dark:text-slate-950"
-                  >
-                    Ver historico completo
-                  </Link>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Compras Recentes */}
+            <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="p-5 border-b border-slate-100">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div>
+                    <h2 className="text-lg font-semibold text-slate-800">Compras recentes</h2>
+                    <p className="text-sm text-slate-500">Últimos pedidos realizados</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Link
+                      href="/catalogo"
+                      className="px-4 py-2 text-sm font-medium text-orange-600 bg-orange-50 rounded-lg hover:bg-orange-100 transition"
+                    >
+                      Comprar mais
+                    </Link>
+                    <Link
+                      href="/cliente/compras"
+                      className="px-4 py-2 text-sm font-medium text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 transition"
+                    >
+                      Ver tudo
+                    </Link>
+                  </div>
                 </div>
               </div>
 
               {orders.length === 0 ? (
-                <div className="mt-4 rounded-[24px] border border-dashed border-slate-200 bg-slate-50 px-6 py-14 text-center text-slate-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400">
-                  Ainda nao existem compras associadas a esta conta.
+                <div className="p-12 text-center">
+                  <ShoppingBag className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                  <p className="text-slate-500">Ainda não existem compras</p>
                 </div>
               ) : (
-                <div className="mt-4 grid gap-4">
+                <div className="divide-y divide-slate-100">
                   {orders.slice(0, 4).map((order) => (
-                    <article
-                      key={order.id}
-                      className="rounded-[28px] border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950"
-                    >
-                      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                        <div>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <h3 className="text-lg font-black text-slate-900 dark:text-white">
-                              #{order.id} {order.produtoNome}
+                    <div key={order.id} className="p-4 hover:bg-slate-50 transition">
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className="font-semibold text-slate-800">
+                              Pedido #{order.id}
                             </h3>
                             <StatusPill
                               label={formatPickupStatus(order.estadoLevantamento)}
                               tone={pickupTone(order.estadoLevantamento)}
                             />
                           </div>
-                          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                            {formatDateTime(order.criadoEm)} | {order.quantidade} unidade(s) |{" "}
+                          <p className="text-sm text-slate-500 mt-1">
+                            {formatDateTime(order.criadoEm)} • {order.quantidade} unidade(s) •{" "}
                             {formatPaymentMethod(order.formaPagamento)}
                           </p>
                           {order.levantamentoNotas && (
-                            <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
-                              Nota da equipa: {order.levantamentoNotas}
-                            </p>
+                            <p className="text-xs text-slate-400 mt-2">{order.levantamentoNotas}</p>
                           )}
                         </div>
-
-                        <div className="flex flex-col items-start gap-3 lg:items-end">
-                          <p className="text-2xl font-black text-orange-600">{formatMoney(order.total)}</p>
-                          <div className="flex flex-wrap gap-2">
+                        <div className="text-right">
+                          <p className="text-lg font-bold text-orange-600">{formatMoney(order.total)}</p>
+                          <div className="flex gap-2 mt-2">
                             <Link
                               href={`/cliente/compras/${order.id}`}
-                              className="inline-flex h-10 items-center justify-center rounded-2xl border border-slate-200 px-4 text-sm font-bold text-slate-700 transition hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600 dark:border-slate-700 dark:text-slate-200"
+                              className="text-xs text-slate-500 hover:text-orange-600"
                             >
                               Detalhe
                             </Link>
                             <button
-                              type="button"
                               onClick={() => printSaleDocument(order)}
-                              className="inline-flex h-10 items-center justify-center rounded-2xl bg-slate-950 px-4 text-sm font-bold text-white transition hover:bg-orange-600 dark:bg-white dark:text-slate-950"
+                              className="text-xs text-slate-500 hover:text-orange-600"
                             >
-                              Baixar PDF
+                              PDF
                             </button>
                           </div>
                         </div>
                       </div>
-                    </article>
+                    </div>
                   ))}
                 </div>
               )}
             </div>
 
-            <div className="grid gap-6">
-              <section className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Levantamento</p>
-                <h2 className="mt-2 text-2xl font-black text-slate-900 dark:text-white">Estado dos pedidos</h2>
-
+            {/* Sidebar - Pedidos Prontos + Água */}
+            <div className="space-y-6">
+              {/* Pedidos Prontos */}
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+                <h2 className="text-lg font-semibold text-slate-800 mb-3">Pedidos prontos</h2>
                 {readyOrders.length === 0 ? (
-                  <p className="mt-4 text-sm leading-6 text-slate-500 dark:text-slate-400">
-                    Ainda nao existem pedidos prontos para levantamento.
-                  </p>
+                  <p className="text-sm text-slate-500">Nenhum pedido pronto para levantamento.</p>
                 ) : (
-                  <div className="mt-4 grid gap-3">
+                  <div className="space-y-3">
                     {readyOrders.slice(0, 3).map((order) => (
-                      <div
-                        key={order.id}
-                        className="rounded-[24px] border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/40 dark:bg-amber-950/20"
-                      >
-                        <div className="flex items-center justify-between gap-3">
-                          <div>
-                            <p className="font-black text-slate-900 dark:text-white">Pedido #{order.id}</p>
-                            <p className="text-sm text-slate-600 dark:text-slate-300">{order.produtoNome}</p>
-                          </div>
-                          <StatusPill
-                            label={formatPickupStatus(order.estadoLevantamento)}
-                            tone={pickupTone(order.estadoLevantamento)}
-                          />
-                        </div>
+                      <div key={order.id} className="bg-green-50 border border-green-200 rounded-lg p-3">
+                        <p className="font-medium text-slate-800 text-sm">Pedido #{order.id}</p>
+                        <p className="text-xs text-slate-600">{order.produtoNome}</p>
+                        <StatusPill label="Pronto" tone="emerald" />
                       </div>
                     ))}
                   </div>
                 )}
-              </section>
+              </div>
 
-              <section className="rounded-[32px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Modulo de agua</p>
-                <h2 className="mt-2 text-2xl font-black text-slate-900 dark:text-white">Agua e facturacao</h2>
-
-                <div className="mt-4 grid gap-3">
-                  <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
-                    <div className="text-sm text-slate-500 dark:text-slate-400">Contratos</div>
-                    <div className="mt-2 text-2xl font-black text-slate-900 dark:text-white">{contracts.length}</div>
+              {/* Módulo Água */}
+              <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <Droplets className="w-5 h-5 text-cyan-600" />
+                  <h2 className="text-lg font-semibold text-slate-800">Módulo de água</h2>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div className="bg-slate-50 rounded-lg p-3 text-center">
+                    <p className="text-xs text-slate-500">Contratos</p>
+                    <p className="text-xl font-bold text-slate-800">{contracts.length}</p>
                   </div>
-                  <div className="rounded-[24px] border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
-                    <div className="text-sm text-slate-500 dark:text-slate-400">Ultima leitura</div>
-                    <div className="mt-2 text-base font-black text-slate-900 dark:text-white">
-                      {latestReading
-                        ? `${latestReading.consumoM3} m3 | ${formatMoney(latestReading.valorPagar)}`
-                        : "Sem leituras"}
-                    </div>
+                  <div className="bg-slate-50 rounded-lg p-3 text-center">
+                    <p className="text-xs text-slate-500">Última leitura</p>
+                    <p className="text-sm font-bold text-slate-800">
+                      {latestReading ? `${latestReading.consumoM3} m³` : "—"}
+                    </p>
                   </div>
                 </div>
 
-                {!pendingBill ? (
-                  <p className="mt-4 text-sm leading-6 text-slate-500 dark:text-slate-400">
-                    Nao ha facturas pendentes neste momento.
-                  </p>
-                ) : (
-                  <div className="mt-5 rounded-[24px] border border-amber-200 bg-amber-50 p-4 dark:border-amber-900/40 dark:bg-amber-950/20">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-black text-slate-900 dark:text-white">
-                          Factura #{pendingBill.id}
-                        </p>
-                        <p className="text-sm text-slate-600 dark:text-slate-300">
-                          {formatMoney(pendingBill.valorTotal)} | {formatDateTime(pendingBill.data)}
-                        </p>
-                      </div>
+                {pendingBill && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3">
+                    <div className="flex justify-between items-start mb-2">
+                      <p className="font-medium text-slate-800 text-sm">Factura #{pendingBill.id}</p>
                       <StatusPill label={pendingBill.estadoPagamento} tone="amber" />
                     </div>
-
-                    <div className="mt-4 grid gap-3">
-                      <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">
-                        O pagamento desta factura e confirmado pela equipa no sistema. Depois disso, o estado muda para
-                        pago e pode imprimir o documento actualizado.
-                      </p>
-
-                      <div className="flex flex-wrap gap-2">
-                        <button
-                          type="button"
-                          onClick={() => printWaterBillDocument(pendingBill)}
-                          className="inline-flex h-9 items-center justify-center rounded-md border border-slate-200 px-4 text-sm font-bold text-slate-700 transition hover:bg-white dark:border-slate-700 dark:text-slate-200"
-                        >
-                          Baixar PDF
-                        </button>
-                        <Link
-                          href="/cliente/agua"
-                          className="inline-flex h-9 items-center justify-center rounded-md border border-slate-200 px-4 text-sm font-bold text-slate-700 transition hover:bg-white dark:border-slate-700 dark:text-slate-200"
-                        >
-                          Abrir modulo de agua
-                        </Link>
-                      </div>
+                    <p className="text-lg font-bold text-orange-600">{formatMoney(pendingBill.valorTotal)}</p>
+                    <div className="flex gap-2 mt-3">
+                      <button
+                        onClick={() => printWaterBillDocument(pendingBill)}
+                        className="flex items-center gap-1 text-xs text-slate-600 hover:text-orange-600"
+                      >
+                        <Download className="w-3 h-3" /> PDF
+                      </button>
+                      <Link
+                        href="/cliente/agua"
+                        className="flex items-center gap-1 text-xs text-slate-600 hover:text-orange-600"
+                      >
+                        <ExternalLink className="w-3 h-3" /> Ver
+                      </Link>
                     </div>
                   </div>
                 )}
-              </section>
+
+                <Link
+                  href="/cliente/agua"
+                  className="block text-center mt-3 px-4 py-2 text-sm font-medium text-orange-600 bg-orange-50 rounded-lg hover:bg-orange-100 transition"
+                >
+                  Abrir módulo de água
+                </Link>
+              </div>
             </div>
-          </section>
+          </div>
         </>
       )}
     </main>

@@ -17,7 +17,7 @@ export default function CarrinhoPage() {
   return (
     <main className="bg-white px-6 py-12 lg:px-20 dark:bg-slate-950">
       <div className="mx-auto max-w-7xl">
-        <div className="rounded-[36px] border border-slate-200 bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 px-8 py-10 text-white shadow-2xl shadow-orange-500/15">
+        <div className="rounded-[36px] border border-slate-200 bg-gradient-to-br from-green-500/90 via-green-600/98 to-green-700 px-8 py-10 text-white shadow-2xl shadow-orange-500/15">
           <p className="text-xs font-semibold uppercase tracking-[0.35em] text-orange-100">Carrinho</p>
           <h1 className="mt-4 text-4xl font-black tracking-tight lg:text-5xl">
             Carrinho dinamico com resumo real da compra.
@@ -38,7 +38,7 @@ export default function CarrinhoPage() {
             </p>
             <Link
               href="/catalogo"
-              className="mt-6 inline-flex h-12 items-center justify-center rounded-2xl bg-slate-950 px-6 text-sm font-bold text-white transition hover:bg-orange-600 dark:bg-white dark:text-slate-950"
+              className="mt-6 inline-flex h-12 items-center justify-center rounded-2xl bg-slate-950 px-6 text-sm font-bold text-white transition hover:bg-green-600 dark:bg-white dark:text-slate-950"
             >
               Ir ao catalogo
             </Link>

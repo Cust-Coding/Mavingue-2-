@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, ReactElement } from "react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { clientApi } from "@/features/client/api";
@@ -17,6 +17,20 @@ import type { AddressItem, WaterBill, WaterContract, WaterCustomer, WaterReading
 import { printWaterBillDocument } from "@/lib/documents/print";
 import { getErrorMessage } from "@/lib/errors";
 import { formatDateTime, formatMoney } from "@/lib/formatters";
+import { 
+  Droplets, 
+  Home, 
+  MapPin, 
+  Phone, 
+  Mail, 
+  FileText, 
+  Printer,
+  CheckCircle,
+  Clock,
+  AlertCircle,
+  PlusCircle,
+  Building2
+} from "lucide-react";
 
 type CompletionFormMap = Record<number, { houseNR: string; adressId: string }>;
 
@@ -31,6 +45,11 @@ export default function ClienteAguaPage() {
   const [faturas, setFaturas] = useState<WaterBill[]>([]);
   const [requestForm, setRequestForm] = useState({ referenciaLocal: "", observacoes: "" });
   const [completionForms, setCompletionForms] = useState<CompletionFormMap>({});
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   async function load() {
     setLoading(true);
@@ -65,8 +84,10 @@ export default function ClienteAguaPage() {
   }
 
   useEffect(() => {
-    load();
-  }, []);
+    if (mounted) {
+      load();
+    }
+  }, [mounted]);
 
   const waterCustomers = profile?.waterCustomers ?? [];
   const customerById = useMemo(() => new Map(waterCustomers.map((item) => [item.id, item])), [waterCustomers]);
@@ -103,212 +124,283 @@ export default function ClienteAguaPage() {
     }
   }
 
+  const getEstadoBadge = (estado: string) => {
+    const styles: Record<string, { bg: string; text: string; icon: ReactElement }> = {
+      ATIVO: { bg: "bg-green-100", text: "text-green-700", icon: <CheckCircle className="w-3 h-3" /> },
+      PENDENTE_APROVACAO: { bg: "bg-yellow-100", text: "text-yellow-700", icon: <Clock className="w-3 h-3" /> },
+      AGUARDANDO_DADOS_CASA: { bg: "bg-blue-100", text: "text-blue-700", icon: <Home className="w-3 h-3" /> },
+      INATIVO: { bg: "bg-red-100", text: "text-red-700", icon: <AlertCircle className="w-3 h-3" /> },
+    };
+    const style = styles[estado] || styles.INATIVO;
+    return (
+      <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${style.bg} ${style.text}`}>
+        {style.icon}
+        {estado === "PENDENTE_APROVACAO" ? "Pendente" : estado === "AGUARDANDO_DADOS_CASA" ? "Aguardando dados" : estado}
+      </span>
+    );
+  };
+
+  if (!mounted) {
+    return (
+      <div className="p-6">
+        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-cyan-100 rounded-lg">
+              <Droplets className="w-5 h-5 text-cyan-600" />
+            </div>
+            <h2 className="text-xl font-semibold text-slate-800">Módulo de Água</h2>
+          </div>
+          <p className="text-slate-500 text-sm mt-2">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <main className="grid gap-6">
-      <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Agua</p>
-        <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-900 dark:text-white">Pedidos e contas de agua da sua area</h1>
-        <p className="mt-3 max-w-4xl text-base leading-7 text-slate-500 dark:text-slate-400">
-          Aqui pode pedir agua para uma ou mais casas. Cada pedido fica pendente para aprovacao e, depois disso,
-          completa os dados finais da casa para activar o servico.
+    <main className="p-4 md:p-6 space-y-6">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-cyan-700 to-cyan-800 rounded-xl p-6 text-white shadow-lg">
+        <div className="flex items-center gap-3 mb-2">
+          <Droplets className="w-6 h-6" />
+          <p className="text-xs font-semibold uppercase tracking-wider text-cyan-200">Módulo de Água</p>
+        </div>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+          Pedidos e contas de água
+        </h1>
+        <p className="mt-2 text-sm text-cyan-100 max-w-2xl">
+          Aqui pode pedir água para uma ou mais casas. Cada pedido fica pendente para aprovação e depois completa os dados finais da casa para ativar o serviço.
         </p>
-      </section>
+      </div>
 
-      {error ? <div className="rounded-[24px] border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div> : null}
-      {success ? <div className="rounded-[24px] border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{success}</div> : null}
-
-      {loading ? <div className="text-sm text-slate-500">A carregar modulo de agua...</div> : null}
-
-      <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-        <h2 className="text-2xl font-black text-slate-900 dark:text-white">Pedir nova conta de agua</h2>
-        <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-          Use esta secao quando tiver outra casa ou novo local. O administrador aprova primeiro e depois completa o
-          numero da casa e a zona.
-        </p>
-        <div className="mt-5 grid gap-3 xl:grid-cols-[1.2fr_1.2fr_auto]">
-          <Input
-            value={requestForm.referenciaLocal}
-            onChange={(event) => setRequestForm((current) => ({ ...current, referenciaLocal: event.target.value }))}
-            placeholder="Ex.: Casa da Matola, Talhao 7, Loja do Mercado"
-          />
-          <Input
-            value={requestForm.observacoes}
-            onChange={(event) => setRequestForm((current) => ({ ...current, observacoes: event.target.value }))}
-            placeholder="Observacoes opcionais para ajudar a equipa"
-          />
-          <Button type="button" onClick={submitRequest}>Enviar pedido</Button>
+      {/* Messages */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-red-700 text-sm flex items-center gap-2">
+          <AlertCircle className="w-4 h-4" />
+          {error}
         </div>
-      </section>
-
-      <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-        <h2 className="text-2xl font-black text-slate-900 dark:text-white">As suas contas e pedidos</h2>
-        {!loading && waterCustomers.length === 0 ? (
-          <div className="mt-4 text-sm text-slate-500">A sua conta ainda nao tem pedidos de agua associados.</div>
-        ) : null}
-
-        <div className="mt-5 grid gap-4">
-          {waterCustomers.map((waterCustomer) => (
-            <article key={waterCustomer.id} className="rounded-[24px] border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
-              <div className="grid gap-4 xl:grid-cols-[1.4fr_1fr]">
-                <div className="grid gap-3">
-                  <div className="text-lg font-black text-slate-900 dark:text-white">
-                    Casa ID #{waterCustomer.id} - {waterCustomer.name}
-                  </div>
-                  <div className="text-sm text-slate-500 dark:text-slate-400">{waterCustomer.email} - {waterCustomer.phone}</div>
-                  <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                    <div className="rounded-[20px] border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-                      <div className="text-xs uppercase tracking-[0.2em] text-slate-400">Local pedido</div>
-                      <div className="mt-2 text-sm font-black text-slate-900 dark:text-white">{waterCustomer.referenciaLocal || "-"}</div>
-                    </div>
-                    <div className="rounded-[20px] border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-                      <div className="text-xs uppercase tracking-[0.2em] text-slate-400">Estado</div>
-                      <div className="mt-2 text-sm font-black text-slate-900 dark:text-white">{waterCustomer.estado}</div>
-                    </div>
-                    <div className="rounded-[20px] border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-                      <div className="text-xs uppercase tracking-[0.2em] text-slate-400">Casa</div>
-                      <div className="mt-2 text-sm font-black text-slate-900 dark:text-white">{waterCustomer.houseNR || "-"}</div>
-                    </div>
-                    <div className="rounded-[20px] border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-                      <div className="text-xs uppercase tracking-[0.2em] text-slate-400">Zona</div>
-                      <div className="mt-2 text-sm font-black text-slate-900 dark:text-white">{waterCustomer.adress || "-"}</div>
-                    </div>
-                  </div>
-                  <div className="text-sm text-slate-500 dark:text-slate-400">
-                    Observacoes: {waterCustomer.observacoes || "Sem observacoes"}
-                  </div>
-                </div>
-
-                {waterCustomer.estado === "AGUARDANDO_DADOS_CASA" ? (
-                  <div className="rounded-[24px] border border-orange-200 bg-orange-50 p-4 dark:border-orange-900/40 dark:bg-orange-950/10">
-                    <h3 className="text-lg font-black text-slate-900 dark:text-white">Completar dados da casa</h3>
-                    <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-                      Este pedido foi aprovado. Informe agora o numero da casa e a zona para activar a conta.
-                    </p>
-                    <div className="mt-4 grid gap-3">
-                      <Input
-                        value={completionForms[waterCustomer.id]?.houseNR || ""}
-                        onChange={(event) =>
-                          setCompletionForms((current) => ({
-                            ...current,
-                            [waterCustomer.id]: {
-                              ...(current[waterCustomer.id] ?? { houseNR: "", adressId: "" }),
-                              houseNR: event.target.value,
-                            },
-                          }))
-                        }
-                        placeholder="Numero da casa"
-                      />
-                      <select
-                        value={completionForms[waterCustomer.id]?.adressId || ""}
-                        onChange={(event) =>
-                          setCompletionForms((current) => ({
-                            ...current,
-                            [waterCustomer.id]: {
-                              ...(current[waterCustomer.id] ?? { houseNR: "", adressId: "" }),
-                              adressId: event.target.value,
-                            },
-                          }))
-                        }
-                        className="h-11 rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
-                      >
-                        <option value="">Seleccionar zona</option>
-                        {enderecos.map((endereco) => (
-                          <option key={endereco.id} value={endereco.id}>
-                            {endereco.name} - {endereco.bairro}
-                          </option>
-                        ))}
-                      </select>
-                      <Button type="button" onClick={() => submitCompletion(waterCustomer.id)}>Guardar dados da casa</Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="rounded-[24px] border border-slate-200 bg-white p-4 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
-                    {waterCustomer.estado === "PENDENTE_APROVACAO"
-                      ? "Aguardando aprovacao do administrador."
-                      : waterCustomer.estado === "ATIVO"
-                      ? "Conta activa e pronta para gestao de leitura, factura e pagamento pela equipa."
-                      : "Pedido indisponivel neste momento. Consulte as observacoes acima."}
-                  </div>
-                )}
-              </div>
-            </article>
-          ))}
+      )}
+      {success && (
+        <div className="bg-green-50 border border-green-200 rounded-xl p-3 text-green-700 text-sm flex items-center gap-2">
+          <CheckCircle className="w-4 h-4" />
+          {success}
         </div>
-      </section>
+      )}
 
-      <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-        <h2 className="text-2xl font-black text-slate-900 dark:text-white">Ligacoes e leituras</h2>
-        <div className="mt-5 grid gap-4 xl:grid-cols-2">
-          <div className="grid gap-3">
-            {contratos.length === 0 ? <div className="text-sm text-slate-500">Sem ligacoes ainda.</div> : contratos.map((contrato) => {
-              const cliente = customerById.get(contrato.consumidorId);
-              return (
-                <article key={contrato.id} className="rounded-[24px] border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
-                  <div className="text-base font-black text-slate-900 dark:text-white">
-                    Ligacao #{contrato.id} - Casa ID #{contrato.consumidorId}
-                  </div>
-                  <div className="text-sm text-slate-500 dark:text-slate-400">
-                    {contrato.estado} - {contrato.consumidorNome} - {cliente?.referenciaLocal || "Sem local"}
-                  </div>
-                  <div className="text-sm text-slate-500 dark:text-slate-400">Casa {contrato.houseNR || "-"} - Operador {contrato.funcionarioNome}</div>
-                </article>
-              );
-            })}
-          </div>
-          <div className="grid gap-3">
-            {leituras.length === 0 ? <div className="text-sm text-slate-500">Sem leituras ainda.</div> : leituras.map((leitura) => {
-              const contrato = contratos.find((item) => item.id === leitura.ligacaoId);
-              return (
-                <article key={leitura.id} className="rounded-[24px] border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
-                  <div className="text-base font-black text-slate-900 dark:text-white">{formatDateTime(leitura.data)}</div>
-                  <div className="text-sm text-slate-500 dark:text-slate-400">
-                    Ligacao #{leitura.ligacaoId} - Casa ID #{contrato?.consumidorId || "-"} - {contrato?.consumidorNome || "Consumidor"}
-                  </div>
-                  <div className="text-sm text-slate-500 dark:text-slate-400">
-                    Actual: {leitura.leituraActual} - Consumo: {leitura.consumoM3} m3 - Valor: {formatMoney(leitura.valorPagar)}
-                  </div>
-                </article>
-              );
-            })}
-          </div>
+      {loading && (
+        <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600 mx-auto mb-3"></div>
+          <p className="text-slate-500 text-sm">A carregar módulo de água...</p>
         </div>
-      </section>
+      )}
 
-      <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-          <div>
-            <h2 className="text-2xl font-black text-slate-900 dark:text-white">Faturas emitidas</h2>
-            <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-              O pagamento e confirmado pela equipa no sistema. Aqui pode acompanhar o estado e imprimir a factura.
+      {!loading && (
+        <>
+          {/* Pedir nova conta */}
+          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+            <div className="flex items-center gap-2 mb-4">
+              <PlusCircle className="w-5 h-5 text-cyan-600" />
+              <h2 className="text-lg font-semibold text-slate-800">Pedir nova conta de água</h2>
+            </div>
+            <p className="text-sm text-slate-500 mb-4">
+              Use esta secção quando tiver outra casa ou novo local. O administrador aprova primeiro e depois completa o número da casa e a zona.
             </p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Input
+                value={requestForm.referenciaLocal}
+                onChange={(event) => setRequestForm((current) => ({ ...current, referenciaLocal: event.target.value }))}
+                placeholder="Ex.: Casa da Matola, Talhão 7"
+              />
+              <Input
+                value={requestForm.observacoes}
+                onChange={(event) => setRequestForm((current) => ({ ...current, observacoes: event.target.value }))}
+                placeholder="Observações (opcional)"
+              />
+              <Button onClick={submitRequest} className="bg-cyan-600 hover:bg-cyan-700 sm:col-span-2">
+                Enviar pedido
+              </Button>
+            </div>
           </div>
-        </div>
-        <div className="mt-5 grid gap-4">
-          {faturas.length === 0 ? <div className="text-sm text-slate-500">Sem faturas emitidas ainda.</div> : faturas.map((fatura) => {
-            const cliente = customerById.get(fatura.consumidorId);
-            return (
-              <article key={fatura.id} className="rounded-[24px] border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
-                <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-                  <div>
-                    <div className="text-lg font-black text-slate-900 dark:text-white">
-                      Factura #{fatura.id} - Casa ID #{fatura.consumidorId}
+
+          {/* Contas e pedidos */}
+          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+            <h2 className="text-lg font-semibold text-slate-800 mb-4">As suas contas e pedidos</h2>
+            
+            {waterCustomers.length === 0 ? (
+              <p className="text-sm text-slate-500 text-center py-8">A sua conta ainda não tem pedidos de água associados.</p>
+            ) : (
+              <div className="space-y-4">
+                {waterCustomers.map((waterCustomer) => (
+                  <div key={waterCustomer.id} className="border border-slate-200 rounded-lg p-4 hover:shadow-sm transition">
+                    <div className="flex flex-wrap justify-between items-start gap-3 mb-3">
+                      <div className="flex items-center gap-2">
+                        <Home className="w-4 h-4 text-cyan-600" />
+                        <h3 className="font-semibold text-slate-800">Casa #{waterCustomer.id}</h3>
+                      </div>
+                      {getEstadoBadge(waterCustomer.estado)}
                     </div>
-                    <div className="text-sm text-slate-500 dark:text-slate-400">
-                      {fatura.consumidorNome} - {cliente?.referenciaLocal || "Sem local"}
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3 text-sm">
+                      <div className="flex items-center gap-2">
+                        <Building2 className="w-3.5 h-3.5 text-slate-400" />
+                        <span className="text-slate-600">{waterCustomer.name}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Phone className="w-3.5 h-3.5 text-slate-400" />
+                        <span className="text-slate-600">{waterCustomer.phone}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Mail className="w-3.5 h-3.5 text-slate-400" />
+                        <span className="text-slate-600">{waterCustomer.email}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                        <span className="text-slate-600">{waterCustomer.referenciaLocal || "Sem local"}</span>
+                      </div>
                     </div>
-                    <div className="text-sm text-slate-500 dark:text-slate-400">
-                      {formatDateTime(fatura.data)} - {formatMoney(fatura.valorTotal)} - Estado: {fatura.estadoPagamento}
-                    </div>
+
+                    {waterCustomer.estado === "AGUARDANDO_DADOS_CASA" ? (
+                      <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <h4 className="text-sm font-semibold text-blue-800 mb-3">Completar dados da casa</h4>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <Input
+                            value={completionForms[waterCustomer.id]?.houseNR || ""}
+                            onChange={(event) =>
+                              setCompletionForms((current) => ({
+                                ...current,
+                                [waterCustomer.id]: {
+                                  ...(current[waterCustomer.id] ?? { houseNR: "", adressId: "" }),
+                                  houseNR: event.target.value,
+                                },
+                              }))
+                            }
+                            placeholder="Número da casa"
+                          />
+                          <select
+                            value={completionForms[waterCustomer.id]?.adressId || ""}
+                            onChange={(event) =>
+                              setCompletionForms((current) => ({
+                                ...current,
+                                [waterCustomer.id]: {
+                                  ...(current[waterCustomer.id] ?? { houseNR: "", adressId: "" }),
+                                  adressId: event.target.value,
+                                },
+                              }))
+                            }
+                            className="h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm focus:outline-none focus:border-cyan-500"
+                          >
+                            <option value="">Selecionar zona</option>
+                            {enderecos.map((endereco) => (
+                              <option key={endereco.id} value={endereco.id}>
+                                {endereco.name} - {endereco.bairro}
+                              </option>
+                            ))}
+                          </select>
+                          <Button onClick={() => submitCompletion(waterCustomer.id)} className="bg-cyan-600 hover:bg-cyan-700 sm:col-span-2">
+                            Guardar dados da casa
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-slate-400 mt-2">
+                        {waterCustomer.estado === "PENDENTE_APROVACAO"
+                          ? "⏳ Aguardando aprovação do administrador."
+                          : waterCustomer.estado === "ATIVO"
+                          ? "✅ Conta activa e pronta para gestão."
+                          : "📋 Pedido em análise."}
+                      </p>
+                    )}
                   </div>
-                  <Button type="button" variant="secondary" onClick={() => printWaterBillDocument(fatura)}>
-                    Imprimir PDF
-                  </Button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Ligações e leituras em grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Ligações */}
+            <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+              <h2 className="text-md font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                <Home className="w-4 h-4 text-cyan-600" />
+                Ligações
+              </h2>
+              {contratos.length === 0 ? (
+                <p className="text-sm text-slate-500 text-center py-6">Sem ligações activas.</p>
+              ) : (
+                <div className="space-y-3">
+                  {contratos.map((contrato) => {
+                    const cliente = customerById.get(contrato.consumidorId);
+                    return (
+                      <div key={contrato.id} className="bg-slate-50 rounded-lg p-3">
+                        <p className="font-medium text-slate-800">Ligação #{contrato.id}</p>
+                        <p className="text-xs text-slate-500">{contrato.consumidorNome}</p>
+                        <p className="text-xs text-slate-400 mt-1">Estado: {contrato.estado}</p>
+                      </div>
+                    );
+                  })}
                 </div>
-              </article>
-            );
-          })}
-        </div>
-      </section>
+              )}
+            </div>
+
+            {/* Leituras */}
+            <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+              <h2 className="text-md font-semibold text-slate-800 mb-4 flex items-center gap-2">
+                <FileText className="w-4 h-4 text-cyan-600" />
+                Leituras
+              </h2>
+              {leituras.length === 0 ? (
+                <p className="text-sm text-slate-500 text-center py-6">Sem leituras registadas.</p>
+              ) : (
+                <div className="space-y-3">
+                  {leituras.slice(0, 5).map((leitura) => {
+                    const contrato = contratos.find((item) => item.id === leitura.ligacaoId);
+                    return (
+                      <div key={leitura.id} className="bg-slate-50 rounded-lg p-3">
+                        <p className="text-xs text-slate-500">{formatDateTime(leitura.data)}</p>
+                        <p className="text-sm font-medium text-slate-800">{leitura.consumoM3} m³</p>
+                        <p className="text-xs text-orange-600 font-semibold">{formatMoney(leitura.valorPagar)}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Faturas */}
+          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+            <h2 className="text-md font-semibold text-slate-800 mb-4 flex items-center gap-2">
+              <FileText className="w-4 h-4 text-cyan-600" />
+              Faturas emitidas
+            </h2>
+            {faturas.length === 0 ? (
+              <p className="text-sm text-slate-500 text-center py-6">Sem faturas emitidas.</p>
+            ) : (
+              <div className="space-y-3">
+                {faturas.map((fatura) => {
+                  const cliente = customerById.get(fatura.consumidorId);
+                  return (
+                    <div key={fatura.id} className="flex flex-wrap items-center justify-between gap-3 bg-slate-50 rounded-lg p-3">
+                      <div>
+                        <p className="font-medium text-slate-800 text-sm">Factura #{fatura.id}</p>
+                        <p className="text-xs text-slate-500">{formatDateTime(fatura.data)}</p>
+                        <p className="text-sm font-bold text-orange-600">{formatMoney(fatura.valorTotal)}</p>
+                        <p className="text-xs text-slate-400">{fatura.estadoPagamento}</p>
+                      </div>
+                      <button
+                        onClick={() => printWaterBillDocument(fatura)}
+                        className="flex items-center gap-1 px-3 py-1.5 text-sm text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-100 transition"
+                      >
+                        <Printer className="w-3.5 h-3.5" />
+                        PDF
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </>
+      )}
     </main>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { clientApi } from "@/features/client/api";
 import { productsApi } from "@/features/products/api";
 import type { ClientOrder } from "@/features/client/types";
@@ -10,11 +10,12 @@ import { getRole } from "@/lib/auth/session";
 import { openPrintableDocument } from "@/lib/documents/print";
 import { getErrorMessage } from "@/lib/errors";
 import { getCartCount, getCartSubtotal, useCartStore } from "@/store/cart.store";
+import { ShoppingBag, CreditCard, Wallet, Banknote, FileText, ArrowLeft, CheckCircle, AlertCircle } from "lucide-react";
 
 const paymentOptions = [
-  { value: "CARTEIRA_MOVEL", label: "Carteira movel" },
-  { value: "CARTAO", label: "Cartao" },
-  { value: "DINHEIRO_FISICO", label: "Dinheiro fisico" },
+  { value: "CARTEIRA_MOVEL", label: "Carteira móvel", icon: Wallet },
+  { value: "CARTAO", label: "Cartão", icon: CreditCard },
+  { value: "DINHEIRO_FISICO", label: "Dinheiro físico", icon: Banknote },
 ] as const;
 
 export default function CheckoutPage() {
@@ -26,6 +27,11 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [completedOrders, setCompletedOrders] = useState<ClientOrder[]>([]);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const itemCount = getCartCount(items);
   const subtotal = getCartSubtotal(items);
@@ -46,14 +52,14 @@ export default function CheckoutPage() {
 
       if (invalidItem) {
         const available = stockByProduct.get(invalidItem.productId) ?? 0;
-        setError(`Stock insuficiente para ${invalidItem.name}. Disponivel agora: ${available}.`);
+        setError(`Stock insuficiente para ${invalidItem.name}. Disponível agora: ${available}.`);
         return;
       }
 
       const orders = await clientApi.checkout({
         items: items.map((item) => ({
           produtoId: item.productId,
-            quantidade: item.quantity,
+          quantidade: item.quantity,
         })),
         formaPagamento: paymentMethod,
       });
@@ -61,7 +67,7 @@ export default function CheckoutPage() {
       setCompletedOrders(orders);
       clear();
     } catch (reason: unknown) {
-      setError(getErrorMessage(reason, "Nao foi possivel concluir a compra"));
+      setError(getErrorMessage(reason, "Não foi possível concluir a compra"));
     } finally {
       setLoading(false);
     }
@@ -69,59 +75,79 @@ export default function CheckoutPage() {
 
   const canCheckout = role === "CLIENTE" && items.length > 0;
 
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-slate-950">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-12 lg:px-8">
+          <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-orange-100 rounded-lg">
+                <ShoppingBag className="w-5 h-5 text-orange-600" />
+              </div>
+              <h2 className="text-xl font-semibold text-slate-800">Checkout</h2>
+            </div>
+            <p className="text-slate-500 text-sm mt-2">Carregando...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <main className="bg-white px-6 py-12 lg:px-20 dark:bg-slate-950">
-      <div className="mx-auto max-w-7xl">
-        <div className="rounded-[36px] border border-slate-200 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 px-8 py-10 text-white shadow-2xl shadow-slate-900/10">
-          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-orange-300">Checkout</p>
-          <h1 className="mt-4 text-4xl font-black tracking-tight lg:text-5xl">
-            Confirmacao de compra com registo directo no sistema.
+    <main className="min-h-screen bg-white dark:bg-slate-950">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-12 lg:px-8">
+        {/* Hero Section */}
+        <div className="rounded-2xl bg-gradient-to-r from-slate-800 to-slate-900 p-6 md:p-8 text-white shadow-lg">
+          <p className="text-xs font-semibold uppercase tracking-wider text-orange-300">Checkout</p>
+          <h1 className="mt-3 text-2xl md:text-3xl font-bold tracking-tight">
+            Confirmação de compra
           </h1>
-          <p className="mt-4 max-w-2xl text-base leading-7 text-slate-300">
-            Ao confirmar, os pedidos sao gravados na area do cliente e entram no fluxo de levantamento para a equipa.
+          <p className="mt-2 text-sm text-slate-300 max-w-xl">
+            Ao confirmar, os pedidos são gravados na área do cliente e entram no fluxo de levantamento.
           </p>
         </div>
 
+        {/* Empty Cart */}
         {!items.length && completedOrders.length === 0 && (
-          <div className="mt-8 rounded-[32px] border border-slate-200 bg-slate-50 px-6 py-16 text-center dark:border-slate-800 dark:bg-slate-900/70">
-            <h2 className="text-2xl font-black text-slate-900 dark:text-white">Nada para finalizar</h2>
-            <p className="mt-3 text-slate-500 dark:text-slate-400">
-              O carrinho esta vazio. Volte ao catalogo para selecionar os produtos.
-            </p>
+          <div className="mt-8 bg-slate-50 rounded-xl p-12 text-center dark:bg-slate-900/50">
+            <ShoppingBag className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+            <h2 className="text-xl font-semibold text-slate-800 dark:text-white">Carrinho vazio</h2>
+            <p className="mt-2 text-slate-500 text-sm">Volte ao catálogo para selecionar os produtos.</p>
             <Link
               href="/catalogo"
-              className="mt-6 inline-flex h-12 items-center justify-center rounded-2xl bg-orange-600 px-6 text-sm font-bold text-white transition hover:bg-orange-700"
+              className="inline-block mt-6 px-6 py-2.5 bg-orange-600 text-white rounded-lg text-sm font-medium hover:bg-orange-700 transition"
             >
-              Ir ao catalogo
+              Ir ao catálogo
             </Link>
           </div>
         )}
 
+        {/* Order Success */}
         {completedOrders.length > 0 && (
-          <div className="mt-8 rounded-[32px] border border-emerald-200 bg-emerald-50 p-6 dark:border-emerald-900/40 dark:bg-emerald-950/20">
-            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-emerald-600 dark:text-emerald-300">
-              Compra realizada
-            </p>
-            <h2 className="mt-3 text-3xl font-black text-slate-900 dark:text-white">
-              O pedido ja aparece na dashboard do cliente.
+          <div className="mt-8 bg-green-50 border border-green-200 rounded-xl p-6 dark:bg-green-950/20 dark:border-green-900/40">
+            <div className="flex items-center gap-3 mb-3">
+              <CheckCircle className="w-6 h-6 text-green-600" />
+              <p className="text-xs font-semibold uppercase tracking-wider text-green-600">Compra realizada</p>
+            </div>
+            <h2 className="text-xl font-bold text-slate-800 dark:text-white">
+              Pedido registado com sucesso!
             </h2>
-            <p className="mt-3 max-w-3xl text-slate-600 dark:text-slate-300">
-              Os pedidos foram registados com sucesso e ficam disponiveis no historico para acompanhamento do
-              levantamento.
+            <p className="mt-2 text-slate-600 dark:text-slate-300 text-sm">
+              Os pedidos foram registados e ficam disponíveis no histórico para acompanhamento.
             </p>
 
             <div className="mt-6 flex flex-wrap gap-3">
               <Link
                 href="/cliente"
-                className="inline-flex h-12 items-center justify-center rounded-2xl bg-slate-950 px-6 text-sm font-bold text-white transition hover:bg-slate-800 dark:bg-white dark:text-slate-950"
+                className="px-5 py-2 bg-slate-800 text-white rounded-lg text-sm font-medium hover:bg-slate-700 transition"
               >
-                Abrir dashboard
+                Ir para dashboard
               </Link>
               <Link
                 href="/cliente/compras"
-                className="inline-flex h-12 items-center justify-center rounded-2xl border border-emerald-200 px-6 text-sm font-bold text-emerald-700 transition hover:bg-white dark:border-emerald-900/40 dark:text-emerald-300 dark:hover:bg-emerald-950/30"
+                className="px-5 py-2 border border-green-300 text-green-700 rounded-lg text-sm font-medium hover:bg-green-100 transition dark:border-green-700 dark:text-green-400"
               >
-                Ver historico
+                Ver histórico
               </Link>
               <button
                 type="button"
@@ -134,9 +160,9 @@ export default function CheckoutPage() {
                         title: "Resumo do pagamento",
                         rows: [
                           { label: "Pedidos gravados", value: String(completedOrders.length) },
-                          { label: "Metodo", value: formatPaymentMethod(paymentMethod) },
+                          { label: "Método", value: formatPaymentMethod(paymentMethod) },
                           {
-                            label: "Referencias",
+                            label: "Referências",
                             value: completedOrders.map((order) => `#${order.id}`).join(", "),
                           },
                           {
@@ -150,92 +176,105 @@ export default function CheckoutPage() {
                     ]
                   )
                 }
-                className="inline-flex h-12 items-center justify-center rounded-2xl border border-emerald-200 px-6 text-sm font-bold text-emerald-700 transition hover:bg-white dark:border-emerald-900/40 dark:text-emerald-300 dark:hover:bg-emerald-950/30"
+                className="px-5 py-2 border border-green-300 text-green-700 rounded-lg text-sm font-medium hover:bg-green-100 transition"
               >
-                Baixar PDF
+                <FileText className="w-4 h-4 inline mr-1" /> Baixar PDF
               </button>
             </div>
           </div>
         )}
 
+        {/* Checkout Form */}
         {items.length > 0 && (
-          <div className="mt-8 grid gap-6 xl:grid-cols-[1.45fr_420px]">
-            <div className="rounded-[32px] border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-              <div className="border-b border-slate-200 pb-4 dark:border-slate-800">
-                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Resumo dos itens</p>
-                <h2 className="mt-2 text-2xl font-black text-slate-900 dark:text-white">
-                  {itemCount} unidade(s) prontas para confirmar
+          <div className="mt-8 flex flex-col lg:flex-row gap-6">
+            {/* Items List */}
+            <div className="flex-1 bg-white rounded-xl border border-slate-200 p-5 shadow-sm dark:bg-slate-900/70 dark:border-slate-800">
+              <div className="pb-4 border-b border-slate-100 dark:border-slate-800">
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Itens</p>
+                <h2 className="mt-1 text-lg font-semibold text-slate-800 dark:text-white">
+                  {itemCount} unidade(s) para confirmar
                 </h2>
               </div>
 
-              <div className="mt-4 grid gap-4">
+              <div className="mt-4 space-y-3">
                 {items.map((item) => (
                   <div
                     key={item.productId}
-                    className="flex flex-col justify-between gap-4 rounded-[28px] border border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-center dark:border-slate-800 dark:bg-slate-950"
+                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-slate-50 rounded-lg dark:bg-slate-800/50"
                   >
                     <div>
-                      <h3 className="text-lg font-black text-slate-900 dark:text-white">{item.name}</h3>
-                      <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">{item.description}</p>
+                      <h3 className="font-medium text-slate-800 dark:text-white">{item.name}</h3>
+                      <p className="text-xs text-slate-400 mt-0.5">{item.description}</p>
                     </div>
                     <div className="text-left sm:text-right">
-                      <p className="text-sm font-bold text-slate-900 dark:text-white">Qtd. {item.quantity}</p>
-                      <p className="mt-1 text-lg font-black text-orange-600">
-                        {formatMoney(item.price * item.quantity)}
-                      </p>
+                      <p className="text-sm text-slate-500">Qtd. {item.quantity}</p>
+                      <p className="text-md font-bold text-orange-600">{formatMoney(item.price * item.quantity)}</p>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
 
-            <aside className="rounded-[32px] border border-slate-200 bg-slate-50 p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Pagamento</p>
-              <h2 className="mt-3 text-3xl font-black text-slate-900 dark:text-white">Confirmar checkout</h2>
+            {/* Payment Sidebar */}
+            <div className="lg:w-80 bg-slate-50 rounded-xl p-5 shadow-sm dark:bg-slate-900/70">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">Pagamento</p>
+              <h2 className="mt-2 text-lg font-bold text-slate-800 dark:text-white">Confirmar compra</h2>
 
-              <div className="mt-6 grid gap-4">
-                <div className="rounded-[24px] border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950">
-                  <div className="text-sm text-slate-500 dark:text-slate-400">Subtotal</div>
-                  <div className="mt-2 text-3xl font-black text-orange-600">{formatMoney(subtotal)}</div>
-                </div>
+              <div className="mt-4 bg-white rounded-lg p-4 border border-slate-200 dark:bg-slate-800 dark:border-slate-700">
+                <p className="text-sm text-slate-500">Subtotal</p>
+                <p className="text-2xl font-bold text-orange-600">{formatMoney(subtotal)}</p>
+              </div>
 
-                <div>
-                  <label className="mb-3 block text-sm font-bold text-slate-700 dark:text-slate-200">
-                    Metodo de pagamento
-                  </label>
-                  <select
-                    value={paymentMethod}
-                    onChange={(event) =>
-                      setPaymentMethod(event.target.value as (typeof paymentOptions)[number]["value"])
-                    }
-                    className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-900 outline-none dark:border-slate-700 dark:bg-slate-950 dark:text-white"
-                  >
-                    {paymentOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
+              <div className="mt-4">
+                <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Método de pagamento
+                </label>
+                <div className="space-y-2">
+                  {paymentOptions.map((option) => {
+                    const Icon = option.icon;
+                    return (
+                      <label
+                        key={option.value}
+                        className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition ${
+                          paymentMethod === option.value
+                            ? "border-orange-400 bg-orange-50 dark:bg-orange-950/30"
+                            : "border-slate-200 hover:bg-slate-100 dark:border-slate-700"
+                        }`}
+                      >
+                        <input
+                          type="radio"
+                          name="paymentMethod"
+                          value={option.value}
+                          checked={paymentMethod === option.value}
+                          onChange={() => setPaymentMethod(option.value)}
+                          className="w-4 h-4 text-orange-600"
+                        />
+                        <Icon className="w-4 h-4 text-slate-500" />
+                        <span className="text-sm text-slate-700 dark:text-slate-300">{option.label}</span>
+                      </label>
+                    );
+                  })}
                 </div>
               </div>
 
               {role !== "CLIENTE" && (
-                <div className="mt-6 rounded-[24px] border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-200">
-                  Precisa entrar com uma conta de cliente para concluir a compra e gravar o historico na dashboard.
+                <div className="mt-4 bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-700 dark:bg-amber-950/20">
+                  <AlertCircle className="w-4 h-4 inline mr-1" />
+                  Precisa entrar com uma conta de cliente para concluir a compra.
                 </div>
               )}
 
               {error && (
-                <div className="mt-6 rounded-[24px] border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/20 dark:text-rose-300">
+                <div className="mt-4 bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-600 dark:bg-red-950/20">
                   {error}
                 </div>
               )}
 
-              <div className="mt-6 grid gap-3">
+              <div className="mt-6 space-y-3">
                 {!canCheckout ? (
                   <Link
                     href="/auth/login?next=/checkout"
-                    className="inline-flex h-12 items-center justify-center rounded-2xl bg-orange-600 px-6 text-sm font-bold text-white transition hover:bg-orange-700"
+                    className="block text-center w-full py-2.5 bg-orange-600 text-white rounded-lg text-sm font-medium hover:bg-orange-700 transition"
                   >
                     Entrar para finalizar
                   </Link>
@@ -244,20 +283,21 @@ export default function CheckoutPage() {
                     type="button"
                     onClick={handleCheckout}
                     disabled={loading}
-                    className="inline-flex h-12 items-center justify-center rounded-2xl bg-orange-600 px-6 text-sm font-bold text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-70"
+                    className="w-full py-2.5 bg-orange-600 text-white rounded-lg text-sm font-medium hover:bg-orange-700 transition disabled:opacity-50"
                   >
-                    {loading ? "A concluir compra..." : "Confirmar compra"}
+                    {loading ? "A concluir..." : "Confirmar compra"}
                   </button>
                 )}
 
                 <Link
                   href="/carrinho"
-                  className="inline-flex h-12 items-center justify-center rounded-2xl border border-slate-200 px-6 text-sm font-bold text-slate-700 transition hover:bg-white dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-950"
+                  className="flex items-center justify-center gap-1 w-full py-2.5 border border-slate-200 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-50 transition dark:border-slate-700"
                 >
+                  <ArrowLeft className="w-4 h-4" />
                   Voltar ao carrinho
                 </Link>
               </div>
-            </aside>
+            </div>
           </div>
         )}
       </div>

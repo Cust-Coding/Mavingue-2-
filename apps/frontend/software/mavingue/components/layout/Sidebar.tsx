@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Boxes, ChevronDown, Droplets, LayoutDashboard, Menu, ShoppingCart, Users } from "lucide-react";
+import { Boxes, ChevronDown, Droplets, LayoutDashboard, Menu, ShoppingCart, Users, X } from "lucide-react";
 import { getNavigation } from "@/components/layout/navigation";
 import { getRole } from "@/lib/auth/session";
 import { cn } from "@/lib/utils/index";
@@ -29,95 +29,69 @@ export default function Sidebar() {
   });
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [mounted, setMounted] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (!mounted) return;
-    localStorage.setItem("sidebar-open", String(isOpen));
-  }, [isOpen, mounted]);
-
-  useEffect(() => {
-    if (!mounted) return;
-
-    const handleResize = () => {
-      const isDesktop = window.innerWidth >= 1024;
-      if (!isDesktop && isOpen) {
+    
+    const checkDesktop = () => {
+      setIsDesktop(window.innerWidth >= 1024);
+      if (window.innerWidth < 1024) {
         setIsOpen(false);
       }
     };
+    
+    checkDesktop();
+    window.addEventListener("resize", checkDesktop);
+    
+    return () => window.removeEventListener("resize", checkDesktop);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted || !isDesktop) return;
+    localStorage.setItem("sidebar-open", String(isOpen));
+  }, [isOpen, mounted, isDesktop]);
+
+  useEffect(() => {
+    if (!mounted || !isDesktop) return;
 
     const applyOffset = () => {
-      const isDesktop = window.innerWidth >= 1024;
-      const offset = isDesktop ? (isOpen ? "280px" : "80px") : "0px";
+      const offset = isOpen ? "280px" : "80px";
       document.documentElement.style.setProperty("--sidebar-offset", offset);
     };
 
     applyOffset();
-    window.addEventListener("resize", handleResize);
-    window.addEventListener("resize", applyOffset);
 
     return () => {
-      window.removeEventListener("resize", handleResize);
-      window.removeEventListener("resize", applyOffset);
       document.documentElement.style.removeProperty("--sidebar-offset");
     };
-  }, [isOpen, mounted]);
-
-  useEffect(() => {
-    if (!mounted) return;
-
-    const handleClickOutside = (event: MouseEvent) => {
-      const isDesktop = window.innerWidth >= 1024;
-      if (isDesktop) return;
-      
-      const sidebar = document.getElementById("sidebar");
-      const menuButton = document.getElementById("sidebar-menu-button");
-      
-      if (sidebar && !sidebar.contains(event.target as Node) && 
-          menuButton && !menuButton.contains(event.target as Node) && 
-          isOpen) {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isOpen, mounted]);
+  }, [isOpen, mounted, isDesktop]);
 
   if (!mounted || !role || !groups.length) {
     return null;
   }
 
-  const isDesktop = typeof window !== "undefined" && window.innerWidth >= 1024;
+  // No mobile, a sidebar NÃO EXISTE (retorna null)
+  if (!isDesktop) {
+    return null;
+  }
+
   const sidebarWidth = isOpen ? "w-72" : "w-20";
 
   return (
     <>
-      {isOpen && !isDesktop && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-30 transition-opacity duration-300"
-          onClick={() => setIsOpen(false)}
-        />
-      )}
-
       <aside
         id="sidebar"
         className={cn(
           "fixed left-0 top-[var(--app-topbar-offset)] z-5 h-[calc(100vh-var(--app-topbar-offset))] border-r border-slate-200 bg-white/90 shadow-xl shadow-slate-900/5 backdrop-blur-xl transition-all duration-300 ease-in-out dark:border-slate-800 dark:bg-slate-950/90",
-          sidebarWidth,
-          !isDesktop && !isOpen && "-translate-x-full",
-          !isDesktop && isOpen && "translate-x-0 shadow-2xl"
+          sidebarWidth
         )}
         style={{
-          transitionProperty: "width, transform",
+          transitionProperty: "width",
         }}
       >
         <div className="flex h-full flex-col gap-4 p-3">
           <button
-            id="sidebar-menu-button"
             type="button"
             onClick={() => setIsOpen((current) => !current)}
             className="inline-flex h-11 w-full items-center justify-center rounded-xl border border-slate-200 text-slate-700 transition-all hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900"
@@ -139,25 +113,15 @@ export default function Sidebar() {
               return (
                 <div
                   key={group.id}
-                  className="rounded-xl border  border-slate-200 bg-white/80 transition-all dark:border-slate-800 dark:bg-slate-950/70"
+                  className="rounded-xl border border-slate-200 bg-white/80 transition-all dark:border-slate-800 dark:bg-slate-950/70"
                 >
                   <button
                     type="button"
                     onClick={() => {
-                      if (!isOpen) {
-                        setIsOpen(true);
-                        setTimeout(() => {
-                          setExpanded((current) => ({
-                            ...current,
-                            [group.id]: !isExpanded,
-                          }));
-                        }, 150);
-                      } else {
-                        setExpanded((current) => ({
-                          ...current,
-                          [group.id]: !isExpanded,
-                        }));
-                      }
+                      setExpanded((current) => ({
+                        ...current,
+                        [group.id]: !isExpanded,
+                      }));
                     }}
                     className={cn(
                       "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all",
@@ -208,9 +172,9 @@ export default function Sidebar() {
             })}
           </nav>
 
-          <div className="w-full -ml-1 pr-13 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-900/50">
+          <div className="rounded-xl border border-slate-200 bg-slate-50 p-2 -m-2 dark:border-slate-800 dark:bg-slate-900/50">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-green-600">Perfil activo</p>
-            <p className="mt-1 text-sm font-bold text-orange-600 dark:text-white">{role}</p>
+            <p className="mt-1 text-[9px] font-bold text-orange-600 dark:text-white">{role}</p>
             {isOpen && (
               <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                 Links completos disponíveis
