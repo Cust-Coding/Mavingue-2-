@@ -8,10 +8,6 @@ export type Customer = {
   provincia: string;
   cidade: string;
   bairro: string;
-  endereco: string;
-  nuit?: string | null;
-  numeroDocumento?: string | null;
-  tipoDocumento?: string | null;
   created?: string;
 };
 
@@ -24,10 +20,6 @@ export type CustomerCreate = {
   provincia: string;
   cidade: string;
   bairro: string;
-  endereco: string;
-  nuit?: string | null;
-  numeroDocumento?: string | null;
-  tipoDocumento?: string | null;
 };
 
 export type CustomerUpdate = CustomerCreate;

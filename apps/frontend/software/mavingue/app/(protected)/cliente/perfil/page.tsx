@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Empty, ErrorBox, Loading } from "@/components/ui/State";
 import { clientApi } from "@/features/client/api";
 import type { ClientProfile } from "@/features/client/types";
-import { User, Mail, Shield, Phone, MapPin, FileText, Droplets, Home, Map, Building } from "lucide-react";
+import { User, Mail, Shield, Phone, MapPin, FileText, Droplets, Home } from "lucide-react";
 
 export default function Perfil() {
   const [profile, setProfile] = useState<ClientProfile | null>(null);
@@ -59,7 +59,7 @@ export default function Perfil() {
           </div>
           <div>
             <h1 className="text-xl font-semibold text-slate-800">Perfil</h1>
-            <p className="text-sm text-slate-500">Dados da conta, cadastro comercial e módulo de água</p>
+            <p className="text-sm text-slate-500">Dados da conta e módulo de água</p>
           </div>
         </div>
       </div>
@@ -122,19 +122,22 @@ export default function Perfil() {
                     </div>
                   </div>
                   <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
-                    <span className="text-sm font-medium text-slate-500 w-24">Morada</span>
+                    <span className="text-sm font-medium text-slate-500 w-24">Cidade</span>
                     <div className="flex items-center gap-1">
                       <MapPin className="w-3 h-3 text-slate-400" />
-                      <span className="text-sm text-slate-800">
-                        {profile.customer.endereco}, {profile.customer.bairro}, {profile.customer.cidade}
-                      </span>
+                      <span className="text-sm text-slate-800">{profile.customer.cidade}</span>
                     </div>
                   </div>
                   <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
-                    <span className="text-sm font-medium text-slate-500 w-24">Documento</span>
-                    <span className="text-sm text-slate-800">
-                      {profile.customer.tipoDocumento || "-"} {profile.customer.numeroDocumento || ""}
-                    </span>
+                    <span className="text-sm font-medium text-slate-500 w-24">Província</span>
+                    <div className="flex items-center gap-1">
+                      <MapPin className="w-3 h-3 text-slate-400" />
+                      <span className="text-sm text-slate-800">{profile.customer.provincia}</span>
+                    </div>
+                  </div>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+                    <span className="text-sm font-medium text-slate-500 w-24">Bairro</span>
+                    <span className="text-sm text-slate-800">{profile.customer.bairro || "-"}</span>
                   </div>
                 </div>
               ) : (

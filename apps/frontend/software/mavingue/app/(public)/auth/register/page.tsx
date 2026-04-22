@@ -10,16 +10,13 @@ import {
   Phone,
   MapPin,
   Calendar,
-  FileText,
   CheckCircle2,
   AlertCircle,
   ChevronRight,
 } from "lucide-react";
-import { setSession } from "@/lib/auth/session";
 import { useI18n } from "@/lib/i18n";
 
 type Sexo = "HOMEM" | "MULHER";
-type TipoDocumento = "BI" | "PASSAPORTE" | "DIRE";
 
 type FormState = {
   nome: string;
@@ -32,10 +29,6 @@ type FormState = {
   provincia: string;
   cidade: string;
   bairro: string;
-  endereco: string;
-  nuit: string;
-  tipoDocumento: TipoDocumento;
-  numeroDocumento: string;
   pedirAgua: "SIM" | "NAO";
 };
 
@@ -178,11 +171,6 @@ function Field({
   );
 }
 
-function normalizeRole(role: unknown) {
-  if (typeof role !== "string" || !role.trim()) return "CLIENTE";
-  return role.toUpperCase();
-}
-
 function parseServerErrorText(text: string) {
   if (!text) return "Erro ao processar o seu pedido.";
 
@@ -272,7 +260,7 @@ async function fetchConstructionPhotos(
   return Array.isArray(data) ? data : [data];
 }
 
-export default function App() {
+export default function RegisterPage() {
   const { t } = useI18n();
   const [loading, setLoading] = useState(false);
   const [ok, setOk] = useState("");
@@ -295,10 +283,6 @@ export default function App() {
     provincia: "",
     cidade: "",
     bairro: "",
-    endereco: "",
-    nuit: "",
-    tipoDocumento: "BI",
-    numeroDocumento: "",
     pedirAgua: "NAO",
   });
 
@@ -323,8 +307,6 @@ export default function App() {
     if (!form.provincia.trim()) e.provincia = t("form.errors.provinceRequired");
     if (!form.cidade.trim()) e.cidade = t("form.errors.cityRequired");
     if (!form.bairro.trim()) e.bairro = t("form.errors.neighborhoodRequired");
-    if (!form.endereco.trim()) e.endereco = t("form.errors.addressRequired");
-    if (!form.numeroDocumento.trim()) e.numeroDocumento = t("form.errors.required");
 
     setFe(e);
     return Object.keys(e).length === 0;
@@ -410,10 +392,6 @@ export default function App() {
           provincia: form.provincia.trim(),
           cidade: form.cidade.trim(),
           bairro: form.bairro.trim(),
-          endereco: form.endereco.trim(),
-          nuit: form.nuit.trim() || null,
-          tipoDocumento: form.tipoDocumento,
-          numeroDocumento: form.numeroDocumento.trim(),
           pedirAgua: form.pedirAgua === "SIM",
         }),
       });
@@ -433,14 +411,6 @@ export default function App() {
         return;
       }
 
-      let data: any = null;
-      try {
-        data = rawText ? JSON.parse(rawText) : null;
-      } catch {
-        data = rawText;
-      }
-
-      // Registration successful, show message and redirect to confirm email
       setOk(rawText || t("auth.codeSentDesc"));
       setTimeout(() => {
         window.location.href = `/auth/confirm-email?email=${encodeURIComponent(form.email.trim())}`;
@@ -699,51 +669,6 @@ export default function App() {
                       onChange={(e) => setField("bairro", e.target.value)}
                     />
                   </Field>
-
-                  <Field label={t("form.labels.fullAddress")} error={fe.endereco}>
-                    <Input
-                      placeholder={t("form.labels.fullAddress")}
-                      value={form.endereco}
-                      onChange={(e) => setField("endereco", e.target.value)}
-                    />
-                  </Field>
-                </div>
-              </div>
-
-              <div className="space-y-6">
-                <h3 className="text-xs font-black text-gray-300 uppercase tracking-[3px] mb-8">
-                  {t("form.sections.taxId")}
-                </h3>
-
-                <Field label={t("form.labels.nuitOptional2")} error={fe.nuit}>
-                  <Input
-                    icon={FileText}
-                    placeholder={t("form.labels.nuitOptional2")}
-                    value={form.nuit}
-                    onChange={(e) => setField("nuit", e.target.value)}
-                  />
-                </Field>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Field label={t("form.labels.documentType2")} error={fe.tipoDocumento}>
-                    <ToggleSelector
-                      value={form.tipoDocumento}
-                      onChange={(v) => setField("tipoDocumento", v)}
-                      options={[
-                        { label: "B.I", val: "BI" },
-                        { label: t("form.documentTypes.passport"), val: "PASSAPORTE" },
-                        { label: "DIRE", val: "DIRE" },
-                      ]}
-                    />
-                  </Field>
-
-                  <Field label={t("form.labels.documentNumber2")} error={fe.numeroDocumento}>
-                    <Input
-                      placeholder={t("form.labels.documentNumber2")}
-                      value={form.numeroDocumento}
-                      onChange={(e) => setField("numeroDocumento", e.target.value)}
-                    />
-                  </Field>
                 </div>
               </div>
 
@@ -776,7 +701,7 @@ export default function App() {
                 <p className="text-center font-bold text-sm text-gray-400">
                   {t("auth.alreadyPartner")}{" "}
                   <a
-                    href="/login"
+                    href="/auth/login"
                     className="text-[#EF6A44] hover:brightness-110 transition-all underline underline-offset-8 decoration-2"
                   >
                     {t("auth.loginSystem")}
