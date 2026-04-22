@@ -246,10 +246,6 @@ public class ClientAreaService {
                 customer.getProvincia(),
                 customer.getCidade(),
                 customer.getBairro(),
-                customer.getEndereco(),
-                customer.getNuit(),
-                customer.getNumeroDocumento(),
-                customer.getTipoDocumento(),
                 customer.getCreated()
         );
     }

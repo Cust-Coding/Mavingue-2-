@@ -39,9 +39,6 @@ public class CustomerService {
         if (customerRepository.existsByEmail(request.email())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email já existe");
         }
-        if (request.nuit() != null && !request.nuit().isBlank() && customerRepository.existsByNuit(request.nuit())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "NUIT já existe");
-        }
 
         var customer = customerMapper.toCustomerDTO(request);
         var saved = customerRepository.save(customer);
@@ -61,10 +58,7 @@ public class CustomerService {
         existing.setProvincia(request.provincia());
         existing.setCidade(request.cidade());
         existing.setBairro(request.bairro());
-        existing.setEndereco(request.endereco());
-        existing.setNuit(request.nuit());
-        existing.setNumeroDocumento(request.numeroDocumento());
-        existing.setTipoDocumento(request.tipoDocumento());
+
 
         var saved = customerRepository.save(existing);
         return customerMapper.toCustomerResponseDTO(saved);

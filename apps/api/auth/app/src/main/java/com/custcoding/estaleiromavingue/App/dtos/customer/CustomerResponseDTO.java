@@ -17,10 +17,6 @@ public record CustomerResponseDTO(
         String provincia,
         String cidade,
         String bairro,
-        String endereco,
-        String nuit,
-        String numeroDocumento,
-        String tipoDocumento,
         @JsonFormat(pattern = "dd/MM/yyyy HH:mm:ss")
         LocalDateTime created
 ) {}

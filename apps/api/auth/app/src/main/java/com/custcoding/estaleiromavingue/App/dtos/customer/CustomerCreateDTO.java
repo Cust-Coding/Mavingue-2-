@@ -47,19 +47,5 @@ public record CustomerCreateDTO(
 
         @NotBlank(message = "Bairro é obrigatório")
         @JsonProperty("bairro")
-        String bairro,
-
-        @NotBlank(message = "Endereço é obrigatório")
-        @JsonProperty("endereco")
-        @JsonAlias({"morada", "address"})
-        String endereco,
-
-        @JsonProperty("nuit")
-        String nuit,
-
-        @JsonProperty("numeroDocumento")
-        String numeroDocumento,
-
-        @JsonProperty("tipoDocumento")
-        String tipoDocumento
+        String bairro
 ) {}

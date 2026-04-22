@@ -112,10 +112,7 @@ public class AuthService {
         c.setProvincia(req.provincia());
         c.setCidade(req.cidade());
         c.setBairro(req.bairro());
-        c.setEndereco(req.endereco());
-        c.setNuit(req.nuit());
-        c.setTipoDocumento(req.tipoDocumento());
-        c.setNumeroDocumento(req.numeroDocumento());
+
         customerRepo.save(c);
 
         if (Boolean.TRUE.equals(req.pedirAgua())) {

@@ -41,15 +41,4 @@ public class UserProfile {
     @Column(nullable = false, length = 120)
     private String bairro;
 
-    @Column(nullable = false, length = 200)
-    private String endereco;
-
-    @Column(length = 30)
-    private String nuit;
-
-    @Column(name = "tipo_documento", length = 30)
-    private String tipoDocumento;
-
-    @Column(name = "numero_documento", length = 60)
-    private String numeroDocumento;
 }

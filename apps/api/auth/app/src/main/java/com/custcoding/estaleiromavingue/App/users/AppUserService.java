@@ -68,10 +68,7 @@ public class AppUserService {
                 .provincia(req.provincia())
                 .cidade(req.cidade())
                 .bairro(req.bairro())
-                .endereco(req.endereco())
-                .nuit(req.nuit())
-                .tipoDocumento(req.tipoDocumento())
-                .numeroDocumento(req.numeroDocumento())
+
                 .build();
 
         profileRepo.save(profile);

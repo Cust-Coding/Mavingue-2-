@@ -26,10 +26,5 @@ public record UserCreateFullRequest(
 
         @NotBlank String provincia,
         @NotBlank String cidade,
-        @NotBlank String bairro,
-        @NotBlank String endereco,
-
-        String nuit,
-        String tipoDocumento,
-        String numeroDocumento
+        @NotBlank String bairro
 ) {}

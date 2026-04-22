@@ -52,18 +52,6 @@ public class CustomerProduct {
     @Column(nullable = false, length = 80)
     private String bairro;
 
-    @Column(nullable = false, length = 180)
-    private String endereco;
-
-    // Opcional (mas útil)
-    @Column(length = 20, unique = true)
-    private String nuit;
-
-    @Column(name = "numero_documento", length = 40)
-    private String numeroDocumento;
-
-    @Column(name = "tipo_documento", length = 40)
-    private String tipoDocumento;
 
     @Column(name = "data_criacao")
     @CreationTimestamp
