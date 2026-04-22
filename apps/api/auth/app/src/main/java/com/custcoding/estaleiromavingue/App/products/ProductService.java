@@ -67,10 +67,9 @@ public class ProductService {
     }
 
     public void delete(Long id) {
-        if (!repo.existsById(id)) {
-            throw new EntityNotFoundException("Produto não encontrado: " + id);
-        }
-        repo.deleteById(id);
+        Product product =  repo.findById(id)
+                        .orElseThrow(() -> new EntityNotFoundException("Produto não encontrado: " + id));
+        repo.delete(product);
     }
     public Integer getAvailableStock(Long productId) {
         return stockRepository.findByProduto_Id(productId)
