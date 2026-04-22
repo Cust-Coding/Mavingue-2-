@@ -5,45 +5,16 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { createUser } from "@/features/users/api";
 import type { Role, UserCreateFullRequest } from "@/features/users/types";
+import { Mail, Lock, User, Shield, AlertCircle, CheckCircle, Calendar, Phone, MapPin } from "lucide-react";
 
 type Sexo = "HOMEM" | "MULHER";
 
-function Field({ label, error, children }: { label: string; error?: string; children: React.ReactNode }) {
-  return (
-    <div style={{ display: "grid", gap: 6 }}>
-      <label style={{ fontSize: 14 }}>{label}</label>
-      {children}
-      {error && <div style={{ color: "crimson", fontSize: 13 }}>{error}</div>}
-    </div>
-  );
-}
-
-function isFieldErrorMap(x: unknown): x is Record<string, string> {
-  if (!x || typeof x !== "object" || Array.isArray(x)) return false;
-  for (const k of Object.keys(x as Record<string, unknown>)) {
-    const v = (x as Record<string, unknown>)[k];
-    if (typeof v !== "string") return false;
-  }
-  return true;
-}
-
-function errMessage(err: unknown): string {
-  if (err instanceof Error) return err.message;
-  if (typeof err === "string") return err;
-  if (err && typeof err === "object" && "message" in err) {
-    const m = (err as any).message;
-    if (typeof m === "string") return m;
-  }
-  return "Erro ao criar utilizador";
-}
-
-export default function UserCreateForm({
-  creatorRole,
-  onCreated,
-}: {
+interface UserCreateFormProps {
   creatorRole: Role;
   onCreated?: () => void;
-}) {
+}
+
+export default function UserCreateForm({ creatorRole, onCreated }: UserCreateFormProps) {
   const roleOptions = useMemo(() => {
     if (creatorRole === "ADMIN") return ["ADMIN", "FUNCIONARIO", "CLIENTE"] as Role[];
     if (creatorRole === "FUNCIONARIO") return ["FUNCIONARIO", "CLIENTE"] as Role[];
@@ -60,39 +31,31 @@ export default function UserCreateForm({
     email: "",
     password: "",
     role: roleOptions.includes("CLIENTE") ? "CLIENTE" : (roleOptions[0] ?? "CLIENTE"),
-
     sexo: "HOMEM",
     telefone: "",
     dataNascimento: "",
     provincia: "",
     cidade: "",
     bairro: "",
-    endereco: "",
-
     nuit: "",
     tipoDocumento: "BI",
     numeroDocumento: "",
   });
 
-  function set<K extends keyof UserCreateFullRequest>(k: K, v: UserCreateFullRequest[K]) {
+  function setField<K extends keyof UserCreateFullRequest>(k: K, v: UserCreateFullRequest[K]) {
     setForm((p) => ({ ...p, [k]: v }));
   }
 
   function validate() {
     const e: Record<string, string> = {};
-    if (!form.nome.trim()) e.nome = "Nome é obrigatório";
-    if (!form.email.trim()) e.email = "Email é obrigatório";
-    if (!form.password.trim() || form.password.length < 6) e.password = "Senha mínima: 6";
-
+    if (!form.nome?.trim()) e.nome = "Nome é obrigatório";
+    if (!form.email?.trim()) e.email = "Email é obrigatório";
+    if (!form.password || form.password.length < 6) e.password = "Senha mínima: 6 caracteres";
     if (!roleOptions.includes(form.role)) e.role = "Role inválida para este utilizador";
-
-    if (!(form.sexo === "HOMEM" || form.sexo === "MULHER")) e.sexo = "Sexo inválido";
-    if (!form.telefone.trim()) e.telefone = "Telefone é obrigatório";
-    if (!form.dataNascimento) e.dataNascimento = "Data nascimento obrigatória";
-    if (!form.provincia.trim()) e.provincia = "Província obrigatória";
-    if (!form.cidade.trim()) e.cidade = "Cidade obrigatória";
-    if (!form.bairro.trim()) e.bairro = "Bairro obrigatório";
-    if (!form.endereco.trim()) e.endereco = "Endereço obrigatório";
+    if (!form.telefone?.trim()) e.telefone = "Telefone é obrigatório";
+    if (!form.dataNascimento) e.dataNascimento = "Data nascimento é obrigatória";
+    if (!form.provincia?.trim()) e.provincia = "Província é obrigatória";
+    if (!form.cidade?.trim()) e.cidade = "Cidade é obrigatória";
 
     setFe(e);
     return Object.keys(e).length === 0;
@@ -109,135 +72,235 @@ export default function UserCreateForm({
     setLoading(true);
     try {
       const payload: UserCreateFullRequest = {
-        ...form,
         nome: form.nome.trim(),
         email: form.email.trim(),
+        password: form.password,
+        role: form.role,
+        sexo: form.sexo,
         telefone: form.telefone.trim(),
+        dataNascimento: form.dataNascimento,
         provincia: form.provincia.trim(),
         cidade: form.cidade.trim(),
-        bairro: form.bairro.trim(),
-        endereco: form.endereco.trim(),
-        nuit: form.nuit?.trim() || null,
-        tipoDocumento: form.tipoDocumento?.trim() || null,
-        numeroDocumento: form.numeroDocumento?.trim() || null,
+        bairro: "Sem bairro",
+        nuit: null,
+        tipoDocumento: "BI",
+        numeroDocumento: null,
       };
 
       await createUser(payload);
 
-      setOk("Utilizador criado com sucesso.");
+      setOk("Utilizador criado com sucesso!");
       onCreated?.();
-      setForm((p) => ({
-        ...p,
+      setForm({
         nome: "",
         email: "",
         password: "",
+        role: roleOptions[0] ?? "CLIENTE",
+        sexo: "HOMEM",
         telefone: "",
         dataNascimento: "",
         provincia: "",
         cidade: "",
         bairro: "",
-        endereco: "",
         nuit: "",
         tipoDocumento: "BI",
         numeroDocumento: "",
-      }));
-    } catch (error: unknown) {
-      if (isFieldErrorMap(error)) {
-        setFe(error);
-        setErr("Corrige os campos e tenta de novo.");
-      } else {
-        setErr(errMessage(error));
-      }
+      });
+      setTimeout(() => setOk(""), 3000);
+    } catch (error: any) {
+      setErr(error?.message || "Erro ao criar utilizador");
     } finally {
       setLoading(false);
     }
   }
 
   if (!roleOptions.length) {
-    return <div style={{ padding: 12, border: "1px solid #ddd", borderRadius: 10 }}>Sem permissão para criar utilizadores.</div>;
+    return (
+      <div className="p-4 border border-slate-200 rounded-xl text-slate-500 text-center">
+        Sem permissão para criar utilizadores.
+      </div>
+    );
   }
 
   return (
-    <form onSubmit={submit} style={{ display: "grid", gap: 12 }}>
-      {err && <div style={{ padding: 10, border: "1px solid #f5b5b5", borderRadius: 10, color: "crimson" }}>{err}</div>}
-      {ok && <div style={{ padding: 10, border: "1px solid #b7f0c2", borderRadius: 10, color: "green" }}>{ok}</div>}
+    <form onSubmit={submit} className="space-y-5">
+      {err && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center gap-2 text-red-700">
+          <AlertCircle className="w-4 h-4" />
+          <p className="text-sm">{err}</p>
+        </div>
+      )}
 
-      <Field label="Tipo de conta *" error={fe.role}>
-        <select
-          value={form.role}
-          onChange={(e) => set("role", e.target.value as Role)}
-          style={{ padding: 10, borderRadius: 8, border: "1px solid #ddd" }}
-        >
-          {roleOptions.map((r) => (
-            <option key={r} value={r}>
-              {r}
-            </option>
-          ))}
-        </select>
-      </Field>
+      {ok && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center gap-2 text-green-700">
+          <CheckCircle className="w-4 h-4" />
+          <p className="text-sm">{ok}</p>
+        </div>
+      )}
 
-      <Field label="Nome *" error={fe.nome}>
-        <Input value={form.nome} onChange={(e) => set("nome", (e.target as HTMLInputElement).value)} />
-      </Field>
-
-      <Field label="Sexo *" error={fe.sexo}>
-        <select
-          value={form.sexo}
-          onChange={(e) => set("sexo", e.target.value as Sexo)}
-          style={{ padding: 10, borderRadius: 8, border: "1px solid #ddd" }}
-        >
-          <option value="HOMEM">Homem</option>
-          <option value="MULHER">Mulher</option>
-        </select>
-      </Field>
-
-      <Field label="Telefone *" error={fe.telefone}>
-        <Input value={form.telefone} onChange={(e) => set("telefone", (e.target as HTMLInputElement).value)} />
-      </Field>
-
-      <Field label="Email *" error={fe.email}>
-        <Input value={form.email} onChange={(e) => set("email", (e.target as HTMLInputElement).value)} />
-      </Field>
-
-      <Field label="Senha *" error={fe.password}>
-        <Input type="password" value={form.password} onChange={(e) => set("password", (e.target as HTMLInputElement).value)} />
-      </Field>
-
-      <Field label="Data de nascimento *" error={fe.dataNascimento}>
-        <Input type="date" value={form.dataNascimento} onChange={(e) => set("dataNascimento", (e.target as HTMLInputElement).value)} />
-      </Field>
-
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-        <Field label="Província *" error={fe.provincia}>
-          <Input value={form.provincia} onChange={(e) => set("provincia", (e.target as HTMLInputElement).value)} />
-        </Field>
-        <Field label="Cidade *" error={fe.cidade}>
-          <Input value={form.cidade} onChange={(e) => set("cidade", (e.target as HTMLInputElement).value)} />
-        </Field>
+      {/* Role */}
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">
+          Tipo de conta <span className="text-red-500">*</span>
+        </label>
+        <div className="relative">
+          <Shield className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <select
+            value={form.role}
+            onChange={(e) => setField("role", e.target.value as Role)}
+            className="w-full h-11 pl-10 pr-4 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:border-orange-400"
+          >
+            {roleOptions.map((r) => (
+              <option key={r} value={r}>
+                {r === "ADMIN" ? "Administrador" : r === "FUNCIONARIO" ? "Funcionário" : "Cliente"}
+              </option>
+            ))}
+          </select>
+        </div>
+        {fe.role && <p className="text-red-500 text-xs mt-1">{fe.role}</p>}
       </div>
 
-      <Field label="Bairro *" error={fe.bairro}>
-        <Input value={form.bairro} onChange={(e) => set("bairro", (e.target as HTMLInputElement).value)} />
-      </Field>
-
-      <Field label="Endereço *" error={fe.endereco}>
-        <Input value={form.endereco} onChange={(e) => set("endereco", (e.target as HTMLInputElement).value)} />
-      </Field>
-
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-        <Field label="NUIT (opcional)" error={fe.nuit}>
-          <Input value={form.nuit ?? ""} onChange={(e) => set("nuit", (e.target as HTMLInputElement).value)} />
-        </Field>
-        <Field label="Tipo Documento (opcional)" error={fe.tipoDocumento}>
-          <Input value={form.tipoDocumento ?? ""} onChange={(e) => set("tipoDocumento", (e.target as HTMLInputElement).value)} />
-        </Field>
+      {/* Nome */}
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">
+          Nome completo <span className="text-red-500">*</span>
+        </label>
+        <div className="relative">
+          <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Input
+            placeholder="Ex.: João Silva"
+            value={form.nome}
+            onChange={(e) => setField("nome", e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        {fe.nome && <p className="text-red-500 text-xs mt-1">{fe.nome}</p>}
       </div>
 
-      <Field label="Número Documento (opcional)" error={fe.numeroDocumento}>
-        <Input value={form.numeroDocumento ?? ""} onChange={(e) => set("numeroDocumento", (e.target as HTMLInputElement).value)} />
-      </Field>
+      {/* Sexo */}
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">
+          Sexo <span className="text-red-500">*</span>
+        </label>
+        <div className="relative">
+          <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <select
+            value={form.sexo}
+            onChange={(e) => setField("sexo", e.target.value as Sexo)}
+            className="w-full h-11 pl-10 pr-4 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:border-orange-400"
+          >
+            <option value="HOMEM">Homem</option>
+            <option value="MULHER">Mulher</option>
+          </select>
+        </div>
+        {fe.sexo && <p className="text-red-500 text-xs mt-1">{fe.sexo}</p>}
+      </div>
 
-      <Button type="submit" disabled={loading}>
+      {/* Telefone */}
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">
+          Telefone <span className="text-red-500">*</span>
+        </label>
+        <div className="relative">
+          <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Input
+            placeholder="Ex.: 84 123 4567"
+            value={form.telefone}
+            onChange={(e) => setField("telefone", e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        {fe.telefone && <p className="text-red-500 text-xs mt-1">{fe.telefone}</p>}
+      </div>
+
+      {/* Email */}
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">
+          Email <span className="text-red-500">*</span>
+        </label>
+        <div className="relative">
+          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Input
+            type="email"
+            placeholder="exemplo@email.com"
+            value={form.email}
+            onChange={(e) => setField("email", e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        {fe.email && <p className="text-red-500 text-xs mt-1">{fe.email}</p>}
+      </div>
+
+      {/* Senha */}
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">
+          Senha <span className="text-red-500">*</span>
+        </label>
+        <div className="relative">
+          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Input
+            type="password"
+            placeholder="Mínimo 6 caracteres"
+            value={form.password}
+            onChange={(e) => setField("password", e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        {fe.password && <p className="text-red-500 text-xs mt-1">{fe.password}</p>}
+      </div>
+
+      {/* Data Nascimento */}
+      <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1">
+          Data de nascimento <span className="text-red-500">*</span>
+        </label>
+        <div className="relative">
+          <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Input
+            type="date"
+            value={form.dataNascimento}
+            onChange={(e) => setField("dataNascimento", e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        {fe.dataNascimento && <p className="text-red-500 text-xs mt-1">{fe.dataNascimento}</p>}
+      </div>
+
+      {/* Província e Cidade */}
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">
+            Província <span className="text-red-500">*</span>
+          </label>
+          <div className="relative">
+            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Input
+              placeholder="Ex.: Maputo"
+              value={form.provincia}
+              onChange={(e) => setField("provincia", e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          {fe.provincia && <p className="text-red-500 text-xs mt-1">{fe.provincia}</p>}
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-1">
+            Cidade <span className="text-red-500">*</span>
+          </label>
+          <Input
+            placeholder="Ex.: Maputo"
+            value={form.cidade}
+            onChange={(e) => setField("cidade", e.target.value)}
+          />
+          {fe.cidade && <p className="text-red-500 text-xs mt-1">{fe.cidade}</p>}
+        </div>
+      </div>
+
+      <Button
+        type="submit"
+        disabled={loading}
+        className="w-full bg-orange-600 hover:bg-orange-700"
+      >
         {loading ? "A criar..." : "Criar utilizador"}
       </Button>
     </form>

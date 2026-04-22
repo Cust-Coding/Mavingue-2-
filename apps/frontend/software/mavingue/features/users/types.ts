@@ -19,7 +19,7 @@ export type UserCreateFullRequest = {
   provincia: string;
   cidade: string;
   bairro: string;
-  endereco: string;
+  
 
   nuit?: string | null;
   tipoDocumento?: string | null;
