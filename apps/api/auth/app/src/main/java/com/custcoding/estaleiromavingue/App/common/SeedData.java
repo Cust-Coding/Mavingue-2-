@@ -118,10 +118,7 @@ public class SeedData implements CommandLineRunner {
             customer.setProvincia("Maputo");
             customer.setCidade("Maputo");
             customer.setBairro("Central");
-            customer.setEndereco("Avenida 25 de Setembro");
-            customer.setNuit(nuit);
-            customer.setTipoDocumento("BI");
-            customer.setNumeroDocumento("110100000000A");
+
             return customerRepository.save(customer);
         });
     }
