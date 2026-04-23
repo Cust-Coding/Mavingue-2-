@@ -20,9 +20,12 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center bg-gradient-to-br from-orange-50 to-white dark:from-slate-950 dark:to-slate-900">
         <div className="text-center animate-in fade-in zoom-in duration-700">
-          <div className="text-7xl font-black tracking-tighter text-orange-600 dark:text-orange-500 mb-4">
-            M
-          </div>
+          {/* Logo */}
+          <img
+            src="/mavingue_logo_v1.svg"
+            alt="Mavingue Logo"
+            className="w-16 h-16 mx-auto mb-4 object-contain"
+          />
           <h1 className="text-2xl font-bold text-slate-700 dark:text-slate-200 mb-2">
             Materiais de Construção
           </h1>
