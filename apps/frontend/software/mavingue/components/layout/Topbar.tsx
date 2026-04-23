@@ -17,6 +17,7 @@ import { clearSession, getRole } from "@/lib/auth/session";
 import { getQuickLinks, normalizeRole } from "@/components/layout/navigation";
 import { useI18n } from "@/lib/i18n";
 import { getCartCount, useCartStore } from "@/store/cart.store";
+import Image from "next/image";
 
 interface MeResponse {
   nome?: string;
@@ -163,8 +164,8 @@ export default function Topbar() {
           </button>
 
           <Link href="/" className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 to-orange-700 text-xl font-black text-white shadow-lg shadow-orange-500/30">
-              M
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl  text-xl font-black text-white ">
+              <Image src="/mavingue_logo_v1.svg" alt="Logo" width={26} height={26} />
             </div>
             <div className="hidden sm:block">
               <div className="text-sm font-black uppercase tracking-[0.3em] text-slate-400">Mavingue</div>
