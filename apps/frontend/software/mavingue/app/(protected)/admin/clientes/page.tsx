@@ -373,61 +373,59 @@ export default function AdminClientes() {
           </div>
 
           {/* Senha (apenas para criaçao) */}
-          {!editingId && (
-            <>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Senha <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <Input
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Mínimo 6 caracteres"
-                    value={form.password}
-                    onChange={(e) => setForm({ ...form, password: e.target.value })}
-                    className="pl-10"
-                    rightIcon={
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="cursor-pointer"
-                      >
-                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    }
-                  />
-                </div>
-                {fe.password && <p className="text-red-500 text-xs mt-1">{fe.password}</p>}
-              </div>
+                  {/* Senha (apenas para criação) */}
+{/* Senha (apenas para criação) */}
+{!editingId && (
+  <>
+    <div>
+      <label className="block text-sm font-medium text-slate-700 mb-1">
+        Senha <span className="text-red-500">*</span>
+      </label>
+      <div className="relative">
+        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10" />
+        <input
+          type={showPassword ? "text" : "password"}
+          placeholder="Mínimo 6 caracteres"
+          value={form.password}
+          onChange={(e) => setForm({ ...form, password: e.target.value })}
+          className="w-full h-11 pl-10 pr-10 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:border-orange-400"
+        />
+        <button
+          type="button"
+          onClick={() => setShowPassword(!showPassword)}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 z-10"
+        >
+          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+        </button>
+      </div>
+      {fe.password && <p className="text-red-500 text-xs mt-1">{fe.password}</p>}
+    </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Confirmar Senha <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                  <Input
-                    type={showConfirmPassword ? "text" : "password"}
-                    placeholder="Repita a senha"
-                    value={form.confirmPassword}
-                    onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
-                    className="pl-10"
-                    rightIcon={
-                      <button
-                        type="button"
-                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                        className="cursor-pointer"
-                      >
-                        {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    }
-                  />
-                </div>
-                {fe.confirmPassword && <p className="text-red-500 text-xs mt-1">{fe.confirmPassword}</p>}
-              </div>
-            </>
-          )}
+    <div>
+      <label className="block text-sm font-medium text-slate-700 mb-1">
+        Confirmar Senha <span className="text-red-500">*</span>
+      </label>
+      <div className="relative">
+        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 z-10" />
+        <input
+          type={showConfirmPassword ? "text" : "password"}
+          placeholder="Repita a senha"
+          value={form.confirmPassword}
+          onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
+          className="w-full h-11 pl-10 pr-10 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:border-orange-400"
+        />
+        <button
+          type="button"
+          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 z-10"
+        >
+          {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+        </button>
+      </div>
+      {fe.confirmPassword && <p className="text-red-500 text-xs mt-1">{fe.confirmPassword}</p>}
+    </div>
+  </>
+)}
         </div>
 
         <div className="flex gap-3 mt-6">
