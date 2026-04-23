@@ -92,43 +92,21 @@ export default function ClienteAguaPage() {
   const waterCustomers = profile?.waterCustomers ?? [];
   const customerById = useMemo(() => new Map(waterCustomers.map((item) => [item.id, item])), [waterCustomers]);
 
- async function submitRequest() {
-  setError("");
-  setSuccess("");
-  
-  if (!requestForm.referenciaLocal.trim()) {
-    setError("Por favor, indique uma referência local (ex: Casa da Matola, Talhão 7)");
-    return;
-  }
-  
-  try {
-    console.log(" Enviando pedido:", {
-      referenciaLocal: requestForm.referenciaLocal.trim(),
-      observacoes: requestForm.observacoes.trim() || undefined,
-    });
-    
-    await createClientWaterRequest({
-      referenciaLocal: requestForm.referenciaLocal.trim(),
-      observacoes: requestForm.observacoes.trim() || undefined,
-    });
-    
-    setRequestForm({ referenciaLocal: "", observacoes: "" });
-    setSuccess("Pedido de água enviado com sucesso! Aguarde aprovação do administrador.");
-    await load();
-  } catch (reason: unknown) {
-    console.error(" Erro detalhado:", reason);
-    const errorMsg = getErrorMessage(reason, "Não foi possível criar o pedido de água");
-    
-    // Tratamento específico para cada tipo de erro
-    if (errorMsg.includes("conflito") || errorMsg.includes("duplicado") || errorMsg.includes("already") || errorMsg.includes("existente")) {
-      setError("Você já possui um pedido de água pendente. Aguarde a aprovação do administrador ou contacte o suporte.");
-    } else if (errorMsg.includes("limite") || errorMsg.includes("máximo")) {
-      setError("Você atingiu o limite máximo de pedidos de água. Contacte o suporte para mais informações.");
-    } else {
-      setError(errorMsg);
+  async function submitRequest() {
+    setError("");
+    setSuccess("");
+    try {
+      await createClientWaterRequest({
+        referenciaLocal: requestForm.referenciaLocal.trim(),
+        observacoes: requestForm.observacoes.trim() || undefined,
+      });
+      setRequestForm({ referenciaLocal: "", observacoes: "" });
+      setSuccess("Pedido de agua enviado com sucesso. Aguarde aprovacao do administrador.");
+      await load();
+    } catch (reason: unknown) {
+      setError(getErrorMessage(reason, "Nao foi possivel criar o pedido de agua"));
     }
   }
-}
 
   async function submitCompletion(requestId: number) {
     const current = completionForms[requestId];

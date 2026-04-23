@@ -1,11 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const BACKEND = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+const MAX_RETRIES = 2;
+const TIMEOUT_MS = 15000;
 
 function urlFor(req: NextRequest, parts: string[]) {
   const base = BACKEND.replace(/\/+$/, "");
   const pathname = parts.join("/");
   return `${base}/${pathname}${req.nextUrl.search}`;
+}
+
+async function fetchWithTimeout(url: string, init: RequestInit, timeout: number) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  
+  try {
+    const response = await fetch(url, { ...init, signal: controller.signal });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    throw error;
+  }
 }
 
 async function handler(req: NextRequest, ctx: { params: Promise<{ path: string[] }> }) {
@@ -28,15 +44,48 @@ async function handler(req: NextRequest, ctx: { params: Promise<{ path: string[]
     if (body.byteLength) init.body = body;
   }
 
-  const upstream = await fetch(url, init);
+  let lastError: Error | null = null;
+  
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const upstream = await fetchWithTimeout(url, init, TIMEOUT_MS);
+      
+      const outHeaders = new Headers();
+      const uct = upstream.headers.get("content-type");
+      if (uct) outHeaders.set("content-type", uct);
+      outHeaders.set("cache-control", "no-store");
 
-  const outHeaders = new Headers();
-  const uct = upstream.headers.get("content-type");
-  if (uct) outHeaders.set("content-type", uct);
-  outHeaders.set("cache-control", "no-store");
+      const data = await upstream.arrayBuffer();
+      
+      // Se for erro 502/503/504, tenta novamente
+      if ((upstream.status === 502 || upstream.status === 503 || upstream.status === 504) && attempt < MAX_RETRIES) {
+        console.warn(`⚠️ Proxy: erro ${upstream.status} (tentativa ${attempt}/${MAX_RETRIES}) para ${url}`);
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+        continue;
+      }
+      
+      return new NextResponse(data, { status: upstream.status, headers: outHeaders });
+    } catch (error: any) {
+      lastError = error;
+      console.error(`❌ Proxy erro (tentativa ${attempt}/${MAX_RETRIES}):`, error.message);
+      
+      if (attempt < MAX_RETRIES) {
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+      }
+    }
+  }
 
-  const data = await upstream.arrayBuffer();
-  return new NextResponse(data, { status: upstream.status, headers: outHeaders });
+  //
+  console.error(`❌ Proxy: todas as tentativas falharam para ${url}`);
+  
+  return NextResponse.json(
+    { 
+      error: "O servidor está temporariamente indisponível. Por favor, tenta novamente dentro de alguns instantes.",
+      code: "SERVICE_UNAVAILABLE",
+      status: 502
+    },
+    { status: 502 }
+  );
 }
 
 export const GET = handler;

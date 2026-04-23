@@ -4,11 +4,26 @@ import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { customersApi } from "@/features/customers/api";
-import type { Customer, CustomerCreate } from "@/features/customers/types";
+import type { Customer } from "@/features/customers/types";
 import { Empty, ErrorBox, Loading } from "@/components/ui/State";
-import { Mail, User, AlertCircle, CheckCircle, Calendar, Phone, MapPin } from "lucide-react";
+import { Mail, User, AlertCircle, CheckCircle, Calendar, Phone, MapPin, Lock, Eye, EyeOff } from "lucide-react";
 
 type Sexo = "HOMEM" | "MULHER";
+
+type FormState = {
+  nome: string;
+  sexo: Sexo;
+  telefone: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  dataNascimento: string;
+  provincia: string;
+  cidade: string;
+  bairro: string;
+};
+
+type FieldErrors = Partial<Record<keyof FormState, string>>;
 
 export default function AdminClientes() {
   const [rows, setRows] = useState<Customer[]>([]);
@@ -16,14 +31,18 @@ export default function AdminClientes() {
   const [err, setErr] = useState("");
   const [ok, setOk] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [fe, setFe] = useState<Record<string, string>>({});
+  const [fe, setFe] = useState<FieldErrors>({});
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const [form, setForm] = useState<CustomerCreate>({
-    name: "",
-    sex: "HOMEM",
-    phone: "",
+  const [form, setForm] = useState<FormState>({
+    nome: "",
+    sexo: "HOMEM",
+    telefone: "",
     email: "",
-    birthDate: "",
+    password: "",
+    confirmPassword: "",
+    dataNascimento: "",
     provincia: "",
     cidade: "",
     bairro: "",
@@ -48,11 +67,13 @@ export default function AdminClientes() {
   function resetForm() {
     setEditingId(null);
     setForm({
-      name: "",
-      sex: "HOMEM",
-      phone: "",
+      nome: "",
+      sexo: "HOMEM",
+      telefone: "",
       email: "",
-      birthDate: "",
+      password: "",
+      confirmPassword: "",
+      dataNascimento: "",
       provincia: "",
       cidade: "",
       bairro: "",
@@ -65,11 +86,13 @@ export default function AdminClientes() {
   function edit(customer: Customer) {
     setEditingId(customer.id);
     setForm({
-      name: customer.name,
-      sex: customer.sex,
-      phone: customer.phone,
+      nome: customer.name,
+      sexo: customer.sex,
+      telefone: customer.phone,
       email: customer.email,
-      birthDate: customer.birthDate,
+      password: "",
+      confirmPassword: "",
+      dataNascimento: customer.birthDate,
       provincia: customer.provincia,
       cidade: customer.cidade,
       bairro: customer.bairro || "",
@@ -77,14 +100,29 @@ export default function AdminClientes() {
   }
 
   function validate() {
-    const e: Record<string, string> = {};
-    if (!form.name?.trim()) e.name = "Nome é obrigatório";
-    if (!form.email?.trim()) e.email = "Email é obrigatório";
-    if (!form.phone?.trim()) e.phone = "Telefone é obrigatório";
-    if (!form.birthDate) e.birthDate = "Data nascimento é obrigatória";
-    if (!form.provincia?.trim()) e.provincia = "Província é obrigatória";
-    if (!form.cidade?.trim()) e.cidade = "Cidade é obrigatória";
-    if (!form.bairro?.trim()) e.bairro = "Bairro é obrigatório";
+    const e: FieldErrors = {};
+
+    if (!form.nome.trim()) e.nome = "Nome é obrigatório";
+    if (!form.telefone.trim()) e.telefone = "Telefone é obrigatório";
+    if (!form.email.trim()) {
+      e.email = "Email é obrigatório";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      e.email = "Email inválido";
+    }
+    if (!form.dataNascimento) e.dataNascimento = "Data nascimento é obrigatória";
+    if (!form.provincia.trim()) e.provincia = "Província é obrigatória";
+    if (!form.cidade.trim()) e.cidade = "Cidade é obrigatória";
+    if (!form.bairro.trim()) e.bairro = "Bairro é obrigatório";
+    
+    // Só valida senha se for criação (não edição)
+    if (!editingId) {
+      if (!form.password.trim() || form.password.length < 6) {
+        e.password = "Senha deve ter no mínimo 6 caracteres";
+      }
+      if (form.confirmPassword !== form.password) {
+        e.confirmPassword = "As senhas não coincidem";
+      }
+    }
 
     setFe(e);
     return Object.keys(e).length === 0;
@@ -98,30 +136,58 @@ export default function AdminClientes() {
     if (!validate()) return;
 
     try {
-      const payload: any = {
-        name: form.name.trim(),
-        sex: form.sex,
-        phone: form.phone.trim(),
-        email: form.email.trim(),
-        birthDate: form.birthDate,
-        provincia: form.provincia.trim(),
-        cidade: form.cidade.trim(),
-        bairro: form.bairro.trim() || "Sem bairro",
-        // Campos ocultos (necessários para o backend)
-        endereco: "Sem endereço",
-        nuit: null,
-        tipoDocumento: "BI",
-        numeroDocumento: null,
-      };
-
-      console.log("Enviando payload:", payload);
-
       if (editingId) {
+      
+        const payload: any = {
+          name: form.nome.trim(),
+          sex: form.sexo,
+          phone: form.telefone.trim(),
+          email: form.email.trim(),
+          birthDate: form.dataNascimento,
+          provincia: form.provincia.trim(),
+          cidade: form.cidade.trim(),
+          bairro: form.bairro.trim() || "Sem bairro",
+          endereco: form.bairro.trim() || "Sem endereço",
+          nuit: null,
+          tipoDocumento: "BI",
+          numeroDocumento: null,
+        };
+
         await customersApi.update(editingId, payload);
         setOk("Cliente atualizado com sucesso!");
       } else {
-        await customersApi.create(payload);
-        setOk("Cliente criado com sucesso!");
+        
+        const registerPayload = {
+          nome: form.nome.trim(),
+          sexo: form.sexo,
+          telefone: form.telefone.trim(),
+          email: form.email.trim(),
+          password: form.password,
+          dataNascimento: form.dataNascimento,
+          provincia: form.provincia.trim(),
+          cidade: form.cidade.trim(),
+          bairro: form.bairro.trim(),
+          pedirAgua: false,
+          endereco: form.bairro.trim() || "Sem endereço",
+          nuit: null,
+          tipoDocumento: "BI",
+          numeroDocumento: null,
+        };
+
+        console.log("Enviando registo:", registerPayload);
+
+        const res = await fetch("/api/proxy/api/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(registerPayload),
+        });
+
+        if (!res.ok) {
+          const errorText = await res.text();
+          throw new Error(errorText || "Erro ao criar cliente");
+        }
+
+        setOk("Cliente criado com sucesso! Já pode fazer login.");
       }
 
       resetForm();
@@ -168,7 +234,7 @@ export default function AdminClientes() {
         </div>
       )}
 
-      {/* Formulário */}
+      {/* Formulario */}
       <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm mb-6">
         <h2 className="text-md font-semibold text-slate-800 mb-4">
           {editingId ? "Editar Cliente" : "Novo Cliente"}
@@ -184,12 +250,12 @@ export default function AdminClientes() {
               <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <Input
                 placeholder="Ex.: João Silva"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                value={form.nome}
+                onChange={(e) => setForm({ ...form, nome: e.target.value })}
                 className="pl-10"
               />
             </div>
-            {fe.name && <p className="text-red-500 text-xs mt-1">{fe.name}</p>}
+            {fe.nome && <p className="text-red-500 text-xs mt-1">{fe.nome}</p>}
           </div>
 
           {/* Sexo */}
@@ -200,15 +266,15 @@ export default function AdminClientes() {
             <div className="relative">
               <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <select
-                value={form.sex}
-                onChange={(e) => setForm({ ...form, sex: e.target.value as Sexo })}
+                value={form.sexo}
+                onChange={(e) => setForm({ ...form, sexo: e.target.value as Sexo })}
                 className="w-full h-11 pl-10 pr-4 rounded-lg border border-slate-200 bg-white text-sm focus:outline-none focus:border-orange-400"
               >
                 <option value="HOMEM">Homem</option>
                 <option value="MULHER">Mulher</option>
               </select>
             </div>
-            {fe.sex && <p className="text-red-500 text-xs mt-1">{fe.sex}</p>}
+            {fe.sexo && <p className="text-red-500 text-xs mt-1">{fe.sexo}</p>}
           </div>
 
           {/* Telefone */}
@@ -220,12 +286,12 @@ export default function AdminClientes() {
               <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <Input
                 placeholder="Ex.: 84 123 4567"
-                value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                value={form.telefone}
+                onChange={(e) => setForm({ ...form, telefone: e.target.value })}
                 className="pl-10"
               />
             </div>
-            {fe.phone && <p className="text-red-500 text-xs mt-1">{fe.phone}</p>}
+            {fe.telefone && <p className="text-red-500 text-xs mt-1">{fe.telefone}</p>}
           </div>
 
           {/* Email */}
@@ -255,15 +321,15 @@ export default function AdminClientes() {
               <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <Input
                 type="date"
-                value={form.birthDate}
-                onChange={(e) => setForm({ ...form, birthDate: e.target.value })}
+                value={form.dataNascimento}
+                onChange={(e) => setForm({ ...form, dataNascimento: e.target.value })}
                 className="pl-10"
               />
             </div>
-            {fe.birthDate && <p className="text-red-500 text-xs mt-1">{fe.birthDate}</p>}
+            {fe.dataNascimento && <p className="text-red-500 text-xs mt-1">{fe.dataNascimento}</p>}
           </div>
 
-          {/* Província */}
+          {/* Provincia */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">
               Província <span className="text-red-500">*</span>
@@ -305,6 +371,63 @@ export default function AdminClientes() {
             />
             {fe.bairro && <p className="text-red-500 text-xs mt-1">{fe.bairro}</p>}
           </div>
+
+          {/* Senha (apenas para criaçao) */}
+          {!editingId && (
+            <>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Senha <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Mínimo 6 caracteres"
+                    value={form.password}
+                    onChange={(e) => setForm({ ...form, password: e.target.value })}
+                    className="pl-10"
+                    rightIcon={
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="cursor-pointer"
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    }
+                  />
+                </div>
+                {fe.password && <p className="text-red-500 text-xs mt-1">{fe.password}</p>}
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">
+                  Confirmar Senha <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <Input
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="Repita a senha"
+                    value={form.confirmPassword}
+                    onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
+                    className="pl-10"
+                    rightIcon={
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="cursor-pointer"
+                      >
+                        {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    }
+                  />
+                </div>
+                {fe.confirmPassword && <p className="text-red-500 text-xs mt-1">{fe.confirmPassword}</p>}
+              </div>
+            </>
+          )}
         </div>
 
         <div className="flex gap-3 mt-6">
