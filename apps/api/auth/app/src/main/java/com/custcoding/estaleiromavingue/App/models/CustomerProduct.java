@@ -31,7 +31,7 @@ public class CustomerProduct {
     private Sexo sex;
 
     // Celular
-    @Column(nullable = false, length = 20)
+    @Column(nullable = false, length = 20, unique = true)
     private String phone;
 
     // Email (login/contacto)

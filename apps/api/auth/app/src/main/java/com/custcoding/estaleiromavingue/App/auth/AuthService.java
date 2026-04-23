@@ -89,8 +89,8 @@ public class AuthService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email já existe no cadastro de cliente");
         }
 
-        if (req.nuit() != null && !req.nuit().isBlank() && customerRepo.existsByNuit(req.nuit())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "NUIT já existe");
+        if (customerRepo.existsByPhone(req.telefone())){
+            throw  new ResponseStatusException(HttpStatus.BAD_REQUEST, "Numero de telefone já cadastrado");
         }
 
         // 1) cria AppUser (login)

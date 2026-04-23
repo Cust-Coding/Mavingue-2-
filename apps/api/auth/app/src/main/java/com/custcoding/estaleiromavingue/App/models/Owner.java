@@ -18,7 +18,7 @@ public class Owner {
     @Column(nullable = false, length = 100)
     private String nome;
 
-    @Column(nullable = false, length = 20)
+    @Column(nullable = false, length = 20, unique = true)
     private String telefone;
     
     @Column(nullable = false, unique = true, length = 100)

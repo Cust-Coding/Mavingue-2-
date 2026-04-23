@@ -19,7 +19,7 @@ public class Funcionario {
     @Column(nullable = false, length = 100)
     private String nome;
 
-    @Column(nullable = false, length = 20)
+    @Column(nullable = false, length = 20, unique = true)
     private String telefone;
 
     @ManyToOne(optional = false)
