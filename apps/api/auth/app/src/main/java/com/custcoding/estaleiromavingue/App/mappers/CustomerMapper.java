@@ -18,10 +18,7 @@ public class CustomerMapper {
         c.setProvincia(dto.provincia());
         c.setCidade(dto.cidade());
         c.setBairro(dto.bairro());
-        c.setEndereco(dto.endereco());
-        c.setNuit(dto.nuit());
-        c.setNumeroDocumento(dto.numeroDocumento());
-        c.setTipoDocumento(dto.tipoDocumento());
+
         return c;
     }
 
@@ -36,10 +33,6 @@ public class CustomerMapper {
                 c.getProvincia(),
                 c.getCidade(),
                 c.getBairro(),
-                c.getEndereco(),
-                c.getNuit(),
-                c.getNumeroDocumento(),
-                c.getTipoDocumento(),
                 c.getCreated()
         );
     }
