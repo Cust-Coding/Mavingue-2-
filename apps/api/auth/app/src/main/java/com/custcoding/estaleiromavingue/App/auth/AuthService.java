@@ -93,7 +93,7 @@ public class AuthService {
             throw  new ResponseStatusException(HttpStatus.BAD_REQUEST, "Numero de telefone já cadastrado");
         }
 
-        // 1) cria AppUser (login)nnn
+        // 1) cria AppUser (login)
         AppUser u = new AppUser();
         u.setNome(req.nome());
         u.setEmail(req.email());
