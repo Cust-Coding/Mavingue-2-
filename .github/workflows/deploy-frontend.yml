@@ -14,7 +14,7 @@ on:
 
 env:
   WORKDIR: apps/frontend/software/mavingue
-  NODE_VERSION: '20'
+  NODE_VERSION: "20"
 
 jobs:
   ci:
@@ -29,14 +29,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Enable Corepack (pnpm)
+        run: corepack enable
+
+      - name: Prepare pnpm
+        run: corepack prepare pnpm@10.33.0 --activate
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
-
-      - name: Enable Corepack (pnpm)
-        run: corepack enable
+          cache: "pnpm"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -59,13 +62,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Enable Corepack (pnpm)
+        run: corepack enable
+
+      - name: Prepare pnpm
+        run: corepack prepare pnpm@10.33.0 --activate
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-
-      - name: Enable Corepack (pnpm)
-        run: corepack enable
 
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
@@ -92,7 +98,7 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `## Preview Frontend\n\n🚀 Deploy concluído!\n\n**URL:** ${{ steps.deploy.outputs.preview_url }}`
+              body: `## 🚀 Preview Frontend\n\nDeploy concluído com sucesso!\n\n**URL:** ${{ steps.deploy.outputs.preview_url }}`
             })
 
 
@@ -110,13 +116,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Enable Corepack (pnpm)
+        run: corepack enable
+
+      - name: Prepare pnpm
+        run: corepack prepare pnpm@10.33.0 --activate
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-
-      - name: Enable Corepack (pnpm)
-        run: corepack enable
 
       - name: Install Vercel CLI
         run: npm install -g vercel@latest
