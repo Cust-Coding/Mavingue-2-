@@ -4,6 +4,10 @@ import { I18nProvider } from "@/lib/i18n";
 export const metadata = {
   metadataBase: new URL("https://estaleiromavingueonline.com"),
 
+  verification: {
+    google: "google1d105e39920db946",
+  },
+
   title: {
     default: "Estaleiro Mavingue",
     template: "%s | Estaleiro Mavingue",
