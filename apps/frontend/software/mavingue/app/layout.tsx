@@ -10,11 +10,12 @@ export const metadata = {
   },
 
   description:
-    "Ferragens, materiais de construção e serviços de água em Maputo. Qualidade e confiança.",
+    "Ferragens, materiais de construção e serviços de canalização em Maputo. Produtos de qualidade com atendimento de confiança.",
 
   keywords: [
     "ferragens Maputo",
-    "materiais de construção",
+    "ferragens Matola",
+    "materiais de construção Maputo",
     "canalização",
     "tubos PVC",
     "Estaleiro Mavingue",
@@ -28,7 +29,7 @@ export const metadata = {
     siteName: "Estaleiro Mavingue",
     images: [
       {
-        url: "/og-image.jpg",
+        url: "/og-image.png",
         width: 1200,
         height: 630,
       },
@@ -37,8 +38,19 @@ export const metadata = {
     type: "website",
   },
 
+  twitter: {
+    card: "summary_large_image",
+    title: "Estaleiro Mavingue",
+    description: "Loja de ferragens e serviços de água em Moçambique.",
+    images: ["/og-image.png"],
+  },
+
   alternates: {
     canonical: "https://estaleiromavingueonline.com",
+  },
+
+  icons: {
+    icon: "/favicon.ico",
   },
 };
 
