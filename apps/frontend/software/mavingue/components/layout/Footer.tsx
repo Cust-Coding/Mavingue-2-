@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useI18n } from "@/lib/i18n";
+import Image from "next/image";
 
 const currentYear = new Date().getFullYear();
 
@@ -96,9 +97,9 @@ export default function Footer() {
           {/* Brand Section */}
           <div className="lg:col-span-1">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center shadow-lg shadow-orange-500/20">
-                <span className="text-2xl font-black text-white">M</span>
-              </div>
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl  text-xl font-black text-white ">
+                  <Image src="/mavingue_logo_v1.svg" alt="Logo" width={30} height={30} />
+                </div>
               <div>
                 <h3 className="text-xl font-bold text-white">Mavingue</h3>
                 <p className="text-xs text-orange-400 uppercase tracking-wider">Materiais de Construção</p>

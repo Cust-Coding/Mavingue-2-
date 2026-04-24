@@ -165,7 +165,7 @@ export default function Topbar() {
 
           <Link href="/" className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl  text-xl font-black text-white ">
-              <Image src="/mavingue_logo_v1.svg" alt="Logo" width={26} height={26} />
+              <Image src="/mavingue_logo_v1.svg" alt="Logo" width={30} height={30} />
             </div>
             <div className="hidden sm:block">
               <div className="text-sm font-black uppercase tracking-[0.3em] text-slate-400">Mavingue</div>
