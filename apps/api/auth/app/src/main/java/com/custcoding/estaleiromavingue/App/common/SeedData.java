@@ -42,8 +42,8 @@ public class SeedData implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        AppUser admin = ensureUser("Admin Sistema", "adminsystem@mavingue.com", Role.ADMIN);
-        AppUser funcionarioUser = ensureUser("Funcionario Mavingue", "funcionario@maving.com", Role.FUNCIONARIO);
+        AppUser admin = ensureUser("Admin Sistema", "adminsystem@mavingue.com", "100402598", Role.ADMIN);
+        AppUser funcionarioUser = ensureUser("Funcionario Mavingue", "funcionario@maving.com", "100402599", Role.FUNCIONARIO);
 
         Owner owner = proprietarioRepository.findByEmail(admin.getEmail())
                 .orElseGet(() -> {
@@ -79,16 +79,18 @@ public class SeedData implements CommandLineRunner {
         ensureProduct("Tubo PVC 1/2", "Tubo PVC para canalizacao", new BigDecimal("210.00"), "https://images.unsplash.com/photo-1621905252507-b35492cc74b4?auto=format&fit=crop&w=1200&q=80", ferragem, 150);
     }
 
-    private AppUser ensureUser(String nome, String email, Role role) {
+    private AppUser ensureUser(String nome, String email, String phone,Role role) {
         return appUserRepository.findByEmail(email).map(existing -> {
             existing.setNome(nome);
             existing.setRole(role);
+            existing.setPhone(phone);
             existing.setPasswordHash(encoder.encode("mavingue1234#"));
             existing.setEnabled(true);
             return appUserRepository.save(existing);
         }).orElseGet(() -> appUserRepository.save(AppUser.builder()
                 .nome(nome)
                 .email(email)
+                .phone(phone)
                 .passwordHash(encoder.encode("mavingue1234#"))
                 .role(role)
                 .enabled(true)

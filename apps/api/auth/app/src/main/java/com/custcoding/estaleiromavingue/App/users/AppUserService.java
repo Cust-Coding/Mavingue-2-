@@ -53,6 +53,7 @@ public class AppUserService {
         AppUser u = AppUser.builder()
                 .nome(req.nome())
                 .email(req.email())
+                .phone(req.telefone())
                 .passwordHash(encoder.encode(req.password()))
                 .role(req.role())
                 .build();
@@ -110,6 +111,6 @@ public class AppUserService {
     }
 
     private UserResponse toResponse(AppUser u) {
-        return new UserResponse(u.getId(), u.getNome(), u.getEmail(), u.getRole());
+        return new UserResponse(u.getId(), u.getNome(), u.getEmail(), u.getPhone(), u.getRole());
     }
 }

@@ -23,10 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.scheduling.annotation.Scheduled;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
@@ -53,9 +50,26 @@ public class AuthService {
     private String frontendUrl;
 
 
+
+    public Optional<AppUser> findByIdentifier(String identifier) {
+
+        if (identifier == null) return Optional.empty();
+
+        if (identifier.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")){
+            return userRepo.findByEmail(identifier);
+        } else if (identifier.matches("^\\d{1,9}$")) {
+            return userRepo.findByPhone("+258" + identifier);
+            
+        }else {
+            throw new IllegalArgumentException("Use um email ou número de telefone válido");
+        }
+
+    }
+
     public LoginResponse login(LoginRequest req) {
-        AppUser u = userRepo.findByEmail(req.email())
-                .orElseThrow(() -> new IllegalArgumentException("Credenciais inválidas"));
+
+        AppUser u = findByIdentifier(req.identifier())
+                .orElseThrow(() -> new IllegalArgumentException("Credenciais Inválidas"));
 
         if (!encoder.matches(req.password(), u.getPasswordHash())) {
             throw new IllegalArgumentException("Credenciais inválidas");
@@ -72,7 +86,7 @@ public class AuthService {
         Long id = Long.parseLong(userIdFromAuth);
         AppUser u = userRepo.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Utilizador não encontrado"));
-        return new MeResponse(u.getId(), u.getNome(), u.getEmail(), u.getRole());
+        return new MeResponse(u.getId(), u.getNome(), u.getEmail(), u.getPhone(),u.getRole());
     }
 
     // ✅ NOVO: Registo do cliente com senha + perfil
@@ -96,6 +110,7 @@ public class AuthService {
         // 1) cria AppUser (login)
         AppUser u = new AppUser();
         u.setNome(req.nome());
+        u.setPhone(req.telefone());
         u.setEmail(req.email());
         u.setPasswordHash(encoder.encode(req.password()));
         u.setRole(Role.CLIENTE);
