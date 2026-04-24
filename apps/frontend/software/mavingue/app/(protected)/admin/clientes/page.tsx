@@ -157,23 +157,22 @@ export default function AdminClientes() {
         setOk("Cliente atualizado com sucesso!");
       } else {
         
-        const registerPayload = {
-          nome: form.nome.trim(),
-          sexo: form.sexo,
-          telefone: form.telefone.trim(),
-          email: form.email.trim(),
-          password: form.password,
-          dataNascimento: form.dataNascimento,
-          provincia: form.provincia.trim(),
-          cidade: form.cidade.trim(),
-          bairro: form.bairro.trim(),
-          pedirAgua: false,
-          endereco: form.bairro.trim() || "Sem endereço",
-          nuit: null,
-          tipoDocumento: "BI",
-          numeroDocumento: null,
-        };
-
+   const registerPayload = {
+  nome: form.nome.trim(),
+  sexo: form.sexo,
+  telefone: "+258" + form.telefone.trim(), 
+  email: form.email.trim(),
+  password: form.password,
+  dataNascimento: form.dataNascimento,
+  provincia: form.provincia.trim(),
+  cidade: form.cidade.trim(),
+  bairro: form.bairro.trim(),
+  pedirAgua: false,
+  endereco: form.bairro.trim() || "Sem endereço",
+  nuit: null,
+  tipoDocumento: "BI",
+  numeroDocumento: null,
+};
         console.log("Enviando registo:", registerPayload);
 
         const res = await fetch("/api/proxy/api/auth/register", {
@@ -372,9 +371,7 @@ export default function AdminClientes() {
             {fe.bairro && <p className="text-red-500 text-xs mt-1">{fe.bairro}</p>}
           </div>
 
-          {/* Senha (apenas para criaçao) */}
-                  {/* Senha (apenas para criação) */}
-{/* Senha (apenas para criação) */}
+        
 {!editingId && (
   <>
     <div>

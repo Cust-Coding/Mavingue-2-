@@ -6,34 +6,6 @@ import { setSession } from "@/lib/auth/session";
 import { useI18n } from "@/lib/i18n";
 import { Mail, Lock, Eye, EyeOff, AlertCircle } from "lucide-react";
 
-type UnsplashPhoto = {
-  id: string;
-  urls?: {
-    regular?: string;
-    full?: string;
-  };
-  user?: {
-    name?: string;
-  };
-};
-
-const UNSPLASH_KEY = "chev9GnfrEnrjUqH2453c_WzTsPgKmgKViPk6bCYY4A";
-const RECENT_BG_KEY = "login_recent_unsplash_bg_ids";
-
-const FALLBACK_BG =
-  "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1600&q=80";
-  
-
-const BG_QUERIES = [
-  "construction site africa",
-  "construction workers africa",
-  "modern construction site",
-  "engineering project construction",
-  "steel beams construction",
-  "industrial building construction",
-  "workers with hard hats",
-  "commercial construction site",
-];
 
 function PremiumInput({
   icon: Icon,
@@ -102,6 +74,36 @@ function PremiumInput({
   );
 }
 
+
+
+type UnsplashPhoto = {
+  id: string;
+  urls?: {
+    regular?: string;
+    full?: string;
+  };
+  user?: {
+    name?: string;
+  };
+};
+
+const UNSPLASH_KEY = "chev9GnfrEnrjUqH2453c_WzTsPgKmgKViPk6bCYY4A";
+const RECENT_BG_KEY = "login_recent_unsplash_bg_ids";
+
+const FALLBACK_BG =
+  "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1600&q=80";
+
+const BG_QUERIES = [
+  "construction site africa",
+  "construction workers africa",
+  "modern construction site",
+  "engineering project construction",
+  "steel beams construction",
+  "industrial building construction",
+  "workers with hard hats",
+  "commercial construction site",
+];
+
 function dashboardForRole(role: string) {
   if (role === "ADMIN") return "/admin";
   if (role === "FUNCIONARIO" || role === "STAFF") return "/staff";
@@ -154,6 +156,9 @@ async function fetchConstructionPhotos(
 }
 
 export default function LoginPage() {
+
+
+  
   const { t } = useI18n();
   const sp = useSearchParams();
   const nextParam = sp.get("next");
@@ -161,9 +166,9 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
   const [fe, setFe] = useState<Record<string, string>>({});
-  const [unverifiedEmail, setUnverifiedEmail] = useState("");
+  const [unverifiedIdentifier, setUnverifiedIdentifier] = useState("");
 
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
 
   const [bgUrl, setBgUrl] = useState("");
@@ -171,10 +176,8 @@ export default function LoginPage() {
 
   function validate() {
     const e: Record<string, string> = {};
-    if (!email.trim()) {
-      e.email = t("auth.emailRequired");
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      e.email = t("auth.emailInvalid");
+    if (!identifier.trim()) {
+      e.identifier = "Email ou telefone é obrigatório";
     }
     if (!password.trim()) e.password = t("auth.passwordRequired");
     setFe(e);
@@ -189,7 +192,6 @@ export default function LoginPage() {
       try {
         const recentIds = readRecentIds();
         const query = BG_QUERIES[Math.floor(Math.random() * BG_QUERIES.length)];
-
         const photos = await fetchConstructionPhotos(UNSPLASH_KEY, query);
 
         if (!mounted) return;
@@ -207,14 +209,9 @@ export default function LoginPage() {
           throw new Error("No image received");
         }
 
-        const nextUrl =
-          selected.urls?.regular || selected.urls?.full || FALLBACK_BG;
-
+        const nextUrl = selected.urls?.regular || selected.urls?.full || FALLBACK_BG;
         setBgUrl(`${nextUrl}${nextUrl.includes("?") ? "&" : "?"}v=${Date.now()}`);
-        setBgAuthor(
-          selected.user?.name ? `Foto por ${selected.user.name} (Unsplash)` : ""
-        );
-
+        setBgAuthor(selected.user?.name ? `Foto por ${selected.user.name} (Unsplash)` : "");
         const updatedRecent = [selected.id, ...recentIds.filter((id) => id !== selected.id)];
         writeRecentIds(updatedRecent);
       } catch {
@@ -225,11 +222,7 @@ export default function LoginPage() {
     }
 
     carregarImagem();
-
-    timer = setInterval(() => {
-      carregarImagem();
-    }, 60000);
-
+    timer = setInterval(() => carregarImagem(), 60000);
     return () => {
       mounted = false;
       if (timer) clearInterval(timer);
@@ -243,6 +236,20 @@ export default function LoginPage() {
 
     if (!validate()) return;
 
+
+ const payload = {
+    identifier: identifier.trim(),
+    password,
+  };
+  console.log("Capturador Jam #####:", payload);
+
+
+
+
+
+
+
+
     setLoading(true);
     try {
       const res = await fetch("/api/proxy/api/auth/login", {
@@ -250,7 +257,7 @@ export default function LoginPage() {
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email: email.trim(),
+          identifier: identifier.trim(),
           password,
         }),
       });
@@ -266,8 +273,8 @@ export default function LoginPage() {
           }
           if (j?.message) {
             const msg = String(j.message);
-            if (msg.includes("não verificada") || msg.includes("verifique o seu email")) {
-              setUnverifiedEmail(email.trim());
+            if (msg.includes("não verificada") || msg.includes("verifique o seu")) {
+              setUnverifiedIdentifier(identifier.trim());
               setErr("");
               return;
             }
@@ -279,7 +286,6 @@ export default function LoginPage() {
         return;
       }
 
-      // Backend returns {token: "..."} - extract the token string
       const data = await res.json();
       const token = data?.token;
       
@@ -289,10 +295,8 @@ export default function LoginPage() {
         return;
       }
 
-      // Store token first
       setSession(token, "CLIENTE");
 
-      // Then fetch user role from /auth/me
       let role = "CLIENTE";
       try {
         const meRes = await fetch("/api/proxy/api/auth/me", {
@@ -302,28 +306,19 @@ export default function LoginPage() {
 
         if (meRes.ok) {
           const me = await meRes.json();
-          // Backend returns {id, nome, email, role}
           role = me?.role ?? "CLIENTE";
-          // Update session with correct role
           setSession(token, role);
-
           const nome = me?.nome ?? "";
           if (nome) localStorage.setItem("me_name", nome);
         }
       } catch (e) {
-        // If /me fails, still allow login with default CLIENTE role
         console.error("Failed to fetch user role:", e);
       }
 
       const defaultDash = dashboardForRole(role);
-
-      const next =
-        nextParam &&
-        nextParam.startsWith("/") &&
-        nextParam !== "/" &&
-        !nextParam.startsWith("/auth")
-          ? nextParam
-          : defaultDash;
+      const next = nextParam && nextParam.startsWith("/") && nextParam !== "/" && !nextParam.startsWith("/auth")
+        ? nextParam
+        : defaultDash;
 
       location.href = next;
     } catch (e: any) {
@@ -342,7 +337,6 @@ export default function LoginPage() {
             style={{ backgroundImage: `url(${bgUrl})` }}
           />
         )}
-
         <div className="absolute inset-0 bg-black/35" />
       </div>
 
@@ -364,27 +358,27 @@ export default function LoginPage() {
             </div>
           )}
 
-          {unverifiedEmail && (
+          {unverifiedIdentifier && (
             <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
               <div className="flex items-center gap-2 text-yellow-700 mb-2">
                 <AlertCircle size={16} />
-                <span className="font-medium">{t("auth.unverifiedAccount").split(".")[0]}</span>
+                <span className="font-medium">Conta não verificada</span>
               </div>
               <p className="text-sm text-yellow-600 mb-3">
-                {t("auth.unverifiedAccount")}
+                Por favor, verifique a sua conta antes de fazer login.
               </p>
               <div className="flex gap-2">
                 <button
-                  onClick={() => window.location.href = `/auth/confirm-email?email=${encodeURIComponent(unverifiedEmail)}`}
+                  onClick={() => window.location.href = `/auth/confirm-email?email=${encodeURIComponent(unverifiedIdentifier)}`}
                   className="px-3 py-1 bg-yellow-600 text-white text-sm rounded hover:bg-yellow-700 transition"
                 >
-                  {t("auth.confirm").split(".")[0]}
+                  Verificar conta
                 </button>
                 <button
-                  onClick={() => setUnverifiedEmail("")}
+                  onClick={() => setUnverifiedIdentifier("")}
                   className="px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300 transition"
                 >
-                  {t("common.previous")}
+                  Voltar
                 </button>
               </div>
             </div>
@@ -393,15 +387,15 @@ export default function LoginPage() {
           <form onSubmit={submit} className="flex flex-col gap-6">
             <div>
               <label className="text-sm font-medium text-gray-700 mb-1 block">
-                {t("auth.email")}
+                Email ou Telefone
               </label>
               <PremiumInput
                 icon={Mail}
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder={t("form.placeholders.email")}
-                error={fe.email}
+                type="text"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                placeholder="exemplo@email.com ou 84 123 4567"
+                error={fe.identifier}
               />
             </div>
 
@@ -420,10 +414,7 @@ export default function LoginPage() {
             </div>
 
             <div className="text-right">
-              <a
-                href="/auth/forgot-password"
-                className="text-sm text-gray-400 hover:text-[#FF4500] transition"
-              >
+              <a href="/auth/forgot-password" className="text-sm text-gray-400 hover:text-[#FF4500] transition">
                 {t("auth.forgotPassword")}
               </a>
             </div>
@@ -439,10 +430,7 @@ export default function LoginPage() {
 
           <p className="text-center text-sm text-gray-400 mt-8">
             {t("auth.noAccount")}{" "}
-            <a
-              href="/auth/register"
-              className="text-[#FF4500] font-medium hover:underline"
-            >
+            <a href="/auth/register" className="text-[#FF4500] font-medium hover:underline">
               {t("auth.register")}
             </a>
           </p>
