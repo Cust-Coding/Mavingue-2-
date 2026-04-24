@@ -69,7 +69,7 @@ public class ClientAreaService {
                 .toList();
 
         return new ClientAreaProfileDTO(
-                new MeResponse(user.getId(), user.getNome(), user.getEmail(), user.getRole()),
+                new MeResponse(user.getId(), user.getNome(), user.getEmail(), user.getPhone(),user.getRole()),
                 findCustomer(user).map(this::toCustomerResponse).orElse(null),
                 waterCustomers.stream()
                         .filter(item -> "ATIVO".equals(item.estado()))
