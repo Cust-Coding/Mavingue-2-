@@ -30,6 +30,8 @@ public class CloudinaryService {
 
             Map<?, ?> uploadResult = cloudinary.uploader().upload(tempFile, ObjectUtils.asMap(
                     "folder", folderName,
+                    "format","webp",
+                    "quality","auto:good",
                     "resource_type", "image"
             ));
             return uploadResult.get("secure_url").toString();
