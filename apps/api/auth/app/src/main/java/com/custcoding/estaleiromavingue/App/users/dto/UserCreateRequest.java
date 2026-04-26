@@ -13,3 +13,4 @@ public record UserCreateRequest(
         @NotBlank @Size(min = 6, max = 100) String password,
         @NotNull Role role
 ) {}
+

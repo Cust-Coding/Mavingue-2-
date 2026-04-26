@@ -61,7 +61,7 @@ public class AuthService {
             return userRepo.findByPhone("+258" + identifier);
             
         }else {
-            throw new IllegalArgumentException("Use um email ou número de telefone válido");
+            throw new IllegalArgumentException("Use um email ou número de phone válido");
         }
 
     }
@@ -103,14 +103,14 @@ public class AuthService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email já existe no cadastro de cliente");
         }
 
-        if (customerRepo.existsByPhone(req.telefone())){
-            throw  new ResponseStatusException(HttpStatus.BAD_REQUEST, "Numero de telefone já cadastrado");
+        if (customerRepo.existsByPhone(req.phone())){
+            throw  new ResponseStatusException(HttpStatus.BAD_REQUEST, "Numero de phone já cadastrado");
         }
 
         // 1) cria AppUser (login)
         AppUser u = new AppUser();
         u.setNome(req.nome());
-        u.setPhone(req.telefone());
+        u.setPhone(req.phone());
         u.setEmail(req.email());
         u.setPasswordHash(encoder.encode(req.password()));
         u.setRole(Role.CLIENTE);
@@ -121,7 +121,7 @@ public class AuthService {
         CustomerProduct c = new CustomerProduct();
         c.setName(req.nome());
         c.setSex(req.sexo());
-        c.setPhone(req.telefone());
+        c.setPhone(req.phone());
         c.setEmail(req.email());
         c.setBirthDate(req.dataNascimento());
         c.setProvincia(req.provincia());
@@ -133,7 +133,7 @@ public class AuthService {
         if (Boolean.TRUE.equals(req.pedirAgua())) {
             CustomerWater water = new CustomerWater();
             water.setName(req.nome());
-            water.setPhone(req.telefone());
+            water.setPhone(req.phone());
             water.setEmail(req.email());
             water.setReferenciaLocal("Pedido inicial criado no registo");
             water.setEstado(EstadoServicoAgua.PENDENTE_APROVACAO);
