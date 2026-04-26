@@ -22,7 +22,7 @@ public record CustomerCreateDTO(
 
         @NotBlank(message = "Phone cannot be blank")
         @JsonProperty("phone")
-        @JsonAlias({"telefone", "celular"})
+        @JsonAlias({"phone", "celular"})
         String phone,
 
         @Email(message = "Email inválido")

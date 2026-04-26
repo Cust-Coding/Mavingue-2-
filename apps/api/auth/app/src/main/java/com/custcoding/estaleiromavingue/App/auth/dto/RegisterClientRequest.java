@@ -9,7 +9,7 @@ import java.time.LocalDate;
 public record RegisterClientRequest(
         @NotBlank String nome,
         @NotNull Sexo sexo,
-        @NotBlank String telefone,
+        @NotBlank String phone,
         @Email @NotBlank String email,
 
         @NotBlank

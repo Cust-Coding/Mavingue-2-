@@ -23,10 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.scheduling.annotation.Scheduled;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
@@ -53,9 +50,26 @@ public class AuthService {
     private String frontendUrl;
 
 
+
+    public Optional<AppUser> findByIdentifier(String identifier) {
+
+        if (identifier == null) return Optional.empty();
+
+        if (identifier.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")){
+            return userRepo.findByEmail(identifier);
+        } else if (identifier.matches("^\\d{1,9}$")) {
+            return userRepo.findByPhone("+258" + identifier);
+            
+        }else {
+            throw new IllegalArgumentException("Use um email ou número de phone válido");
+        }
+
+    }
+
     public LoginResponse login(LoginRequest req) {
-        AppUser u = userRepo.findByEmail(req.email())
-                .orElseThrow(() -> new IllegalArgumentException("Credenciais inválidas"));
+
+        AppUser u = findByIdentifier(req.identifier())
+                .orElseThrow(() -> new IllegalArgumentException("Credenciais Inválidas"));
 
         if (!encoder.matches(req.password(), u.getPasswordHash())) {
             throw new IllegalArgumentException("Credenciais inválidas");
@@ -72,7 +86,7 @@ public class AuthService {
         Long id = Long.parseLong(userIdFromAuth);
         AppUser u = userRepo.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Utilizador não encontrado"));
-        return new MeResponse(u.getId(), u.getNome(), u.getEmail(), u.getRole());
+        return new MeResponse(u.getId(), u.getNome(), u.getEmail(), u.getPhone(),u.getRole());
     }
 
     // ✅ NOVO: Registo do cliente com senha + perfil
@@ -89,13 +103,14 @@ public class AuthService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email já existe no cadastro de cliente");
         }
 
-        if (customerRepo.existsByPhone(req.telefone())){
-            throw  new ResponseStatusException(HttpStatus.BAD_REQUEST, "Numero de telefone já cadastrado");
+        if (customerRepo.existsByPhone(req.phone())){
+            throw  new ResponseStatusException(HttpStatus.BAD_REQUEST, "Numero de phone já cadastrado");
         }
 
         // 1) cria AppUser (login)
         AppUser u = new AppUser();
         u.setNome(req.nome());
+        u.setPhone(req.phone());
         u.setEmail(req.email());
         u.setPasswordHash(encoder.encode(req.password()));
         u.setRole(Role.CLIENTE);
@@ -106,7 +121,7 @@ public class AuthService {
         CustomerProduct c = new CustomerProduct();
         c.setName(req.nome());
         c.setSex(req.sexo());
-        c.setPhone(req.telefone());
+        c.setPhone(req.phone());
         c.setEmail(req.email());
         c.setBirthDate(req.dataNascimento());
         c.setProvincia(req.provincia());
@@ -118,7 +133,7 @@ public class AuthService {
         if (Boolean.TRUE.equals(req.pedirAgua())) {
             CustomerWater water = new CustomerWater();
             water.setName(req.nome());
-            water.setPhone(req.telefone());
+            water.setPhone(req.phone());
             water.setEmail(req.email());
             water.setReferenciaLocal("Pedido inicial criado no registo");
             water.setEstado(EstadoServicoAgua.PENDENTE_APROVACAO);
