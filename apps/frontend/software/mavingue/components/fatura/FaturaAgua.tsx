@@ -16,6 +16,14 @@ interface Product {
   unitPrice: number;
 }
 
+interface Client {
+    name?: string;
+    address?: string;
+    phone?: string;
+    city?: string;
+    email?: string;
+}
+
 interface InvoiceData {
     sender: {
         name: string;
@@ -25,18 +33,12 @@ interface InvoiceData {
         logoUrl?: string;
     };
 
-    client: {
-        name: string;
-        address: string;
-        city: string;
-        email: string;
-        phone: string;
-    };
+    client: Client;
 
     invoiceNumber: string;
     invoiceDate: string;
-    debt: number;
-    fine: number;
+    debt?: number;
+    fine?: number;
     
 
     products: Product[];
@@ -255,7 +257,24 @@ const S = StyleSheet.create({
     },
 });
 
-const CheckOutWatter = ({ data }: { data: InvoiceData }) => {
+export interface FaturaAguaProps {
+    client: Client;
+    invoiceNumber?: string;
+    invoiceDate?: string;
+    debt?: number;
+    fine?: number;
+    sender?: InvoiceData["sender"];
+    products?: Product[];
+    currency?: string;
+    notes?: string;
+    footerText?: string;
+}
+
+interface FaturaAguaComponentProps {
+    data: InvoiceData;
+}
+
+function FaturaAguaComponent({ data }: FaturaAguaComponentProps) {
   const c = data.currency;
 
   return (
@@ -264,7 +283,7 @@ const CheckOutWatter = ({ data }: { data: InvoiceData }) => {
         
         <View style={S.header}>
           {data.sender.logoUrl ? (
-            <Image src={data.sender.logoUrl} style={S.logoImage} />
+            <Image src={data.sender.logoUrl} style={S.logoImage} alt="logo" />
           ) : (
             <View style={S.logoBox}>
               <Text style={S.logoText}>M</Text>
@@ -284,12 +303,21 @@ const CheckOutWatter = ({ data }: { data: InvoiceData }) => {
         <View style={S.recipientInvoiceRow}>
           <View>
             <Text style={S.sectionLabel}>CLIENTE</Text>
-            <Text style={S.recipientText}>Nome: {safe(data.client.name)}</Text>
-            <Text style={S.recipientText}>Morada: {safe(data.client.address)}</Text>
-            <Text style={S.recipientText}>Cidade: {safe(data.client.city)}</Text>
-            <Text style={S.recipientText}> </Text>
-            <Text style={S.recipientText}>Email: {safe(data.client.email)}</Text>
-            <Text style={S.recipientText}>Telefone: {safe(data.client.phone)}</Text>
+            {data.client.name && (
+              <Text style={S.recipientText}>Nome: {safe(data.client.name)}</Text>
+            )}
+            {data.client.address && (
+              <Text style={S.recipientText}>Morada: {safe(data.client.address)}</Text>
+            )}
+            {data.client.city && (
+              <Text style={S.recipientText}>Cidade: {safe(data.client.city)}</Text>
+            )}
+            {data.client.email && (
+              <Text style={S.recipientText}>Email: {safe(data.client.email)}</Text>
+            )}
+            {data.client.phone && (
+              <Text style={S.recipientText}>Telefone: {safe(data.client.phone)}</Text>
+            )}
           </View>
 
           <View>
@@ -410,18 +438,6 @@ const safe = (value: unknown, fallbackValue = "Desconhecido") => {
   return value.trim() ? value : fallbackValue;
 };
 
-
-const generateInvoiceNumber = () => {
-  const key = "invoice_counter";
-
-  let current = Number(localStorage.getItem(key) || "0");
-  current += 1;
-
-  localStorage.setItem(key, String(current));
-
-  return `EM${String(current).padStart(6, "0")}`;
-};
-
 const money = (value: unknown, currency = "MZN") => {
   const num = Number(value);
 
@@ -432,52 +448,66 @@ const money = (value: unknown, currency = "MZN") => {
   return `${num.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")} ${currency}`;
 };
 
-const nowdata: string = new Date().toLocaleDateString("en-GB", {
-  day: "2-digit",
-  month: "short",
-  year: "numeric",
-}).toUpperCase();
 
-
-const sampleInvoice: InvoiceData = {
-  sender: {
+const defaultSender: InvoiceData["sender"] = {
     name: "Mavingue Água, Lda",
     email: "estaleiromavingue@gmail.com",
     phone: "+258 86 218 0576",
     website: "www.estaleiromavingueonline.com",
     logoUrl: "/mavingue-logo.png",
-  },
-  client: {
-    name: "João da Silva",
-    address: "Av. dos Combatentes, Nº 123",
-    city: "Maputo",
-    email: "texte@gmail.com",
-    phone: "+258 84 765 4321",
-  },
-  invoiceNumber: generateInvoiceNumber(),
-  invoiceDate: nowdata,
-  debt: 0,
-  fine: 0,
-
-  products: [
-    { name: "Água Potável", unitPrice: 60 },
-  ],
-
-  currency: "MZN",
-  notes:
-    "Se não for pago no prazo de 11 dias, incidirá multa de 20% ao mês sobre o valor em atraso.\n\nTenha um bom dia e obrigado! \n\nMavingue Água",
 };
 
+const defaultProducts: Product[] = [
+    { name: "Água Potável", unitPrice: 60 },
+];
 
-export default function Faturaagua() {
-    
-  return (
-    <div style={{ height: "100vh" }}>
-        <PDFDownloadLink
-        document={<CheckOutWatter data={sampleInvoice} />}
-        fileName={`fatura-${sampleInvoice.invoiceNumber}.pdf`}
-        >Baixar PDF
-        </PDFDownloadLink>
-    </div>
-  );
+const generateInvoiceNumber = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const random = Math.floor(Math.random() * 10000).toString().padStart(4, "0");
+    return `EM${year}${month}${random}`;
+};
+
+const nowdata: string = new Date().toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+}).toUpperCase();
+
+export default function FaturaAgua({
+    client,
+    invoiceNumber,
+    invoiceDate,
+    debt = 0,
+    fine = 0,
+    sender = defaultSender,
+    products = defaultProducts,
+    currency = "MZN",
+    notes = "Se não for pago no prazo de 11 dias, incidirá multa de 20% ao mês sobre o valor em atraso.\n\nTenha um bom dia e obrigado! \n\nMavingue Água",
+    footerText,
+}: FaturaAguaProps) {
+    const invoiceData: InvoiceData = {
+        sender,
+        client,
+        invoiceNumber: invoiceNumber || generateInvoiceNumber(),
+        invoiceDate: invoiceDate || nowdata,
+        debt,
+        fine,
+        products,
+        currency,
+        notes,
+        footerText,
+    };
+
+    return (
+        <div style={{ height: "100vh" }}>
+            <PDFDownloadLink
+                document={<FaturaAguaComponent data={invoiceData} />}
+                fileName={`fatura-${invoiceData.invoiceNumber}.pdf`}
+            >
+                {({ loading }) => (loading ? "A gerar PDF..." : "Baixar PDF")}
+            </PDFDownloadLink>
+        </div>
+    );
 }
