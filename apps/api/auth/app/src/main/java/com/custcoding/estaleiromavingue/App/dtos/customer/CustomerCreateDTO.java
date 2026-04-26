@@ -28,7 +28,7 @@ public record CustomerCreateDTO(
         @NotBlank(message = "Telefone e obrigatorio")
         @Size(max = 20, message = "Telefone excede o limite permitido")
         @JsonProperty("phone")
-        @JsonAlias({"telefone", "celular"})
+        @JsonAlias({"phone", "celular"})
         String phone,
 
         @Email(message = "Email invalido")
