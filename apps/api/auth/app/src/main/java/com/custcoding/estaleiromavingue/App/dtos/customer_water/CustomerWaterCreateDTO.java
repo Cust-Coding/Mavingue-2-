@@ -4,29 +4,39 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 public record CustomerWaterCreateDTO(
-        @NotBlank(message = "Name Should not be blank")
+        @NotBlank(message = "Nome e obrigatorio")
+        @Size(max = 100, message = "Nome excede o limite permitido")
         @JsonProperty("name")
         String name,
 
-        @NotBlank(message = "Phone Number Should not be blank")
+        @NotBlank(message = "Telefone e obrigatorio")
+        @Size(max = 20, message = "Telefone excede o limite permitido")
         @JsonProperty("phone")
         String phone,
 
-        @NotBlank(message = "Please provide an email")
-        @Email(message = "Please provide a valid email")
+        @Email(message = "Email invalido")
+        @Size(max = 120, message = "Email excede o limite permitido")
         @JsonProperty("email")
         String email,
 
-        @NotBlank(message = "Please Provide a house number")
+        @Size(max = 20, message = "Numero da casa excede o limite permitido")
         @JsonProperty("house_nr")
         String houseNR,
 
-        @NotNull(message = "Please provide a Adress Id")
+        @JsonProperty("customer_id")
+        Long customerId,
+
         @JsonProperty("adress_id")
-        Long adressId
+        Long adressId,
 
+        @NotBlank(message = "Referencia do local e obrigatoria")
+        @Size(max = 180, message = "Referencia do local excede o limite permitido")
+        String referenciaLocal,
 
+        @Size(max = 255, message = "Observacoes excedem o limite permitido")
+        String observacoes
 ) {
 }

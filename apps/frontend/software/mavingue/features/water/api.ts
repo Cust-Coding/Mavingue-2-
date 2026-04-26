@@ -6,6 +6,7 @@ import type {
   WaterBillPaymentCreate,
   WaterContract,
   WaterCustomer,
+  WaterCustomerCreate,
   WaterReading,
   WaterRequestCompletion,
   WaterRequestCreate,
@@ -19,6 +20,8 @@ export const listWaterReadings = (ligacaoId?: number) =>
   apiGet<WaterReading[]>(ligacaoId ? endpoints.leiturasAguaByLigacao(ligacaoId) : endpoints.leiturasAgua);
 export const listWaterBills = () => apiGet<WaterBill[]>(endpoints.facturasAgua);
 export const getWaterBill = (id: number) => apiGet<WaterBill>(endpoints.facturaAguaById(id));
+export const createWaterCustomer = (payload: WaterCustomerCreate) =>
+  apiPost<WaterCustomer>(endpoints.customerWater, payload);
 export const payWaterBill = (id: number, payload: WaterBillPaymentCreate) =>
   apiPatch<WaterBill>(endpoints.facturaAguaPagamento(id), payload);
 export const approveWaterRequest = (id: number, payload?: WaterRequestDecision) =>

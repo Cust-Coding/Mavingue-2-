@@ -13,7 +13,7 @@ import {
   User,
   X,
 } from "lucide-react";
-import { clearSession, getRole } from "@/lib/auth/session";
+import { clearSession, getSessionUser } from "@/lib/auth/session";
 import { getQuickLinks, normalizeRole } from "@/components/layout/navigation";
 import { useI18n } from "@/lib/i18n";
 import { getCartCount, useCartStore } from "@/store/cart.store";
@@ -38,9 +38,10 @@ function firstName(full?: string) {
 
 export default function Topbar() {
   const [mounted, setMounted] = useState(false);
-  const role = getRole();
+  const sessionUser = getSessionUser();
+  const role = sessionUser?.role ?? null;
   const normalizedRole = normalizeRole(role);
-  const quickLinks = useMemo(() => getQuickLinks(role, 5), [role]);
+  const quickLinks = useMemo(() => getQuickLinks(sessionUser, 5), [sessionUser]);
   const items = useCartStore((state) => state.items);
   const cartCount = getCartCount(items);
   const showCart = !role || normalizedRole === "CLIENTE";

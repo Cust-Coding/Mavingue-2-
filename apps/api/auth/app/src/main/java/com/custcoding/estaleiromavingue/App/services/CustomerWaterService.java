@@ -6,10 +6,13 @@ import com.custcoding.estaleiromavingue.App.dtos.customer_water.CustomerWaterCre
 import com.custcoding.estaleiromavingue.App.dtos.customer_water.CustomerWaterRequestCreateDTO;
 import com.custcoding.estaleiromavingue.App.dtos.customer_water.CustomerWaterResponseDTO;
 import com.custcoding.estaleiromavingue.App.models.Adress;
+import com.custcoding.estaleiromavingue.App.models.CustomerProduct;
 import com.custcoding.estaleiromavingue.App.models.CustomerWater;
 import com.custcoding.estaleiromavingue.App.models.status.EstadoServicoAgua;
 import com.custcoding.estaleiromavingue.App.repositories.AdressRepository;
+import com.custcoding.estaleiromavingue.App.repositories.CustomerRepository;
 import com.custcoding.estaleiromavingue.App.repositories.CustomerWaterRepository;
+import com.custcoding.estaleiromavingue.App.users.AppUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -17,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 
@@ -25,7 +29,10 @@ import java.util.Locale;
 public class CustomerWaterService {
 
     private final CustomerWaterRepository customerWaterRepository;
+    private final CustomerRepository customerRepository;
     private final AdressRepository adressRepository;
+    private final PhoneNumberService phoneNumberService;
+    private final AccountSyncService accountSyncService;
 
     @Transactional(readOnly = true)
     public List<CustomerWaterResponseDTO> list() {
@@ -46,57 +53,82 @@ public class CustomerWaterService {
         return toResponse(findCustomer(id));
     }
 
+    @Transactional
     public CustomerWaterResponseDTO create(CustomerWaterCreateDTO dto) {
-        Adress adress = findAdress(dto.adressId());
+        CustomerProduct customer = resolveCustomer(dto.customerId(), dto.phone(), dto.email());
+        Adress adress = dto.adressId() == null ? null : findAdress(dto.adressId());
+        String normalizedPhone = phoneNumberService.normalizeRequired(dto.phone());
+        String normalizedEmail = normalizeEmail(dto.email());
 
         CustomerWater customerWater = new CustomerWater();
-        customerWater.setName(dto.name());
-        customerWater.setPhone(dto.phone());
-        customerWater.setEmail(dto.email());
-        customerWater.setHouseNR(dto.houseNR());
+        customerWater.setName(dto.name().trim());
+        customerWater.setPhone(normalizedPhone);
+        customerWater.setEmail(normalizedEmail);
+        customerWater.setHouseNR(blankToNull(dto.houseNR()));
         customerWater.setAdressId(adress);
-        customerWater.setReferenciaLocal("Cadastro manual");
-        customerWater.setEstado(EstadoServicoAgua.ATIVO);
+        customerWater.setCustomer(customer);
+        customerWater.setAppUser(customer == null ? null : customer.getAppUser());
+        customerWater.setReferenciaLocal(dto.referenciaLocal().trim());
+        customerWater.setEstado((customerWater.getHouseNR() == null || customerWater.getAdressId() == null)
+                ? EstadoServicoAgua.AGUARDANDO_DADOS_CASA
+                : EstadoServicoAgua.ATIVO);
         customerWater.setPedidoAgua(true);
-        customerWater.setActivo(true);
-        customerWater.setObservacoes("Cliente de agua criado manualmente");
+        customerWater.setActivo(customerWater.getEstado() == EstadoServicoAgua.ATIVO);
+        customerWater.setObservacoes(blankToNull(dto.observacoes()));
         customerWater.setUpdated(LocalDateTime.now());
 
-        return toResponse(customerWaterRepository.save(customerWater));
+        CustomerWater saved = customerWaterRepository.save(customerWater);
+        if (customer != null) {
+            customer.setTemServicoAgua(Boolean.TRUE);
+            customerRepository.save(customer);
+            accountSyncService.syncWaterForCustomer(customer);
+        }
+        return toResponse(saved);
     }
 
+    @Transactional
     public CustomerWaterResponseDTO update(Long id, CustomerWaterCreateDTO dto) {
         CustomerWater existing = findCustomer(id);
+        CustomerProduct customer = resolveCustomer(dto.customerId(), dto.phone(), dto.email());
 
-        Adress adress = findAdress(dto.adressId());
-
-        existing.setName(dto.name());
-        existing.setPhone(dto.phone());
-        existing.setEmail(dto.email());
-        existing.setHouseNR(dto.houseNR());
-        existing.setAdressId(adress);
-        if (existing.getReferenciaLocal() == null || existing.getReferenciaLocal().isBlank()) {
-            existing.setReferenciaLocal("Cadastro manual");
-        }
-        existing.setEstado(EstadoServicoAgua.ATIVO);
+        existing.setName(dto.name().trim());
+        existing.setPhone(phoneNumberService.normalizeRequired(dto.phone()));
+        existing.setEmail(normalizeEmail(dto.email()));
+        existing.setHouseNR(blankToNull(dto.houseNR()));
+        existing.setAdressId(dto.adressId() == null ? null : findAdress(dto.adressId()));
+        existing.setCustomer(customer);
+        existing.setAppUser(customer == null ? existing.getAppUser() : customer.getAppUser());
+        existing.setReferenciaLocal(dto.referenciaLocal().trim());
+        existing.setEstado((existing.getHouseNR() == null || existing.getAdressId() == null)
+                ? EstadoServicoAgua.AGUARDANDO_DADOS_CASA
+                : EstadoServicoAgua.ATIVO);
         existing.setPedidoAgua(true);
-        existing.setActivo(true);
+        existing.setActivo(existing.getEstado() == EstadoServicoAgua.ATIVO);
+        existing.setObservacoes(blankToNull(dto.observacoes()));
         existing.setUpdated(LocalDateTime.now());
 
-        return toResponse(customerWaterRepository.save(existing));
+        CustomerWater saved = customerWaterRepository.save(existing);
+        if (customer != null) {
+            customer.setTemServicoAgua(Boolean.TRUE);
+            customerRepository.save(customer);
+            accountSyncService.syncWaterForCustomer(customer);
+        }
+        return toResponse(saved);
     }
 
+    @Transactional
     public CustomerWaterResponseDTO approve(Long id, CustomerWaterApprovalDTO dto) {
         CustomerWater existing = findCustomer(id);
         existing.setEstado(EstadoServicoAgua.AGUARDANDO_DADOS_CASA);
         existing.setActivo(false);
         existing.setUpdated(LocalDateTime.now());
         existing.setObservacoes(dto.observacoes() == null || dto.observacoes().isBlank()
-                ? "Pedido aprovado. Cliente deve completar os dados da casa."
-                : dto.observacoes());
+                ? "Pedido aprovado. O cliente deve completar os dados da casa."
+                : dto.observacoes().trim());
         return toResponse(customerWaterRepository.save(existing));
     }
 
+    @Transactional
     public CustomerWaterResponseDTO reject(Long id, CustomerWaterApprovalDTO dto) {
         CustomerWater existing = findCustomer(id);
         existing.setEstado(EstadoServicoAgua.REJEITADO);
@@ -104,31 +136,56 @@ public class CustomerWaterService {
         existing.setUpdated(LocalDateTime.now());
         existing.setObservacoes(dto.observacoes() == null || dto.observacoes().isBlank()
                 ? "Pedido de agua rejeitado."
-                : dto.observacoes());
+                : dto.observacoes().trim());
         return toResponse(customerWaterRepository.save(existing));
     }
 
     @Transactional(readOnly = true)
-    public List<CustomerWaterResponseDTO> listByEmail(String email) {
-        return customerWaterRepository.findByEmailOrderByCreatedDesc(email).stream()
+    public List<CustomerWaterResponseDTO> listForUser(AppUser user) {
+        LinkedHashMap<Long, CustomerWaterResponseDTO> items = new LinkedHashMap<>();
+
+        customerWaterRepository.findByAppUser_IdOrderByCreatedDesc(user.getId())
+                .stream()
                 .map(this::toResponse)
-                .toList();
+                .forEach(item -> items.put(item.id(), item));
+
+        customerRepository.findByAppUser_Id(user.getId()).ifPresent(customer ->
+                customerWaterRepository.findByCustomer_IdOrderByCreatedDesc(customer.getId()).stream()
+                        .map(this::toResponse)
+                        .forEach(item -> items.put(item.id(), item))
+        );
+
+        customerWaterRepository.findByPhoneOrderByCreatedDesc(user.getPhone()).stream()
+                .map(this::toResponse)
+                .forEach(item -> items.put(item.id(), item));
+
+        String email = normalizeEmail(user.getEmail());
+        if (email != null) {
+            customerWaterRepository.findByEmailOrderByCreatedDesc(email).stream()
+                    .map(this::toResponse)
+                    .forEach(item -> items.put(item.id(), item));
+        }
+
+        return List.copyOf(items.values());
     }
 
-    public CustomerWaterResponseDTO requestFromClient(String name, String phone, String email, CustomerWaterRequestCreateDTO dto) {
+    @Transactional
+    public CustomerWaterResponseDTO requestFromClient(AppUser user, CustomerWaterRequestCreateDTO dto) {
         String normalizedReference = normalize(dto.referenciaLocal());
-        boolean duplicatedPending = customerWaterRepository.findByEmailAndEstadoOrderByCreatedDesc(email, EstadoServicoAgua.PENDENTE_APROVACAO)
-                .stream()
-                .anyMatch(existing -> normalize(existing.getReferenciaLocal()).equals(normalizedReference));
+        boolean duplicatedPending = listForUser(user).stream()
+                .filter(existing -> "PENDENTE_APROVACAO".equals(existing.estado()))
+                .anyMatch(existing -> normalize(existing.referenciaLocal()).equals(normalizedReference));
 
         if (duplicatedPending) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ja existe um pedido pendente para este local");
         }
 
         CustomerWater request = new CustomerWater();
-        request.setName(name);
-        request.setPhone(phone);
-        request.setEmail(email);
+        request.setName(user.getNome());
+        request.setPhone(user.getPhone());
+        request.setEmail(normalizeEmail(user.getEmail()));
+        request.setAppUser(user);
+        request.setCustomer(customerRepository.findByAppUser_Id(user.getId()).orElse(null));
         request.setReferenciaLocal(dto.referenciaLocal().trim());
         request.setEstado(EstadoServicoAgua.PENDENTE_APROVACAO);
         request.setPedidoAgua(true);
@@ -138,44 +195,64 @@ public class CustomerWaterService {
                 : dto.observacoes().trim());
         request.setUpdated(LocalDateTime.now());
 
-        return toResponse(customerWaterRepository.save(request));
+        CustomerWater saved = customerWaterRepository.save(request);
+        if (request.getCustomer() != null) {
+            request.getCustomer().setTemServicoAgua(Boolean.TRUE);
+            customerRepository.save(request.getCustomer());
+        }
+        return toResponse(saved);
     }
 
-    public CustomerWaterResponseDTO completeForClient(String email, Long requestId, CustomerWaterClientUpdateDTO dto) {
+    @Transactional
+    public CustomerWaterResponseDTO completeForClient(AppUser user, Long requestId, CustomerWaterClientUpdateDTO dto) {
         CustomerWater existing = findCustomer(requestId);
-
-        if (!existing.getEmail().equalsIgnoreCase(email)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Pedido de agua nao encontrado");
-        }
+        ensureRequestOwnership(user, existing);
 
         if (existing.getEstado() != EstadoServicoAgua.AGUARDANDO_DADOS_CASA) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "O pedido de agua ainda nao foi aprovado pelo administrador");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "O pedido de agua ainda nao foi aprovado");
         }
 
-        existing.setHouseNR(dto.houseNR());
+        existing.setHouseNR(dto.houseNR().trim());
         existing.setAdressId(findAdress(dto.adressId()));
         existing.setEstado(EstadoServicoAgua.ATIVO);
         existing.setActivo(true);
         existing.setUpdated(LocalDateTime.now());
         existing.setObservacoes("Dados da casa confirmados pelo cliente");
 
-        return toResponse(customerWaterRepository.save(existing));
+        CustomerWater saved = customerWaterRepository.save(existing);
+        if (existing.getCustomer() != null) {
+            existing.getCustomer().setTemServicoAgua(Boolean.TRUE);
+            customerRepository.save(existing.getCustomer());
+            accountSyncService.syncWaterForCustomer(existing.getCustomer());
+        }
+        return toResponse(saved);
     }
 
-    public CustomerWaterResponseDTO completeLatestForClient(String email, CustomerWaterClientUpdateDTO dto) {
-        CustomerWater existing = customerWaterRepository.findByEmailAndEstadoOrderByCreatedDesc(email, EstadoServicoAgua.AGUARDANDO_DADOS_CASA)
-                .stream()
+    @Transactional
+    public CustomerWaterResponseDTO completeLatestForClient(AppUser user, CustomerWaterClientUpdateDTO dto) {
+        CustomerWater existing = listForUser(user).stream()
+                .filter(item -> "AGUARDANDO_DADOS_CASA".equals(item.estado()))
                 .findFirst()
+                .map(item -> findCustomer(item.id()))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Pedido de agua nao encontrado"));
 
-        return completeForClient(email, existing.getId(), dto);
+        return completeForClient(user, existing.getId(), dto);
     }
 
+    @Transactional
     public void delete(Long id) {
-        if (!customerWaterRepository.existsById(id)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Consumidor de agua nao encontrado");
+        CustomerWater customerWater = findCustomer(id);
+        customerWaterRepository.delete(customerWater);
+    }
+
+    private void ensureRequestOwnership(AppUser user, CustomerWater request) {
+        boolean ownedByUserId = request.getAppUser() != null && request.getAppUser().getId().equals(user.getId());
+        boolean ownedByPhone = request.getPhone() != null && request.getPhone().equals(user.getPhone());
+        boolean ownedByEmail = request.getEmail() != null && request.getEmail().equalsIgnoreCase(blankToNull(user.getEmail()) == null ? "" : user.getEmail());
+
+        if (!ownedByUserId && !ownedByPhone && !ownedByEmail) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Pedido de agua nao encontrado");
         }
-        customerWaterRepository.deleteById(id);
     }
 
     private CustomerWater findCustomer(Long id) {
@@ -186,6 +263,28 @@ public class CustomerWaterService {
     private Adress findAdress(Long id) {
         return adressRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Endereco nao encontrado"));
+    }
+
+    private CustomerProduct resolveCustomer(Long customerId, String phone, String email) {
+        if (customerId != null) {
+            return customerRepository.findById(customerId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Cadastro de pessoa nao encontrado"));
+        }
+
+        String normalizedPhone = phoneNumberService.normalize(phone);
+        if (normalizedPhone != null) {
+            var byPhone = customerRepository.findByPhone(normalizedPhone);
+            if (byPhone.isPresent()) {
+                return byPhone.get();
+            }
+        }
+
+        String normalizedEmail = normalizeEmail(email);
+        if (normalizedEmail != null) {
+            return customerRepository.findByEmail(normalizedEmail).orElse(null);
+        }
+
+        return null;
     }
 
     private CustomerWaterResponseDTO toResponse(CustomerWater customerWater) {
@@ -212,5 +311,19 @@ public class CustomerWaterService {
 
     private String normalize(String value) {
         return value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private String normalizeEmail(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private String blankToNull(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
     }
 }

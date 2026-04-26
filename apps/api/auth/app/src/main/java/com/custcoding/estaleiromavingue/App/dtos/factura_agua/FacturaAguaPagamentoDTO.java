@@ -4,5 +4,6 @@ import com.custcoding.estaleiromavingue.App.models.status.FormaPagamento;
 import jakarta.validation.constraints.NotNull;
 
 public record FacturaAguaPagamentoDTO(
-        @NotNull FormaPagamento formaPagamento
+        @NotNull(message = "Forma de pagamento e obrigatoria")
+        FormaPagamento formaPagamento
 ) {}

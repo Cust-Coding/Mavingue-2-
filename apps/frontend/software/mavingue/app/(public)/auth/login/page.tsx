@@ -1,440 +1,220 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { setSession } from "@/lib/auth/session";
-import { useI18n } from "@/lib/i18n";
-import { Mail, Lock, Eye, EyeOff, AlertCircle } from "lucide-react";
+import Image from "next/image";
+import { AlertCircle, Eye, EyeOff, Lock, Mail, Phone } from "lucide-react";
+import { apiGet, apiPost } from "@/lib/http/client";
+import { endpoints } from "@/lib/http/endpoints";
+import { clearSession, setSession, type SessionUser } from "@/lib/auth/session";
+import { getErrorMessage, getFieldErrors } from "@/lib/errors";
+import { isValidEmail, isValidMozPhone } from "@/lib/validation/forms";
 
+type LoginResponse = { token: string };
 
-function PremiumInput({
-  icon: Icon,
-  type = "text",
-  value,
-  onChange,
-  placeholder,
-  error,
-  ...props
-}: {
-  icon?: React.ElementType;
-  type?: string;
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  placeholder?: string;
-  error?: string;
-  [key: string]: any;
-}) {
-  const [showPassword, setShowPassword] = useState(false);
-  const isPassword = type === "password";
-  const inputType = isPassword ? (showPassword ? "text" : "password") : type;
-
-  return (
-    <div className="relative">
-      {Icon && (
-        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-          <Icon size={18} />
-        </div>
-      )}
-      <input
-        type={inputType}
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-        className={`
-          w-full px-4 py-3 rounded-xl border bg-white text-gray-900 
-          placeholder:text-gray-400 transition-all duration-200 
-          focus:outline-none focus:ring-2 
-          ${
-            error
-              ? "border-red-500 focus:ring-red-200 focus:border-red-500"
-              : "border-gray-200 focus:ring-[#FF4500]/20 focus:border-[#FF4500]"
-          }
-          hover:border-gray-300
-          ${Icon ? "pl-10" : "pl-4"}
-          ${isPassword ? "pr-10" : "pr-4"}
-        `}
-        {...props}
-      />
-      {isPassword && (
-        <button
-          type="button"
-          onClick={() => setShowPassword(!showPassword)}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-        >
-          {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-        </button>
-      )}
-      {error && (
-        <div className="flex items-center gap-1 mt-1 text-xs text-red-500 animate-pulse">
-          <AlertCircle size={12} />
-          <span>{error}</span>
-        </div>
-      )}
-    </div>
-  );
-}
-
-
-
-type UnsplashPhoto = {
-  id: string;
-  urls?: {
-    regular?: string;
-    full?: string;
-  };
-  user?: {
-    name?: string;
-  };
-};
-
-const UNSPLASH_KEY = "chev9GnfrEnrjUqH2453c_WzTsPgKmgKViPk6bCYY4A";
-const RECENT_BG_KEY = "login_recent_unsplash_bg_ids";
-
-const FALLBACK_BG =
-  "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1600&q=80";
-
-const BG_QUERIES = [
-  "construction site africa",
-  "construction workers africa",
-  "modern construction site",
-  "engineering project construction",
-  "steel beams construction",
-  "industrial building construction",
-  "workers with hard hats",
-  "commercial construction site",
-];
-
-function dashboardForRole(role: string) {
+function dashboardForRole(role: SessionUser["role"]) {
   if (role === "ADMIN") return "/admin";
   if (role === "FUNCIONARIO" || role === "STAFF") return "/staff";
-  if (role === "CLIENTE") return "/cliente";
-  return "/";
+  return "/cliente";
 }
 
-function readRecentIds(): string[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(RECENT_BG_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
-  } catch {
-    return [];
-  }
-}
-
-function writeRecentIds(ids: string[]) {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(RECENT_BG_KEY, JSON.stringify(ids.slice(0, 50)));
-  } catch {}
-}
-
-async function fetchConstructionPhotos(
-  accessKey: string,
-  query: string
-): Promise<UnsplashPhoto[]> {
-  const res = await fetch(
-    `https://api.unsplash.com/photos/random?query=${encodeURIComponent(
-      query
-    )}&orientation=landscape&content_filter=high&count=10&sig=${Date.now()}`,
-    {
-      cache: "no-store",
-      headers: {
-        Authorization: `Client-ID ${accessKey}`,
-        "Accept-Version": "v1",
-      },
-    }
+function InputError({ message }: { message?: string }) {
+  if (!message) return null;
+  return (
+    <p className="mt-2 flex items-center gap-1 text-xs font-medium text-red-600">
+      <AlertCircle className="h-3.5 w-3.5" />
+      {message}
+    </p>
   );
-
-  if (!res.ok) {
-    throw new Error(`Erro API ${res.status}`);
-  }
-
-  const data = await res.json();
-  return Array.isArray(data) ? data : [data];
 }
 
 export default function LoginPage() {
-
-
-  
-  const { t } = useI18n();
-  const sp = useSearchParams();
-  const nextParam = sp.get("next");
-
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState("");
-  const [fe, setFe] = useState<Record<string, string>>({});
-  const [unverifiedIdentifier, setUnverifiedIdentifier] = useState("");
+  const searchParams = useSearchParams();
+  const nextParam = searchParams.get("next");
 
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  const [bgUrl, setBgUrl] = useState("");
-  const [bgAuthor, setBgAuthor] = useState("");
+  const pendingMessage = useMemo(() => {
+    if (!error) return "";
+    if (error.includes("pendente de verificacao por email")) {
+      return "A sua conta ainda nao foi verificada por email. Introduza o codigo enviado para concluir a activacao.";
+    }
+    if (error.includes("pendente de verificacao pela equipa")) {
+      return "A sua conta esta pendente de confirmacao pela equipa. Assim que for verificada, podera entrar normalmente.";
+    }
+    return "";
+  }, [error]);
 
   function validate() {
-    const e: Record<string, string> = {};
+    const nextErrors: Record<string, string> = {};
+
     if (!identifier.trim()) {
-      e.identifier = "Email ou telefone é obrigatório";
+      nextErrors.identifier = "Introduza o email ou numero de telefone.";
+    } else if (!identifier.includes("@") && !isValidMozPhone(identifier)) {
+      nextErrors.identifier = "Use um numero valido de Mocambique, com ou sem +258.";
+    } else if (identifier.includes("@") && !isValidEmail(identifier)) {
+      nextErrors.identifier = "Introduza um email valido.";
     }
-    if (!password.trim()) e.password = t("auth.passwordRequired");
-    setFe(e);
-    return Object.keys(e).length === 0;
+
+    if (!password.trim()) {
+      nextErrors.password = "Introduza a sua senha.";
+    }
+
+    setFieldErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
   }
 
-  useEffect(() => {
-    let mounted = true;
-    let timer: ReturnType<typeof setInterval> | null = null;
-
-    async function carregarImagem() {
-      try {
-        const recentIds = readRecentIds();
-        const query = BG_QUERIES[Math.floor(Math.random() * BG_QUERIES.length)];
-        const photos = await fetchConstructionPhotos(UNSPLASH_KEY, query);
-
-        if (!mounted) return;
-
-        const filtered = photos.filter((photo) => {
-          if (!photo?.id) return false;
-          if (!photo.urls?.regular && !photo.urls?.full) return false;
-          if (recentIds.includes(photo.id)) return false;
-          return true;
-        });
-
-        const selected = filtered[0] || photos[0];
-
-        if (!selected) {
-          throw new Error("No image received");
-        }
-
-        const nextUrl = selected.urls?.regular || selected.urls?.full || FALLBACK_BG;
-        setBgUrl(`${nextUrl}${nextUrl.includes("?") ? "&" : "?"}v=${Date.now()}`);
-        setBgAuthor(selected.user?.name ? `Foto por ${selected.user.name} (Unsplash)` : "");
-        const updatedRecent = [selected.id, ...recentIds.filter((id) => id !== selected.id)];
-        writeRecentIds(updatedRecent);
-      } catch {
-        if (!mounted) return;
-        setBgUrl(`${FALLBACK_BG}&v=${Date.now()}`);
-        setBgAuthor("");
-      }
-    }
-
-    carregarImagem();
-    timer = setInterval(() => carregarImagem(), 60000);
-    return () => {
-      mounted = false;
-      if (timer) clearInterval(timer);
-    };
-  }, []);
-
-  async function submit(ev: React.FormEvent) {
-    ev.preventDefault();
-    setErr("");
-    setFe({});
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError("");
+    setFieldErrors({});
 
     if (!validate()) return;
 
-
- const payload = {
-    identifier: identifier.trim(),
-    password,
-  };
-  console.log("Capturador Jam #####:", payload);
-
-
-
-
-
-
-
-
     setLoading(true);
     try {
-      const res = await fetch("/api/proxy/api/auth/login", {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          identifier: identifier.trim(),
-          password,
-        }),
+      clearSession();
+      const login = await apiPost<LoginResponse>(endpoints.auth.login, {
+        identifier: identifier.trim(),
+        password,
       });
 
-      if (!res.ok) {
-        const txt = await res.text().catch(() => "");
-        try {
-          const j = JSON.parse(txt);
-          if (j && typeof j === "object" && !Array.isArray(j) && !j.message) {
-            setFe(j);
-            setErr(t("auth.invalidFields"));
-            return;
-          }
-          if (j?.message) {
-            const msg = String(j.message);
-            if (msg.includes("não verificada") || msg.includes("verifique o seu")) {
-              setUnverifiedIdentifier(identifier.trim());
-              setErr("");
-              return;
-            }
-            setErr(msg);
-            return;
-          }
-        } catch {}
-        setErr(txt || `HTTP Error ${res.status}`);
-        return;
+      // Guardar token primeiro para que o /me funcione
+      setSession(login.token, { id: 0, nome: "", email: null, phone: "", role: "CLIENTE", status: "ATIVO", permissions: [] });
+
+      const me = await apiGet<SessionUser>(endpoints.auth.me);
+      setSession(login.token, me);
+
+      localStorage.setItem("me_name", me.nome);
+
+      const fallback = dashboardForRole(me.role);
+      const next =
+        nextParam && nextParam.startsWith("/") && !nextParam.startsWith("/auth") ? nextParam : fallback;
+
+      window.location.href = next;
+    } catch (reason) {
+      const apiFieldErrors = getFieldErrors(reason);
+      if (Object.keys(apiFieldErrors).length > 0) {
+        setFieldErrors(apiFieldErrors);
       }
-
-      const data = await res.json();
-      const token = data?.token;
-      
-      if (!token) {
-        setErr(t("auth.processingError"));
-        setLoading(false);
-        return;
-      }
-
-      setSession(token, "CLIENTE");
-
-      let role = "CLIENTE";
-      try {
-        const meRes = await fetch("/api/proxy/api/auth/me", {
-          method: "GET",
-          credentials: "include",
-        });
-
-        if (meRes.ok) {
-          const me = await meRes.json();
-          role = me?.role ?? "CLIENTE";
-          setSession(token, role);
-          const nome = me?.nome ?? "";
-          if (nome) localStorage.setItem("me_name", nome);
-        }
-      } catch (e) {
-        console.error("Failed to fetch user role:", e);
-      }
-
-      const defaultDash = dashboardForRole(role);
-      const next = nextParam && nextParam.startsWith("/") && nextParam !== "/" && !nextParam.startsWith("/auth")
-        ? nextParam
-        : defaultDash;
-
-      location.href = next;
-    } catch (e: any) {
-      setErr(e?.message ?? t("auth.serverError"));
+      setError(getErrorMessage(reason, "Nao foi possivel iniciar sessao."));
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="min-h-screen flex">
-      <div className="hidden lg:flex w-1/2 bg-gradient-to-br from-gray-50 to-gray-100 flex-col justify-between p-12 relative overflow-hidden">
-        {bgUrl && (
-          <div
-            className="absolute inset-0 bg-cover bg-center transition-opacity duration-700"
-            style={{ backgroundImage: `url(${bgUrl})` }}
-          />
-        )}
-        <div className="absolute inset-0 bg-black/35" />
-      </div>
+    <div className="min-h-screen bg-slate-100">
+      <div className="grid min-h-screen lg:grid-cols-[1.05fr_0.95fr]">
+        <section className="relative hidden overflow-hidden lg:block">
+          <Image src="/intro.jpg" alt="Mavingue" fill className="object-cover" priority />
+          <div className="absolute inset-0 bg-slate-950/45" />
+          <div className="absolute inset-0 flex items-end p-12">
+            <div className="max-w-xl text-white">
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-orange-200">Mavingue</p>
+              <h1 className="mt-4 text-4xl font-bold tracking-tight">Acesso organizado para clientes, equipa e administracao.</h1>
+              <p className="mt-4 text-sm leading-7 text-slate-200">
+                Entre com email ou numero de celular. O sistema mostra apenas o que a sua conta pode realmente usar.
+              </p>
+            </div>
+          </div>
+        </section>
 
-      <div className="w-full lg:w-1/2 flex items-center justify-center bg-white px-6">
-        <div className="w-full max-w-md">
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">
-              {t("auth.welcomeBack")}
-            </h2>
-            <p className="text-gray-400">
-              {t("auth.loginSystem")}
+        <section className="flex items-center justify-center px-6 py-10">
+          <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-900/5">
+            <div className="mb-8">
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-orange-600">Entrar</p>
+              <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-900">Bem-vindo de volta</h2>
+              <p className="mt-2 text-sm leading-6 text-slate-500">
+                Use o email ou o numero de telefone associado a sua conta.
+              </p>
+            </div>
+
+            {error && !pendingMessage && (
+              <div className="mb-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {error}
+              </div>
+            )}
+
+            {pendingMessage && (
+              <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                {pendingMessage}
+              </div>
+            )}
+
+            <form onSubmit={submit} className="space-y-5">
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">Email ou telefone</label>
+                <div className="relative">
+                  {identifier.includes("@") ? (
+                    <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  ) : (
+                    <Phone className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  )}
+                  <input
+                    value={identifier}
+                    onChange={(event) => setIdentifier(event.target.value)}
+                    placeholder="exemplo@email.com ou 84 123 4567"
+                    className="h-12 w-full rounded-2xl border border-slate-200 bg-white pl-10 pr-4 text-sm text-slate-900 outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                  />
+                </div>
+                <InputError message={fieldErrors.identifier} />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-slate-700">Senha</label>
+                <div className="relative">
+                  <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    placeholder="Introduza a sua senha"
+                    className="h-12 w-full rounded-2xl border border-slate-200 bg-white pl-10 pr-11 text-sm text-slate-900 outline-none transition focus:border-orange-400 focus:ring-4 focus:ring-orange-100"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((current) => !current)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-700"
+                    aria-label="Mostrar ou esconder senha"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+                <InputError message={fieldErrors.password} />
+              </div>
+
+              <div className="flex items-center justify-between gap-4 text-sm">
+                <a href="/auth/forgot-password" className="font-medium text-slate-500 transition hover:text-orange-600">
+                  Esqueceu a senha?
+                </a>
+                <a href="/auth/confirm-email" className="font-medium text-slate-500 transition hover:text-orange-600">
+                  Confirmar conta
+                </a>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="h-12 w-full rounded-2xl bg-orange-600 text-sm font-semibold text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {loading ? "A entrar..." : "Entrar no sistema"}
+              </button>
+            </form>
+
+            <p className="mt-8 text-center text-sm text-slate-500">
+              Ainda nao tem conta?{" "}
+              <a href="/auth/register" className="font-semibold text-orange-600 transition hover:text-orange-700">
+                Criar conta
+              </a>
             </p>
           </div>
-
-          {err && (
-            <div className="mb-6 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm flex items-center gap-2">
-              <AlertCircle size={16} />
-              {err}
-            </div>
-          )}
-
-          {unverifiedIdentifier && (
-            <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <div className="flex items-center gap-2 text-yellow-700 mb-2">
-                <AlertCircle size={16} />
-                <span className="font-medium">Conta não verificada</span>
-              </div>
-              <p className="text-sm text-yellow-600 mb-3">
-                Por favor, verifique a sua conta antes de fazer login.
-              </p>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => window.location.href = `/auth/confirm-email?email=${encodeURIComponent(unverifiedIdentifier)}`}
-                  className="px-3 py-1 bg-yellow-600 text-white text-sm rounded hover:bg-yellow-700 transition"
-                >
-                  Verificar conta
-                </button>
-                <button
-                  onClick={() => setUnverifiedIdentifier("")}
-                  className="px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded hover:bg-gray-300 transition"
-                >
-                  Voltar
-                </button>
-              </div>
-            </div>
-          )}
-
-          <form onSubmit={submit} className="flex flex-col gap-6">
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-1 block">
-                Email ou Telefone
-              </label>
-              <PremiumInput
-                icon={Mail}
-                type="text"
-                value={identifier}
-                onChange={(e) => setIdentifier(e.target.value)}
-                placeholder="exemplo@email.com ou 84 123 4567"
-                error={fe.identifier}
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-medium text-gray-700 mb-1 block">
-                {t("auth.password")}
-              </label>
-              <PremiumInput
-                icon={Lock}
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                error={fe.password}
-              />
-            </div>
-
-            <div className="text-right">
-              <a href="/auth/forgot-password" className="text-sm text-gray-400 hover:text-[#FF4500] transition">
-                {t("auth.forgotPassword")}
-              </a>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="h-12 rounded-xl bg-[#FF4500] text-white font-semibold hover:bg-[#e03e00] transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
-            >
-              {loading ? t("auth.loggingIn") : t("auth.loginButton")}
-            </button>
-          </form>
-
-          <p className="text-center text-sm text-gray-400 mt-8">
-            {t("auth.noAccount")}{" "}
-            <a href="/auth/register" className="text-[#FF4500] font-medium hover:underline">
-              {t("auth.register")}
-            </a>
-          </p>
-        </div>
+        </section>
       </div>
     </div>
   );

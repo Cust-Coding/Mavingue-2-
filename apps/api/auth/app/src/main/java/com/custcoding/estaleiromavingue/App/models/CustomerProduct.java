@@ -1,8 +1,10 @@
 package com.custcoding.estaleiromavingue.App.models;
 
 import com.custcoding.estaleiromavingue.App.models.status.Sexo;
+import com.custcoding.estaleiromavingue.App.users.AppUser;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
@@ -13,6 +15,7 @@ import java.time.LocalDateTime;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 @Entity
 @Table(name = "t_customer_product")
 public class CustomerProduct {
@@ -35,7 +38,7 @@ public class CustomerProduct {
     private String phone;
 
     // Email (login/contacto)
-    @Column(nullable = false, unique = true, length = 120)
+    @Column(nullable = true, unique = true, length = 120)
     private String email;
 
     // Data nascimento
@@ -52,6 +55,24 @@ public class CustomerProduct {
     @Column(nullable = false, length = 80)
     private String bairro;
 
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "app_user_id")
+    private AppUser appUser;
+
+    @Column(name = "elegivel_conta", nullable = true)
+    @Builder.Default
+    private Boolean elegivelConta = Boolean.FALSE;
+
+    @Column(name = "conta_activa", nullable = true)
+    @Builder.Default
+    private Boolean contaActiva = Boolean.FALSE;
+
+    @Column(name = "tem_servico_agua", nullable = true)
+    @Builder.Default
+    private Boolean temServicoAgua = Boolean.FALSE;
+
+    @Column(name = "observacoes", length = 255)
+    private String observacoes;
 
     @Column(name = "data_criacao")
     @CreationTimestamp

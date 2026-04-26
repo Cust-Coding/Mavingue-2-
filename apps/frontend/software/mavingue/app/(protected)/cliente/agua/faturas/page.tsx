@@ -1,1 +1,7 @@
-export { default } from "@/app/(protected)/cliente/agua/page";
+"use client";
+
+import { ClientWaterBillsPage } from "@/features/water/ClientWaterPages";
+
+export default function ClientWaterBillsRoute() {
+  return <ClientWaterBillsPage />;
+}

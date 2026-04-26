@@ -7,6 +7,11 @@ spring:
     username: ${SPRING_DATASOURCE_USERNAME}
     password:  ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      keepaliveTime: 30000
+      connectionTimeout: 20000
+      idleTimeout: 600000
+      maxLifetime: 1800000
   servlet:
     multipart:
       max-file-size: 10MB

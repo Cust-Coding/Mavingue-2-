@@ -27,45 +27,51 @@ public class CustomerWaterController {
     private final CustomerWaterService customerWaterService;
 
     @GetMapping({ "", "/" })
+    @PreAuthorize("@permissionService.hasPermission(authentication, 'water.customers.view')")
     public List<CustomerWaterResponseDTO> getAll() {
         return customerWaterService.list();
     }
 
     @GetMapping("/pendentes")
+    @PreAuthorize("@permissionService.hasPermission(authentication, 'water.requests.review')")
     public List<CustomerWaterResponseDTO> getPending() {
         return customerWaterService.pending();
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("@permissionService.hasPermission(authentication, 'water.customers.view')")
     public CustomerWaterResponseDTO getById(@PathVariable Long id) {
         return customerWaterService.getById(id);
     }
 
     @PostMapping({ "", "/" })
     @org.springframework.web.bind.annotation.ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("@permissionService.hasPermission(authentication, 'water.customers.manage')")
     public CustomerWaterResponseDTO create(@Valid @org.springframework.web.bind.annotation.RequestBody CustomerWaterCreateDTO dto) {
         return customerWaterService.create(dto);
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("@permissionService.hasPermission(authentication, 'water.customers.manage')")
     public CustomerWaterResponseDTO update(@PathVariable Long id, @Valid @org.springframework.web.bind.annotation.RequestBody CustomerWaterCreateDTO dto) {
         return customerWaterService.update(id, dto);
     }
 
     @PatchMapping("/{id}/aprovar")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@permissionService.hasPermission(authentication, 'water.requests.review')")
     public CustomerWaterResponseDTO approve(@PathVariable Long id, @org.springframework.web.bind.annotation.RequestBody(required = false) CustomerWaterApprovalDTO dto) {
         return customerWaterService.approve(id, dto == null ? new CustomerWaterApprovalDTO(null) : dto);
     }
 
     @PatchMapping("/{id}/rejeitar")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("@permissionService.hasPermission(authentication, 'water.requests.review')")
     public CustomerWaterResponseDTO reject(@PathVariable Long id, @org.springframework.web.bind.annotation.RequestBody(required = false) CustomerWaterApprovalDTO dto) {
         return customerWaterService.reject(id, dto == null ? new CustomerWaterApprovalDTO(null) : dto);
     }
 
     @DeleteMapping("/{id}")
     @org.springframework.web.bind.annotation.ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("@permissionService.hasPermission(authentication, 'water.customers.manage')")
     public void delete(@PathVariable Long id) {
         customerWaterService.delete(id);
     }

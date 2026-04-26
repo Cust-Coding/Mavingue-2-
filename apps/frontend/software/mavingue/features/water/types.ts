@@ -2,7 +2,7 @@ export interface WaterCustomer {
   id: number;
   name: string;
   phone: string;
-  email: string;
+  email: string | null;
   referenciaLocal: string | null;
   houseNR: string | null;
   adressId: number | null;
@@ -65,6 +65,17 @@ export interface WaterRequestCompletion {
 export interface WaterRequestCreate {
   referenciaLocal: string;
   observacoes?: string;
+}
+
+export interface WaterCustomerCreate {
+  name: string;
+  phone: string;
+  email?: string | null;
+  houseNR?: string | null;
+  customerId?: number | null;
+  adressId?: number | null;
+  referenciaLocal: string;
+  observacoes?: string | null;
 }
 
 export interface AddressItem {

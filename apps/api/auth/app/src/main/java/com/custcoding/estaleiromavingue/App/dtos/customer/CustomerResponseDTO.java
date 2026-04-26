@@ -17,6 +17,11 @@ public record CustomerResponseDTO(
         String provincia,
         String cidade,
         String bairro,
+        Boolean elegivelConta,
+        Boolean contaActiva,
+        Boolean temServicoAgua,
+        Long appUserId,
+        String observacoes,
         @JsonFormat(pattern = "dd/MM/yyyy HH:mm:ss")
         LocalDateTime created
 ) {}

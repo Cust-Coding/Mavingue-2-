@@ -11,7 +11,12 @@ public interface CustomerWaterRepository extends JpaRepository<CustomerWater, Lo
     boolean existsByEmail(String email);
     Optional<CustomerWater> findByEmail(String email);
     Optional<CustomerWater> findFirstByEmailOrderByCreatedDesc(String email);
+    Optional<CustomerWater> findFirstByPhoneOrderByCreatedDesc(String phone);
     List<CustomerWater> findByEstadoOrderByCreatedDesc(EstadoServicoAgua estado);
     List<CustomerWater> findByEmailOrderByCreatedDesc(String email);
+    List<CustomerWater> findByPhoneOrderByCreatedDesc(String phone);
     List<CustomerWater> findByEmailAndEstadoOrderByCreatedDesc(String email, EstadoServicoAgua estado);
+    List<CustomerWater> findByPhoneAndEstadoOrderByCreatedDesc(String phone, EstadoServicoAgua estado);
+    List<CustomerWater> findByAppUser_IdOrderByCreatedDesc(Long appUserId);
+    List<CustomerWater> findByCustomer_IdOrderByCreatedDesc(Long customerId);
 }

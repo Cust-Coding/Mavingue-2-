@@ -1,12 +1,11 @@
 package com.custcoding.estaleiromavingue.App.auth.dto;
 
 import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotBlank;
 
 public record ForgotPasswordRequest(
-        @Email
-        @NotNull(message = "Email nao atribuido")
+        @Email(message = "Email invalido")
+        @NotBlank(message = "Email e obrigatorio")
         String email
-
 ) {
 }

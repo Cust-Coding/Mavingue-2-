@@ -7,5 +7,6 @@ export const customersApi = {
   get: (id: number) => apiGet<Customer>(`${endpoints.customer}/${id}`),
   create: (body: CustomerCreate) => apiPost<Customer>(`${endpoints.customer}/`, body),
   update: (id: number, body: CustomerUpdate) => apiPut<Customer>(`${endpoints.customer}/${id}`, body),
+  syncAccount: (id: number) => apiPost<Customer>(`${endpoints.customer}/${id}/sync-account`),
   remove: (id: number) => apiDelete<void>(`${endpoints.customer}/${id}`),
 };

@@ -1,6 +1,7 @@
 package com.custcoding.estaleiromavingue.App.models;
 
 import com.custcoding.estaleiromavingue.App.models.status.EstadoServicoAgua;
+import com.custcoding.estaleiromavingue.App.users.AppUser;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -24,7 +25,7 @@ public class CustomerWater {
     private String name;
     @Column(nullable = false, length = 20)
     private String phone;
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String email;
 
     @Column(name = "nr_casa", length = 20)
@@ -36,6 +37,14 @@ public class CustomerWater {
     @ManyToOne
     @JoinColumn(name = "id_zona", nullable = true)
     private Adress adressId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "customer_id")
+    private CustomerProduct customer;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "app_user_id")
+    private AppUser appUser;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 40)

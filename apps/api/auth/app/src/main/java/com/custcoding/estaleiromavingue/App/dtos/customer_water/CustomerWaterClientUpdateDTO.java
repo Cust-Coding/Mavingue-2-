@@ -4,6 +4,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 public record CustomerWaterClientUpdateDTO(
-        @NotBlank String houseNR,
-        @NotNull Long adressId
+        @NotBlank(message = "Numero da casa e obrigatorio") String houseNR,
+        @NotNull(message = "Zona e obrigatoria") Long adressId
 ) {}

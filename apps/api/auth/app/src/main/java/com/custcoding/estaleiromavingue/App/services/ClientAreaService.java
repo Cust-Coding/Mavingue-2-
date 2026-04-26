@@ -33,6 +33,7 @@ import com.custcoding.estaleiromavingue.App.repositories.ProprietarioRepository;
 import com.custcoding.estaleiromavingue.App.repositories.VendaRepository;
 import com.custcoding.estaleiromavingue.App.users.AppUser;
 import com.custcoding.estaleiromavingue.App.users.AppUserRepository;
+import com.custcoding.estaleiromavingue.App.users.UserStatus;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -41,7 +42,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 @Service
@@ -69,7 +72,7 @@ public class ClientAreaService {
                 .toList();
 
         return new ClientAreaProfileDTO(
-                new MeResponse(user.getId(), user.getNome(), user.getEmail(), user.getPhone(),user.getRole()),
+                new MeResponse(user.getId(), user.getNome(), user.getEmail(), user.getPhone(), user.getRole(), user.getStatus(), java.util.Set.of()),
                 findCustomer(user).map(this::toCustomerResponse).orElse(null),
                 waterCustomers.stream()
                         .filter(item -> "ATIVO".equals(item.estado()))
@@ -192,17 +195,17 @@ public class ClientAreaService {
 
     public CustomerWaterResponseDTO createWaterRequest(String userIdFromAuth, CustomerWaterRequestCreateDTO dto) {
         AppUser user = findCurrentUser(userIdFromAuth);
-        return customerWaterService.requestFromClient(user.getNome(), resolvePhone(user), user.getEmail(), dto);
+        return customerWaterService.requestFromClient(user, dto);
     }
 
     public CustomerWaterResponseDTO updateWaterRequest(String userIdFromAuth, Long requestId, CustomerWaterClientUpdateDTO dto) {
         AppUser user = findCurrentUser(userIdFromAuth);
-        return customerWaterService.completeForClient(user.getEmail(), requestId, dto);
+        return customerWaterService.completeForClient(user, requestId, dto);
     }
 
     public CustomerWaterResponseDTO updateLatestWaterRequest(String userIdFromAuth, CustomerWaterClientUpdateDTO dto) {
         AppUser user = findCurrentUser(userIdFromAuth);
-        return customerWaterService.completeLatestForClient(user.getEmail(), dto);
+        return customerWaterService.completeLatestForClient(user, dto);
     }
 
     private AppUser findCurrentUser(String userIdFromAuth) {
@@ -218,15 +221,37 @@ public class ClientAreaService {
     }
 
     private Optional<CustomerProduct> findCustomer(AppUser user) {
-        return customerRepository.findByEmail(user.getEmail());
-    }
-
-    private Optional<CustomerWater> findWaterCustomer(AppUser user) {
-        return customerWaterRepository.findFirstByEmailOrderByCreatedDesc(user.getEmail());
+        return customerRepository.findByAppUser_Id(user.getId())
+                .or(() -> customerRepository.findByPhone(user.getPhone()))
+                .or(() -> {
+                    String email = normalizeEmail(user.getEmail());
+                    return email == null ? Optional.empty() : customerRepository.findByEmail(email);
+                });
     }
 
     private List<CustomerWater> findWaterCustomers(AppUser user) {
-        return customerWaterRepository.findByEmailOrderByCreatedDesc(user.getEmail());
+        LinkedHashMap<Long, CustomerWater> items = new LinkedHashMap<>();
+
+        customerWaterRepository.findByAppUser_IdOrderByCreatedDesc(user.getId())
+                .forEach(item -> items.put(item.getId(), item));
+
+        findCustomer(user).ifPresent(customer ->
+                customerWaterRepository.findByCustomer_IdOrderByCreatedDesc(customer.getId())
+                        .forEach(item -> items.put(item.getId(), item))
+        );
+
+        if (user.getPhone() != null) {
+            customerWaterRepository.findByPhoneOrderByCreatedDesc(user.getPhone())
+                    .forEach(item -> items.put(item.getId(), item));
+        }
+
+        String email = normalizeEmail(user.getEmail());
+        if (email != null) {
+            customerWaterRepository.findByEmailOrderByCreatedDesc(email)
+                    .forEach(item -> items.put(item.getId(), item));
+        }
+
+        return new ArrayList<>(items.values());
     }
 
     private List<Long> findWaterCustomerIds(AppUser user) {
@@ -246,6 +271,11 @@ public class ClientAreaService {
                 customer.getProvincia(),
                 customer.getCidade(),
                 customer.getBairro(),
+                customer.getElegivelConta(),
+                customer.getContaActiva(),
+                customer.getTemServicoAgua(),
+                customer.getAppUser() == null ? null : customer.getAppUser().getId(),
+                customer.getObservacoes(),
                 customer.getCreated()
         );
     }
@@ -320,7 +350,14 @@ public class ClientAreaService {
     private String resolvePhone(AppUser user) {
         return findCustomer(user)
                 .map(CustomerProduct::getPhone)
-                .orElse("000000000");
+                .orElse(user.getPhone());
+    }
+
+    private String normalizeEmail(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim().toLowerCase(Locale.ROOT);
     }
 
     private Funcionario resolveCheckoutFuncionario() {

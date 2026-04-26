@@ -65,8 +65,7 @@ public class SecurityConfig {
                         // --------------------
                         // USERS (ADMIN)
                         // --------------------
-                        .requestMatchers(HttpMethod.POST, "/api/users", "/api/users/").hasAnyRole("ADMIN", "FUNCIONARIO")
-                        .requestMatchers("/api/users/**").hasRole("ADMIN")
+                        .requestMatchers("/api/users/**").hasAnyRole("ADMIN", "FUNCIONARIO")
 
                         // --------------------
                         // PRODUCTS
@@ -79,9 +78,7 @@ public class SecurityConfig {
                         // --------------------
                         // CLIENTES (admin/staff lê; admin altera/apaga)
                         // --------------------
-                        .requestMatchers(HttpMethod.GET, "/api/customer/**").hasAnyRole("ADMIN", "FUNCIONARIO")
-                        .requestMatchers(HttpMethod.PUT, "/api/customer/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/customer/**").hasRole("ADMIN")
+                        .requestMatchers("/api/customer/**").hasAnyRole("ADMIN", "FUNCIONARIO")
 
                         // --------------------
                         // STOCK / VENDAS / COMPRAS (admin ou funcionário)

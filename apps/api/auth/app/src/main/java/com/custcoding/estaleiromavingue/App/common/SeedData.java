@@ -16,8 +16,10 @@ import com.custcoding.estaleiromavingue.App.repositories.ProductRepository;
 import com.custcoding.estaleiromavingue.App.repositories.ProprietarioRepository;
 import com.custcoding.estaleiromavingue.App.repositories.StockRepository;
 import com.custcoding.estaleiromavingue.App.users.AppUser;
+import com.custcoding.estaleiromavingue.App.users.AppPermission;
 import com.custcoding.estaleiromavingue.App.users.AppUserRepository;
 import com.custcoding.estaleiromavingue.App.users.Role;
+import com.custcoding.estaleiromavingue.App.users.UserStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -42,8 +44,8 @@ public class SeedData implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        AppUser admin = ensureUser("Admin Sistema", "adminsystem@mavingue.com", "100402598", Role.ADMIN);
-        AppUser funcionarioUser = ensureUser("Funcionario Mavingue", "funcionario@maving.com", "100402599", Role.FUNCIONARIO);
+        AppUser admin = ensureUser("Admin Sistema", "adminsystem@mavingue.com", "+258840000101", Role.ADMIN);
+        AppUser funcionarioUser = ensureUser("Funcionario Mavingue", "funcionario@maving.com", "+258840000102", Role.FUNCIONARIO);
 
         Owner owner = proprietarioRepository.findByEmail(admin.getEmail())
                 .orElseGet(() -> {
@@ -69,7 +71,7 @@ public class SeedData implements CommandLineRunner {
         ensureFuncionario(admin.getNome(), "Administrador", "840000001", ferragem, owner);
         ensureFuncionario(funcionarioUser.getNome(), "Operador de Loja", "840000002", ferragem, owner);
 
-        ensureCustomer("Cliente Demo", "cliente.demo@mavingue.com", "870000001", Sexo.MULHER, "500000001");
+        ensureCustomer("Cliente Demo", "cliente.demo@mavingue.com", "+258870000001", Sexo.MULHER, "500000001");
         ensureAdress("Zona Central", "Central", ferragem);
         ensureAdress("Zona Museu", "Polana", ferragem);
 
@@ -85,7 +87,9 @@ public class SeedData implements CommandLineRunner {
             existing.setRole(role);
             existing.setPhone(phone);
             existing.setPasswordHash(encoder.encode("mavingue1234#"));
+            existing.setStatus(UserStatus.ATIVO);
             existing.setEnabled(true);
+            existing.setPermissions(new java.util.LinkedHashSet<>(AppPermission.defaultForRole(role)));
             return appUserRepository.save(existing);
         }).orElseGet(() -> appUserRepository.save(AppUser.builder()
                 .nome(nome)
@@ -93,7 +97,9 @@ public class SeedData implements CommandLineRunner {
                 .phone(phone)
                 .passwordHash(encoder.encode("mavingue1234#"))
                 .role(role)
+                .status(UserStatus.ATIVO)
                 .enabled(true)
+                .permissions(new java.util.LinkedHashSet<>(AppPermission.defaultForRole(role)))
                 .build()));
     }
 

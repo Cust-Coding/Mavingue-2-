@@ -18,6 +18,8 @@ public class CustomerMapper {
         c.setProvincia(dto.provincia());
         c.setCidade(dto.cidade());
         c.setBairro(dto.bairro());
+        c.setElegivelConta(Boolean.TRUE.equals(dto.elegivelConta()));
+        c.setObservacoes(dto.observacoes());
 
         return c;
     }
@@ -33,6 +35,11 @@ public class CustomerMapper {
                 c.getProvincia(),
                 c.getCidade(),
                 c.getBairro(),
+                c.getElegivelConta(),
+                c.getContaActiva(),
+                c.getTemServicoAgua(),
+                c.getAppUser() == null ? null : c.getAppUser().getId(),
+                c.getObservacoes(),
                 c.getCreated()
         );
     }

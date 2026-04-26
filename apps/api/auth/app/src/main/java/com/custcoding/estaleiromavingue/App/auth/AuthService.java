@@ -1,6 +1,11 @@
 package com.custcoding.estaleiromavingue.App.auth;
 
-import com.custcoding.estaleiromavingue.App.auth.dto.*;
+import com.custcoding.estaleiromavingue.App.auth.dto.ForgotPasswordRequest;
+import com.custcoding.estaleiromavingue.App.auth.dto.LoginRequest;
+import com.custcoding.estaleiromavingue.App.auth.dto.LoginResponse;
+import com.custcoding.estaleiromavingue.App.auth.dto.MeResponse;
+import com.custcoding.estaleiromavingue.App.auth.dto.RegisterClientRequest;
+import com.custcoding.estaleiromavingue.App.auth.dto.ResetPasswordRequest;
 import com.custcoding.estaleiromavingue.App.models.CustomerProduct;
 import com.custcoding.estaleiromavingue.App.models.CustomerWater;
 import com.custcoding.estaleiromavingue.App.models.status.EstadoServicoAgua;
@@ -11,19 +16,32 @@ import com.custcoding.estaleiromavingue.App.security.tokens.resetpassword.ResetP
 import com.custcoding.estaleiromavingue.App.security.tokens.resetpassword.ResetPasswordToken;
 import com.custcoding.estaleiromavingue.App.security.tokens.verification.VerificationToken;
 import com.custcoding.estaleiromavingue.App.security.tokens.verification.VerificationTokenRepository;
+import com.custcoding.estaleiromavingue.App.services.AccountSyncService;
 import com.custcoding.estaleiromavingue.App.services.EmailValidatorService;
-import com.custcoding.estaleiromavingue.App.users.*;
+import com.custcoding.estaleiromavingue.App.services.PasswordPolicyService;
+import com.custcoding.estaleiromavingue.App.services.PermissionService;
+import com.custcoding.estaleiromavingue.App.services.PhoneNumberService;
+import com.custcoding.estaleiromavingue.App.users.AppUser;
+import com.custcoding.estaleiromavingue.App.users.AppUserRepository;
+import com.custcoding.estaleiromavingue.App.users.AppPermission;
+import com.custcoding.estaleiromavingue.App.users.Role;
+import com.custcoding.estaleiromavingue.App.users.UserStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.server.ResponseStatusException;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
@@ -35,125 +53,151 @@ public class AuthService {
     private final CustomerWaterRepository customerWaterRepository;
     private final PasswordEncoder encoder;
     private final JwtService jwt;
-
     private final VerificationTokenRepository tokenRepository;
     private final EmailValidatorService emailValidatorService;
-
     private final ResetPassowordTokenRepository resetPassowordTokenRepository;
+    private final PhoneNumberService phoneNumberService;
+    private final AccountSyncService accountSyncService;
+    private final PermissionService permissionService;
+    private final PasswordPolicyService passwordPolicyService;
 
-    private final Map<String, List<LocalDateTime>> requestsPerEmail = new  ConcurrentHashMap<>();
-
-    private final Integer MAX_EMAIL_PER_DAY=5;
-
+    private final Map<String, List<LocalDateTime>> requestsPerEmail = new ConcurrentHashMap<>();
+    private final Integer maxEmailPerDay = 5;
 
     @Value("${app.front-url}")
     private String frontendUrl;
 
-
-
     public Optional<AppUser> findByIdentifier(String identifier) {
-
-        if (identifier == null) return Optional.empty();
-
-        if (identifier.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")){
-            return userRepo.findByEmail(identifier);
-        } else if (identifier.matches("^\\d{1,9}$")) {
-            return userRepo.findByPhone("+258" + identifier);
-            
-        }else {
-            throw new IllegalArgumentException("Use um email ou número de telefone válido");
+        if (identifier == null || identifier.isBlank()) {
+            return Optional.empty();
         }
 
+        String trimmed = identifier.trim();
+        if (trimmed.contains("@")) {
+            return userRepo.findByEmail(trimmed.toLowerCase(Locale.ROOT));
+        }
+
+        String normalizedPhone = phoneNumberService.normalize(trimmed);
+        if (normalizedPhone != null) {
+            return userRepo.findByPhone(normalizedPhone);
+        }
+
+        throw new IllegalArgumentException("Use um email ou numero de telefone valido");
     }
 
     public LoginResponse login(LoginRequest req) {
+        AppUser user = findByIdentifier(req.identifier())
+                .orElseThrow(() -> new IllegalArgumentException("Login invalido"));
 
-        AppUser u = findByIdentifier(req.identifier())
-                .orElseThrow(() -> new IllegalArgumentException("Credenciais Inválidas"));
-
-        if (!encoder.matches(req.password(), u.getPasswordHash())) {
-            throw new IllegalArgumentException("Credenciais inválidas");
+        if (!encoder.matches(req.password(), user.getPasswordHash())) {
+            throw new IllegalArgumentException("Login invalido");
         }
 
-        if(!u.getEnabled()){
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Conta não verificada. Verifique o seu email.");
+        UserStatus status = resolveStatus(user);
+        if (status != UserStatus.ATIVO) {
+            throw buildStatusException(status);
         }
 
-        return new LoginResponse(jwt.generate(u));
+        return new LoginResponse(jwt.generate(user));
     }
 
     public MeResponse me(String userIdFromAuth) {
         Long id = Long.parseLong(userIdFromAuth);
-        AppUser u = userRepo.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Utilizador não encontrado"));
-        return new MeResponse(u.getId(), u.getNome(), u.getEmail(), u.getPhone(),u.getRole());
+        AppUser user = userRepo.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Utilizador nao encontrado"));
+
+        return new MeResponse(
+                user.getId(),
+                user.getNome(),
+                user.getEmail(),
+                user.getPhone(),
+                user.getRole(),
+                resolveStatus(user),
+                permissionService.effectivePermissionKeys(user)
+        );
     }
 
-    // ✅ NOVO: Registo do cliente com senha + perfil
     @Transactional
-    public void registerClient(RegisterClientRequest req) {
+    public UserStatus registerClient(RegisterClientRequest req) {
+        String normalizedEmail = normalizeEmail(req.email());
+        String normalizedPhone = phoneNumberService.normalizeRequired(req.telefone());
 
-        // email não pode repetir (conta)
-        if (userRepo.findByEmail(req.email()).isPresent()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email já existe");
+        if (normalizedEmail != null && userRepo.existsByEmail(normalizedEmail)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ja existe uma conta com este email");
+        }
+        if (userRepo.existsByPhone(normalizedPhone)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ja existe uma conta com este numero de telefone");
         }
 
-        // email não pode repetir (perfil)
-        if (customerRepo.existsByEmail(req.email())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email já existe no cadastro de cliente");
-        }
+        AppUser user = new AppUser();
+        user.setNome(req.nome().trim());
+        user.setPhone(normalizedPhone);
+        user.setEmail(normalizedEmail);
+        passwordPolicyService.validatePublicPassword(req.password());
+        user.setPasswordHash(encoder.encode(req.password()));
+        user.setRole(Role.CLIENTE);
+        user.setStatus(normalizedEmail == null ? UserStatus.PENDENTE_REVISAO : UserStatus.PENDENTE_VERIFICACAO);
+        user.setEnabled(false);
+        user.setPermissions(new java.util.LinkedHashSet<>(AppPermission.defaultForRole(Role.CLIENTE)));
+        user.setCreatedAt(LocalDateTime.now());
+        user.setUpdatedAt(LocalDateTime.now());
+        user = userRepo.save(user);
 
-        if (customerRepo.existsByPhone(req.telefone())){
-            throw  new ResponseStatusException(HttpStatus.BAD_REQUEST, "Numero de telefone já cadastrado");
-        }
+        CustomerProduct customer = customerRepo.findByPhone(normalizedPhone)
+                .or(() -> normalizedEmail == null ? Optional.empty() : customerRepo.findByEmail(normalizedEmail))
+                .orElseGet(CustomerProduct::new);
 
-        // 1) cria AppUser (login)
-        AppUser u = new AppUser();
-        u.setNome(req.nome());
-        u.setPhone(req.telefone());
-        u.setEmail(req.email());
-        u.setPasswordHash(encoder.encode(req.password()));
-        u.setRole(Role.CLIENTE);
-        u.setEnabled(false);
-        u = userRepo.save(u);
-
-        // 2) cria perfil do cliente (CustomerProduct)
-        CustomerProduct c = new CustomerProduct();
-        c.setName(req.nome());
-        c.setSex(req.sexo());
-        c.setPhone(req.telefone());
-        c.setEmail(req.email());
-        c.setBirthDate(req.dataNascimento());
-        c.setProvincia(req.provincia());
-        c.setCidade(req.cidade());
-        c.setBairro(req.bairro());
-
-        customerRepo.save(c);
+        customer.setName(req.nome().trim());
+        customer.setSex(req.sexo());
+        customer.setPhone(normalizedPhone);
+        customer.setEmail(normalizedEmail);
+        customer.setBirthDate(req.dataNascimento());
+        customer.setProvincia(req.provincia().trim());
+        customer.setCidade(req.cidade().trim());
+        customer.setBairro(req.bairro().trim());
+        customer.setAppUser(user);
+        customer.setElegivelConta(Boolean.TRUE);
+        customer.setContaActiva(Boolean.FALSE);
+        customer = customerRepo.save(customer);
 
         if (Boolean.TRUE.equals(req.pedirAgua())) {
             CustomerWater water = new CustomerWater();
-            water.setName(req.nome());
-            water.setPhone(req.telefone());
-            water.setEmail(req.email());
+            water.setName(req.nome().trim());
+            water.setPhone(normalizedPhone);
+            water.setEmail(normalizedEmail);
+            water.setCustomer(customer);
+            water.setAppUser(user);
             water.setReferenciaLocal("Pedido inicial criado no registo");
             water.setEstado(EstadoServicoAgua.PENDENTE_APROVACAO);
             water.setPedidoAgua(true);
             water.setActivo(false);
             water.setObservacoes("Pedido criado no registo da conta");
+            water.setUpdated(LocalDateTime.now());
             customerWaterRepository.save(water);
+
+            customer.setTemServicoAgua(Boolean.TRUE);
+            customerRepo.save(customer);
         }
 
-        // 3) Envia email de verificacao
-        sendVerification(u);
+        accountSyncService.syncUser(user);
 
+        if (normalizedEmail != null) {
+            sendVerification(user);
+        }
+
+        return resolveStatus(user);
     }
 
-    private void sendVerification(AppUser user){
+    private void sendVerification(AppUser user) {
+        if (user.getEmail() == null || user.getEmail().isBlank()) {
+            return;
+        }
+
         verifyLimit(user.getEmail());
         tokenRepository.findByUser(user).ifPresent(tokenRepository::delete);
 
         String tokenValue = UUID.randomUUID().toString();
-        String code = String.format("%06d", (int)(Math.random() * 1000000));
+        String code = String.format("%06d", (int) (Math.random() * 1000000));
 
         VerificationToken token = new VerificationToken();
         token.setToken(tokenValue);
@@ -162,217 +206,210 @@ public class AuthService {
         token.setExpiryDate(LocalDateTime.now().plusHours(24));
         tokenRepository.save(token);
 
-        System.out.println("Código de verificação gerado e salvo para " + user.getEmail() + ": " + code);
-
-        try {
-            emailValidatorService.sendVerificationEmail(user.getEmail(), code);
-        } catch (Exception e) {
-            // Log the error, but don't fail the registration
-            System.err.println("Failed to send verification email: " + e.getMessage());
-            System.err.println("Verification code: " + code);
-        }
-
-   }
-
-    public void verifyAccount(Long userId, String token) {
-        AppUser user = userRepo.findById(userId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Utilizador não encontrado"));
-
-        VerificationToken vt = tokenRepository.findByToken(token)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Token inválido"));
-
-        if (!vt.getUser().getId().equals(userId)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Token não pertence a este utilizador");
-        }
-
-        if (vt.isExpired()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Token expirado. Solicite um novo.");
-        }
-
-        user.setEnabled(true);
-        userRepo.save(user);
-        tokenRepository.delete(vt);
+        emailValidatorService.sendVerificationEmail(user.getEmail(), code);
     }
 
-   public void verifyAccountByCode(String email, String code) {
-       System.out.println("Tentando verificar código para email: " + email + ", código digitado: " + code);
+    @Transactional
+    public void verifyAccount(Long userId, String token) {
+        AppUser user = userRepo.findById(userId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Utilizador nao encontrado"));
 
-       // Normalizar o email (trim e lowercase)
-       String normalizedEmail = email != null ? email.trim().toLowerCase() : "";
-       System.out.println("Email normalizado: " + normalizedEmail);
+        VerificationToken verificationToken = tokenRepository.findByToken(token)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Token invalido"));
 
-       AppUser user = userRepo.findByEmail(normalizedEmail)
-               .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email não encontrado"));
-       System.out.println("Usuário encontrado: " + user.getEmail() + ", enabled: " + user.getEnabled());
+        if (!verificationToken.getUser().getId().equals(userId)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Token invalido");
+        }
 
-       VerificationToken vt = tokenRepository.findByUser(user)
-               .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Código de verificação não encontrado. Solicite um novo código."));
-       System.out.println("Token encontrado, código salvo: '" + vt.getCode() + "', expirado: " + vt.isExpired());
+        if (verificationToken.isExpired()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Token expirado. Solicite um novo codigo.");
+        }
 
-       if (vt.isExpired()) {
-           throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Código expirado. Solicite um novo.");
-       }
+        activateUser(user);
+        tokenRepository.delete(verificationToken);
+    }
 
-       // Normalizar o código para 6 dígitos com zeros à esquerda
-       String normalizedCode;
-       try {
-           // Remove qualquer caractere não numérico e normaliza
-           String cleanCode = code != null ? code.replaceAll("[^0-9]", "") : "";
-           normalizedCode = String.format("%06d", Integer.parseInt(cleanCode));
-           System.out.println("Código normalizado: '" + normalizedCode + "'");
-       } catch (NumberFormatException e) {
-           System.out.println("Erro ao parsear código: " + code);
-           throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Código inválido");
-       }
+    @Transactional
+    public void verifyAccountByCode(String email, String code) {
+        String normalizedEmail = normalizeEmail(email);
+        if (normalizedEmail == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email invalido");
+        }
 
-       // Comparação direta sem trim extra (já normalizado acima)
-       if (!normalizedCode.equals(vt.getCode())) {
-           System.out.println("Código não bate: esperado '" + vt.getCode() + "', recebido '" + normalizedCode + "'");
-           throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Código inválido ou expirado");
-       }
+        AppUser user = userRepo.findByEmail(normalizedEmail)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email nao encontrado"));
 
-       System.out.println("Código válido, ativando conta");
-       user.setEnabled(true);
-       userRepo.save(user);
-       tokenRepository.delete(vt);
-   }
+        VerificationToken verificationToken = tokenRepository.findByUser(user)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Codigo de verificacao nao encontrado. Solicite um novo codigo."));
 
+        if (verificationToken.isExpired()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Codigo expirado. Solicite um novo codigo.");
+        }
+
+        String normalizedCode = normalizeCode(code);
+        if (!normalizedCode.equals(verificationToken.getCode())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Codigo invalido ou expirado");
+        }
+
+        activateUser(user);
+        tokenRepository.delete(verificationToken);
+    }
 
     public void resendVerificationToken(String email) {
-        AppUser user = userRepo.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Utilizador não encontrado"));
+        String normalizedEmail = normalizeEmail(email);
+        if (normalizedEmail == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email invalido");
+        }
 
-        if (user.getEnabled()) {
-            throw new RuntimeException("Conta já verificada");
+        AppUser user = userRepo.findByEmail(normalizedEmail)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Utilizador nao encontrado"));
+
+        if (resolveStatus(user) == UserStatus.ATIVO) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Conta ja esta activa");
         }
 
         sendVerification(user);
     }
 
-    public void requestPasswordReset(ForgotPasswordRequest request)
-    {
-        // Normalizar email
-        String normalizedEmail = request.email() != null ? request.email().trim().toLowerCase() : "";
-        
+    public void requestPasswordReset(ForgotPasswordRequest request) {
+        String normalizedEmail = normalizeEmail(request.email());
+        if (normalizedEmail == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email invalido");
+        }
+
         AppUser user = userRepo.findByEmail(normalizedEmail)
-                .orElseThrow(() -> new RuntimeException("Utilizador não encontrado"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Utilizador nao encontrado"));
 
         verifyLimit(user.getEmail());
-
         resetPassowordTokenRepository.findByUser(user).ifPresent(resetPassowordTokenRepository::delete);
 
-        String tokenValue = UUID.randomUUID().toString();
-        String code = String.format("%06d", (int)(Math.random() * 1000000));
+        String code = String.format("%06d", (int) (Math.random() * 1000000));
 
         ResetPasswordToken token = new ResetPasswordToken();
-        token.setToken(tokenValue);
+        token.setToken(UUID.randomUUID().toString());
         token.setCode(code);
         token.setUser(user);
         token.setExpiryDate(LocalDateTime.now().plusHours(1));
-
         resetPassowordTokenRepository.save(token);
 
-        System.out.println("Código de redefinição de senha gerado para " + user.getEmail() + ": " + code);
-
-        try {
-            emailValidatorService.sendPasswordResetEmail(user.getEmail(), code);
-        } catch (Exception e) {
-            System.err.println("Failed to send password reset email: " + e.getMessage());
-        }
-
-
+        emailValidatorService.sendPasswordResetEmail(user.getEmail(), code);
     }
 
     @Transactional
-    public void resetPassword(ResetPasswordRequest request){
+    public void resetPassword(ResetPasswordRequest request) {
+        String normalizedEmail = normalizeEmail(request.email());
+        if (normalizedEmail == null) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email invalido");
+        }
 
-        // Normalizar o email
-        String normalizedEmail = request.email() != null ? request.email().trim().toLowerCase() : "";
-        
         AppUser user = userRepo.findByEmail(normalizedEmail)
-                .orElseThrow(() -> new RuntimeException("Utilizador não encontrado"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Utilizador nao encontrado"));
 
         ResetPasswordToken token = resetPassowordTokenRepository.findByUser(user)
-                .orElseThrow(() -> new RuntimeException("Token Inválido. Solicite um novo código."));
-        
-        if(token.isExpired()){
-            throw new RuntimeException("Código expirado. Solicite um novo.");
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Codigo invalido. Solicite um novo codigo."));
+
+        if (token.isExpired()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Codigo expirado. Solicite um novo codigo.");
         }
 
-        // Normalizar o código - remove caracteres não numéricos
-        String normalizedCode;
-        try {
-            String cleanCode = request.code() != null ? request.code().replaceAll("[^0-9]", "") : "";
-            normalizedCode = String.format("%06d", Integer.parseInt(cleanCode));
-        } catch (NumberFormatException e) {
-            throw new RuntimeException("Código inválido");
+        if (!normalizeCode(request.code()).equals(token.getCode())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Codigo invalido ou expirado");
         }
 
-        if (!normalizedCode.equals(token.getCode())) {
-            throw new RuntimeException("Código inválido ou expirado");
-        }
+        passwordPolicyService.validatePublicPassword(request.newPassword());
 
-        user.setPasswordHash(encoder.encode(request.newPassword()));
+        user.setPasswordHash(encoder.encode(request.newPassword().trim()));
+        user.setUpdatedAt(LocalDateTime.now());
         userRepo.save(user);
         resetPassowordTokenRepository.delete(token);
-
     }
 
-    // Limpeza automática de contas pendentes e tokens expirados a cada hora
-    @Scheduled(fixedRate = 3600000) // 1 hora em milissegundos
+    @Scheduled(fixedRate = 3600000)
     @Transactional
     public void cleanupExpiredData() {
-        LocalDateTime now = LocalDateTime.now();
-
-        // Remover tokens de verificação expirados e suas contas associadas não verificadas
         var expiredVerificationTokens = tokenRepository.findAll().stream()
                 .filter(VerificationToken::isExpired)
                 .toList();
 
         for (VerificationToken token : expiredVerificationTokens) {
             AppUser user = token.getUser();
-            if (!user.getEnabled()) {
-                // Remover conta do cliente se existir
-                customerRepo.findByEmail(user.getEmail()).ifPresent(customerRepo::delete);
-                // Remover usuário
+            if (resolveStatus(user) == UserStatus.PENDENTE_VERIFICACAO) {
+                customerRepo.findByAppUser_Id(user.getId()).ifPresent(customer -> {
+                    customer.setAppUser(null);
+                    customer.setContaActiva(Boolean.FALSE);
+                    customerRepo.save(customer);
+                });
                 userRepo.delete(user);
-                System.out.println("Removida conta pendente expirada: " + user.getEmail());
             }
-            // Remover token
             tokenRepository.delete(token);
         }
 
-        // Remover tokens de reset de senha expirados
         var expiredResetTokens = resetPassowordTokenRepository.findAll().stream()
                 .filter(ResetPasswordToken::isExpired)
                 .toList();
 
         for (ResetPasswordToken token : expiredResetTokens) {
             resetPassowordTokenRepository.delete(token);
-            System.out.println("Removido token de reset expirado para: " + token.getUser().getEmail());
         }
-
-        System.out.println("Limpeza automática executada em " + now);
     }
 
     public void verifyLimit(String email) {
+        if (email == null || email.isBlank()) {
+            return;
+        }
+
         LocalDateTime aDayAgo = LocalDateTime.now().minusDays(1);
+        List<LocalDateTime> requests = requestsPerEmail.computeIfAbsent(email, key -> new ArrayList<>());
+        requests.removeIf(time -> time.isBefore(aDayAgo));
 
-        List<LocalDateTime> requests = requestsPerEmail
-                .computeIfAbsent(email, k -> new ArrayList<>());
-
-        requests.removeIf(t -> t.isBefore(aDayAgo));
-
-        if (requests.size() >= MAX_EMAIL_PER_DAY){
-            throw  new ResponseStatusException(
+        if (requests.size() >= maxEmailPerDay) {
+            throw new ResponseStatusException(
                     HttpStatus.TOO_MANY_REQUESTS,
-                    "Limite diário de emails atingido. Tente novamente amanhã."
+                    "Limite diario de emails atingido. Tente novamente amanha."
             );
         }
 
         requests.add(LocalDateTime.now());
     }
 
+    private void activateUser(AppUser user) {
+        user.setStatus(UserStatus.ATIVO);
+        user.setEnabled(true);
+        user.setUpdatedAt(LocalDateTime.now());
+        userRepo.save(user);
+        accountSyncService.syncUser(user);
+    }
 
+    private UserStatus resolveStatus(AppUser user) {
+        if (user.getStatus() != null) {
+            return user.getStatus();
+        }
+        return Boolean.TRUE.equals(user.getEnabled()) ? UserStatus.ATIVO : UserStatus.PENDENTE_REVISAO;
+    }
 
+    private ResponseStatusException buildStatusException(UserStatus status) {
+        return switch (status) {
+            case PENDENTE_VERIFICACAO -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Conta pendente de verificacao por email.");
+            case PENDENTE_REVISAO -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Conta pendente de verificacao pela equipa.");
+            case INATIVO -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Conta inactiva. Contacte um administrador.");
+            case ATIVO -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Conta indisponivel.");
+        };
+    }
+
+    private String normalizeEmail(String email) {
+        if (email == null) {
+            return null;
+        }
+        String normalized = email.trim().toLowerCase(Locale.ROOT);
+        return normalized.isBlank() ? null : normalized;
+    }
+
+    private String normalizeCode(String code) {
+        try {
+            String cleanCode = code == null ? "" : code.replaceAll("[^0-9]", "");
+            return String.format("%06d", Integer.parseInt(cleanCode));
+        } catch (NumberFormatException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Codigo invalido");
+        }
+    }
 }

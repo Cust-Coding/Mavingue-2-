@@ -1,8 +1,16 @@
-type Props = { params: { id: string } };
-export default function Page({ params }: Props) {
+import PermissionGate from "@/components/layout/PermissionGate";
+import { UserDetailPage } from "@/features/users/UserDetailPage";
+
+type PageProps = {
+  params: {
+    id: string;
+  };
+};
+
+export default function AdminUserEditPage({ params }: PageProps) {
   return (
-    <main>
-      <h1>Admin — Editar utilizador {params.id}</h1>
-    </main>
+    <PermissionGate permissions={["users.view"]}>
+      <UserDetailPage scope="admin" userId={Number(params.id)} />
+    </PermissionGate>
   );
 }

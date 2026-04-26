@@ -13,22 +13,23 @@ export default function RoleGate({ allow, children }: { allow: Allow; children: 
   const allowedSet = useMemo(() => new Set(allow), [allowKey]);
 
   useEffect(() => {
-    const r = getRole();
-    setRole(r);
+    const currentRole = getRole();
+    setRole(currentRole);
     setReady(true);
 
-    if (!r) {
+    if (!currentRole) {
       location.replace("/auth/login");
       return;
     }
 
-    // STAFF e FUNCIONARIO são equivalentes: se allow tiver STAFF, aceita FUNCIONARIO também
     const ok =
-      allowedSet.has(r) ||
-      (allowedSet.has("STAFF") && isStaff(r)) ||
-      (allowedSet.has("FUNCIONARIO") && isStaff(r));
+      allowedSet.has(currentRole) ||
+      (allowedSet.has("STAFF") && isStaff(currentRole)) ||
+      (allowedSet.has("FUNCIONARIO") && isStaff(currentRole));
 
-    if (!ok) location.replace("/forbidden");
+    if (!ok) {
+      location.replace("/forbidden");
+    }
   }, [allowedSet]);
 
   if (!ready) return null;

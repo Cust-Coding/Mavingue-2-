@@ -4,11 +4,11 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 public record CustomerWaterRequestCreateDTO(
-        @NotBlank
-        @Size(max = 180)
+        @NotBlank(message = "Referencia do local e obrigatoria")
+        @Size(max = 180, message = "Referencia do local excede o limite permitido")
         String referenciaLocal,
 
-        @Size(max = 255)
+        @Size(max = 255, message = "Observacoes excedem o limite permitido")
         String observacoes
 ) {
 }
