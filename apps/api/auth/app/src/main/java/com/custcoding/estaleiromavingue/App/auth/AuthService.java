@@ -72,15 +72,17 @@ public class AuthService {
             return Optional.empty();
         }
 
-        if (identifier.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")){
-            return userRepo.findByEmail(identifier);
-        } else if (identifier.matches("^\\d{1,9}$")) {
-            return userRepo.findByPhone("+258" + identifier);
-            
-        }else {
-            throw new IllegalArgumentException("Use um email ou número de telefone válido");
+        String trimmed = identifier.trim();
+        if (trimmed.contains("@")) {
+            return userRepo.findByEmail(trimmed.toLowerCase(Locale.ROOT));
         }
 
+        String normalizedPhone = phoneNumberService.normalize(trimmed);
+        if (normalizedPhone != null) {
+            return userRepo.findByPhone(normalizedPhone);
+        }
+
+        throw new IllegalArgumentException("Use um email ou numero de telefone valido");
     }
 
     public LoginResponse login(LoginRequest req) {
@@ -123,39 +125,48 @@ public class AuthService {
         if (normalizedEmail != null && userRepo.existsByEmail(normalizedEmail)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ja existe uma conta com este email");
         }
-
-        if (customerRepo.existsByPhone(req.telefone())){
-            throw  new ResponseStatusException(HttpStatus.BAD_REQUEST, "Numero de telefone já cadastrado");
+        if (userRepo.existsByPhone(normalizedPhone)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ja existe uma conta com este numero de telefone");
         }
 
-        // 1) cria AppUser (login)
-        AppUser u = new AppUser();
-        u.setNome(req.nome());
-        u.setPhone(req.telefone());
-        u.setEmail(req.email());
-        u.setPasswordHash(encoder.encode(req.password()));
-        u.setRole(Role.CLIENTE);
-        u.setEnabled(false);
-        u = userRepo.save(u);
+        AppUser user = new AppUser();
+        user.setNome(req.nome().trim());
+        user.setPhone(normalizedPhone);
+        user.setEmail(normalizedEmail);
+        passwordPolicyService.validatePublicPassword(req.password());
+        user.setPasswordHash(encoder.encode(req.password()));
+        user.setRole(Role.CLIENTE);
+        user.setStatus(normalizedEmail == null ? UserStatus.PENDENTE_REVISAO : UserStatus.PENDENTE_VERIFICACAO);
+        user.setEnabled(false);
+        user.setPermissions(new java.util.LinkedHashSet<>(AppPermission.defaultForRole(Role.CLIENTE)));
+        user.setCreatedAt(LocalDateTime.now());
+        user.setUpdatedAt(LocalDateTime.now());
+        user = userRepo.save(user);
 
-        // 2) cria perfil do cliente (CustomerProduct)
-        CustomerProduct c = new CustomerProduct();
-        c.setName(req.nome());
-        c.setSex(req.sexo());
-        c.setPhone(req.telefone());
-        c.setEmail(req.email());
-        c.setBirthDate(req.dataNascimento());
-        c.setProvincia(req.provincia());
-        c.setCidade(req.cidade());
-        c.setBairro(req.bairro());
+        CustomerProduct customer = customerRepo.findByPhone(normalizedPhone)
+                .or(() -> normalizedEmail == null ? Optional.empty() : customerRepo.findByEmail(normalizedEmail))
+                .orElseGet(CustomerProduct::new);
 
-        customerRepo.save(c);
+        customer.setName(req.nome().trim());
+        customer.setSex(req.sexo());
+        customer.setPhone(normalizedPhone);
+        customer.setEmail(normalizedEmail);
+        customer.setBirthDate(req.dataNascimento());
+        customer.setProvincia(req.provincia().trim());
+        customer.setCidade(req.cidade().trim());
+        customer.setBairro(req.bairro().trim());
+        customer.setAppUser(user);
+        customer.setElegivelConta(Boolean.TRUE);
+        customer.setContaActiva(Boolean.FALSE);
+        customer = customerRepo.save(customer);
 
         if (Boolean.TRUE.equals(req.pedirAgua())) {
             CustomerWater water = new CustomerWater();
-            water.setName(req.nome());
-            water.setPhone(req.telefone());
-            water.setEmail(req.email());
+            water.setName(req.nome().trim());
+            water.setPhone(normalizedPhone);
+            water.setEmail(normalizedEmail);
+            water.setCustomer(customer);
+            water.setAppUser(user);
             water.setReferenciaLocal("Pedido inicial criado no registo");
             water.setEstado(EstadoServicoAgua.PENDENTE_APROVACAO);
             water.setPedidoAgua(true);
