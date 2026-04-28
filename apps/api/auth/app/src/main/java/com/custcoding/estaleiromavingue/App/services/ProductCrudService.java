@@ -3,6 +3,7 @@ package com.custcoding.estaleiromavingue.App.services;
 import com.custcoding.estaleiromavingue.App.dtos.product.*;
 import com.custcoding.estaleiromavingue.App.models.Product;
 import com.custcoding.estaleiromavingue.App.repositories.ProductRepository;
+import com.custcoding.estaleiromavingue.App.repositories.StockRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 
@@ -12,9 +13,11 @@ import java.util.List;
 public class ProductCrudService {
 
     private final ProductRepository repo;
+    private final StockRepository  stockRepository;
 
-    public ProductCrudService(ProductRepository repo) {
+    public ProductCrudService(ProductRepository repo, StockRepository stockRepository) {
         this.repo = repo;
+        this.stockRepository = stockRepository;
     }
 
     public ProductResponseDTO create(ProductCreateDTO dto) {
@@ -47,6 +50,10 @@ public class ProductCrudService {
 
     public void delete(Long id) {
         if (!repo.existsById(id)) throw new EntityNotFoundException("Produto não encontrado: " + id);
+
+        if (stockRepository.existsByProduto_Id(id)){
+            throw new IllegalStateException("Produto possui stock associado e não pode ser deletado.");
+        }
         repo.deleteById(id);
     }
 
