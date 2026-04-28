@@ -59,13 +59,13 @@ export default function Topbar() {
   // Marcar componente como montado
   useEffect(() => {
     setMounted(true);
-    
+
     // Ler tema do localStorage apenas no cliente
     const savedTheme = localStorage.getItem("theme");
     const isDark = savedTheme === "dark" || document.documentElement.classList.contains("dark");
     setDarkMode(isDark);
     document.documentElement.classList.toggle("dark", isDark);
-    
+
     // Ler nome do localStorage apenas no cliente
     const savedName = localStorage.getItem("me_name");
     if (savedName) {
@@ -105,7 +105,7 @@ export default function Topbar() {
 
   useEffect(() => {
     if (!mounted) return;
-    
+
     function handleOutsideClick(event: MouseEvent) {
       if (accountRef.current && !accountRef.current.contains(event.target as Node)) {
         setAccountOpen(false);
@@ -153,7 +153,7 @@ export default function Topbar() {
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
-      <div className="mx-auto flex max-w-7xl items-center px-4 py-3">
+      <div className="mx-auto flex max-w-7xl items-center px-4 py-7">
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <button
             type="button"
@@ -220,11 +220,10 @@ export default function Topbar() {
                       setLocale(option.value);
                       setLangOpen(false);
                     }}
-                    className={`flex w-full items-center rounded-2xl px-3 py-2 text-sm font-semibold transition ${
-                      locale === option.value
-                        ? "bg-orange-50 text-orange-600 dark:bg-orange-950/40"
-                        : "text-slate-600 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-900"
-                    }`}
+                    className={`flex w-full items-center rounded-2xl px-3 py-2 text-sm font-semibold transition ${locale === option.value
+                      ? "bg-orange-50 text-orange-600 dark:bg-orange-950/40"
+                      : "text-slate-600 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-900"
+                      }`}
                   >
                     {option.label}
                   </button>
