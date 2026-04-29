@@ -87,10 +87,12 @@ public class AuthService {
 
     public LoginResponse login(LoginRequest req) {
         AppUser user = findByIdentifier(req.identifier())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED,"Login invalido"));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.UNAUTHORIZED,
+                        "Email, Número ou senha inválidos"));
 
         if (!encoder.matches(req.password(), user.getPasswordHash())) {
-            throw new IllegalArgumentException("Login invalido");
+            throw new IllegalArgumentException("Email, Número ou senha inválidos");
         }
 
         UserStatus status = resolveStatus(user);
@@ -104,7 +106,7 @@ public class AuthService {
     public MeResponse me(String userIdFromAuth) {
         Long id = Long.parseLong(userIdFromAuth);
         AppUser user = userRepo.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Utilizador nao encontrado"));
+                .orElseThrow(() -> new IllegalArgumentException("Utilizador não encontrado"));
 
         return new MeResponse(
                 user.getId(),
