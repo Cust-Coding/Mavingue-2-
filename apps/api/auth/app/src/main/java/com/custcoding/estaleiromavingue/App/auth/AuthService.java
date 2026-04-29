@@ -82,12 +82,12 @@ public class AuthService {
             return userRepo.findByPhone(normalizedPhone);
         }
 
-        throw new IllegalArgumentException("Use um email ou numero de telefone valido");
+        throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Use um email ou número de telefone valido");
     }
 
     public LoginResponse login(LoginRequest req) {
         AppUser user = findByIdentifier(req.identifier())
-                .orElseThrow(() -> new IllegalArgumentException("Login invalido"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED,"Login invalido"));
 
         if (!encoder.matches(req.password(), user.getPasswordHash())) {
             throw new IllegalArgumentException("Login invalido");
