@@ -9,7 +9,7 @@ import { productsApi } from "@/features/products/api";
 import type { Product } from "@/features/products/types";
 import { getErrorMessage } from "@/lib/errors";
 import { formatDateTime } from "@/lib/formatters";
-import { Package, TrendingUp, TrendingDown, History, Plus, Minus, AlertCircle } from "lucide-react";
+import { Package, TrendingUp, TrendingDown, History, Plus, Minus, AlertCircle, Check, Search } from "lucide-react";
 
 export default function AdminStock() {
   const [rows, setRows] = useState<StockItem[]>([]);
@@ -19,6 +19,8 @@ export default function AdminStock() {
   const [err, setErr] = useState("");
   const [mounted, setMounted] = useState(false);
   const [form, setForm] = useState({ produtoId: "", quantidade: "", tipo: "ENTRADA" as "ENTRADA" | "SAIDA", motivo: "" });
+  const [selectedProducts, setSelectedProducts] = useState<number[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     setMounted(true);
@@ -72,6 +74,26 @@ export default function AdminStock() {
     }
   }
 
+  const toggleProductSelection = (productId: number) => {
+    setSelectedProducts(prev => 
+      prev.includes(productId) 
+        ? prev.filter(id => id !== productId)
+        : [...prev, productId]
+    );
+  };
+
+  const selectAllProducts = () => {
+    if (selectedProducts.length === filteredProducts.length) {
+      setSelectedProducts([]);
+    } else {
+      setSelectedProducts(filteredProducts.map(p => p.id));
+    }
+  };
+
+  const filteredProducts = products.filter(product =>
+    product.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   if (!mounted) {
     return (
       <div className="p-6">
@@ -111,7 +133,7 @@ export default function AdminStock() {
         </div>
       )}
 
-      {/* */}
+      {/* Ajustar Stock */}
       <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
         <h2 className="text-md font-semibold text-slate-800 mb-4 flex items-center gap-2">
           <History className="w-4 h-4 text-orange-500" />
@@ -141,8 +163,8 @@ export default function AdminStock() {
             onChange={(e) => setForm({ ...form, tipo: e.target.value as "ENTRADA" | "SAIDA" })}
             className="h-11 rounded-lg border border-slate-200 bg-white px-4 text-sm text-slate-900 focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
           >
-            <option value="ENTRADA">📥 ENTRADA</option>
-            <option value="SAIDA">📤 SAÍDA</option>
+            <option value="ENTRADA" className="text-green-400">ENTRADA</option>
+            <option value="SAIDA" className="text-red-400"> SAÍDA</option>
           </select>
           <Input 
             placeholder="Motivo (opcional)" 
@@ -156,6 +178,7 @@ export default function AdminStock() {
         </div>
       </div>
 
+      {/* Stock actual */}
       <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
         <h2 className="text-md font-semibold text-slate-800 mb-4 flex items-center gap-2">
           <Package className="w-4 h-4 text-orange-500" />
@@ -197,7 +220,106 @@ export default function AdminStock() {
         )}
       </div>
 
-      {/* ovimentos */}
+      {/* Seleção de Produtos com Checkbox */}
+      <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+          <h2 className="text-md font-semibold text-slate-800 flex items-center gap-2">
+            <Check className="w-4 h-4 text-orange-500" />
+            Seleção múltipla de produtos
+          </h2>
+          <Button 
+            variant="outline" 
+            onClick={selectAllProducts}
+            className="text-sm"
+          >
+            {selectedProducts.length === filteredProducts.length && filteredProducts.length > 0 
+              ? "Desmarcar todos" 
+              : "Selecionar todos"}
+          </Button>
+        </div>
+
+        {/* Barra de pesquisa */}
+        <div className="relative mb-4">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Input
+            placeholder="Pesquisar produtos..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-9 rounded-lg"
+          />
+        </div>
+
+        {/* Lista de produtos com checkbox */}
+        <div className="border border-slate-200 rounded-lg overflow-hidden">
+          <div className="max-h-64 overflow-y-auto">
+            {filteredProducts.length === 0 ? (
+              <div className="p-8 text-center text-slate-500">
+                Nenhum produto encontrado
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-100">
+                {filteredProducts.map((product) => {
+                  const stockItem = rows.find(s => s.produtoId === product.id);
+                  const isSelected = selectedProducts.includes(product.id);
+                  
+                  return (
+                    <label
+                      key={product.id}
+                      className={`flex items-center justify-between p-3 hover:bg-slate-50 cursor-pointer transition ${
+                        isSelected ? 'bg-orange-50' : ''
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 flex-1">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => toggleProductSelection(product.id)}
+                          className="w-4 h-4 text-orange-600 rounded border-slate-300 focus:ring-orange-500"
+                        />
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-slate-800">{product.name}</p>
+                          <p className="text-xs text-slate-500">
+                            Stock: {stockItem?.quantidade || 0} unidades
+                          </p>
+                        </div>
+                      </div>
+                      {isSelected && (
+                        <Check className="w-4 h-4 text-orange-600" />
+                      )}
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Resumo da seleção */}
+        {selectedProducts.length > 0 && (
+          <div className="mt-4 p-3 bg-slate-50 rounded-lg">
+            <p className="text-sm text-slate-600">
+              <span className="font-semibold">{selectedProducts.length}</span> produto(s) selecionado(s)
+            </p>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {selectedProducts.slice(0, 5).map(id => {
+                const product = products.find(p => p.id === id);
+                return product && (
+                  <span key={id} className="text-xs bg-white px-2 py-1 rounded border border-slate-200">
+                    {product.name}
+                  </span>
+                );
+              })}
+              {selectedProducts.length > 5 && (
+                <span className="text-xs text-slate-500">
+                  +{selectedProducts.length - 5} outros
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Movimentos */}
       <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <h2 className="text-md font-semibold text-slate-800 flex items-center gap-2">
@@ -225,8 +347,8 @@ export default function AdminStock() {
                       <span className="font-semibold text-slate-800">{movement.produtoNome}</span>
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                         movement.tipo === "ENTRADA" 
-                          ? "bg-green-100 text-green-700" 
-                          : "bg-red-100 text-red-700"
+                          ? "bg-emerald-100 text-emerald-700" 
+                          : "bg-rose-100 text-rose-700"
                       }`}>
                         {movement.tipo === "ENTRADA" ? "+" : "-"}{movement.quantidade} un
                       </span>
@@ -240,9 +362,9 @@ export default function AdminStock() {
                   </div>
                   <div className="flex items-center gap-1">
                     {movement.tipo === "ENTRADA" ? (
-                      <TrendingUp className="w-4 h-4 text-green-600" />
+                      <TrendingUp className="w-4 h-4 text-emerald-600" />
                     ) : (
-                      <TrendingDown className="w-4 h-4 text-red-600" />
+                      <TrendingDown className="w-4 h-4 text-rose-600" />
                     )}
                   </div>
                 </div>
