@@ -50,6 +50,7 @@ export function UserManagementPage({ scope }: { scope: Scope }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [workingId, setWorkingId] = useState<number | null>(null);
+  const [resetConfirmId, setResetConfirmId] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -130,11 +131,40 @@ export function UserManagementPage({ scope }: { scope: Scope }) {
       setError(getErrorMessage(reason, "Nao foi possivel redefinir a senha."));
     } finally {
       setWorkingId(null);
+      setResetConfirmId(null);
     }
   }
 
   return (
     <main className="space-y-6">
+      {/* Modal de confirmação para reset de senha */}
+      {resetConfirmId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-lg">
+            <h3 className="text-lg font-semibold text-slate-900">Redefinir senha?</h3>
+            <p className="mt-2 text-sm text-slate-600">
+              A nova senha será: <span className="font-semibold">1234</span>
+            </p>
+            <div className="mt-6 flex gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setResetConfirmId(null)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                className="bg-red-600 text-white hover:bg-red-700"
+                onClick={() => handleResetPassword(resetConfirmId)}
+              >
+                Confirmar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
@@ -310,13 +340,14 @@ export function UserManagementPage({ scope }: { scope: Scope }) {
                           </Button>
                         )}
 
+                       
                         {canReset && (
                           <Button
                             type="button"
                             size="sm"
                             variant="outline"
                             disabled={workingId === user.id}
-                            onClick={() => handleResetPassword(user.id)}
+                            onClick={() => setResetConfirmId(user.id)}
                           >
                             <KeyRound className="h-4 w-4" />
                             Reset 1234
