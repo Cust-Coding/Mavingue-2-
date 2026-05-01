@@ -153,6 +153,50 @@ function MessageStack({ error, success }: { error: string; success: string }) {
   );
 }
 
+//Modal de Confirma
+function ConfirmModal({
+  isOpen,
+  title,
+  message,
+  confirmText,
+  cancelText,
+  onConfirm,
+  onCancel,
+  isDanger = false,
+}: {
+  isOpen: boolean;
+  title: string;
+  message: string;
+  confirmText: string;
+  cancelText: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+  isDanger?: boolean;
+}) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div className="max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-lg">
+        <h3 className="text-xl font-semibold text-slate-900">{title}</h3>
+        <p className="mt-3 text-sm leading-6 text-slate-600">{message}</p>
+        <div className="mt-6 flex gap-3 justify-end">
+          <Button type="button" variant="outline" onClick={onCancel}>
+            {cancelText}
+          </Button>
+          <Button
+            type="button"
+            onClick={onConfirm}
+            className={isDanger ? "bg-red-600 text-white hover:bg-red-700" : "bg-cyan-600 text-white hover:bg-cyan-700"}
+          >
+            {confirmText}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function WaterOverviewPage({ scope }: { scope: Scope }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -307,6 +351,11 @@ export function WaterRequestsPage({ scope: _scope }: { scope: Scope }) {
   const [workingId, setWorkingId] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    id: number;
+    action: "approve" | "reject";
+  }>({ isOpen: false, id: 0, action: "approve" });
 
   async function load() {
     setLoading(true);
@@ -341,11 +390,27 @@ export function WaterRequestsPage({ scope: _scope }: { scope: Scope }) {
       setError(getErrorMessage(reason, "Nao foi possivel actualizar a solicitacao."));
     } finally {
       setWorkingId(null);
+      setConfirmModal({ isOpen: false, id: 0, action: "approve" });
     }
   }
 
   return (
     <main className="space-y-6">
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        title={confirmModal.action === "approve" ? "Aprovar pedido?" : "Rejeitar pedido?"}
+        message={
+          confirmModal.action === "approve"
+            ? "Tem certeza que deseja aprovar este pedido? O cliente poderá então completar os dados da casa."
+            : "Tem certeza que deseja rejeitar este pedido? Esta ação não pode ser desfeita."
+        }
+        confirmText={confirmModal.action === "approve" ? "Aprovar" : "Rejeitar"}
+        cancelText="Cancelar"
+        onConfirm={() => handleDecision(confirmModal.id, confirmModal.action)}
+        onCancel={() => setConfirmModal({ isOpen: false, id: 0, action: "approve" })}
+        isDanger={confirmModal.action === "reject"}
+      />
+
       <PageHeader
         badge="Solicitacoes"
         title="Analise de pedidos de agua"
@@ -382,7 +447,7 @@ export function WaterRequestsPage({ scope: _scope }: { scope: Scope }) {
                     <Button
                       type="button"
                       disabled={workingId === item.id}
-                      onClick={() => handleDecision(item.id, "approve")}
+                      onClick={() => setConfirmModal({ isOpen: true, id: item.id, action: "approve" })}
                       className="bg-emerald-600 text-white hover:bg-emerald-700"
                     >
                       Aprovar
@@ -391,7 +456,7 @@ export function WaterRequestsPage({ scope: _scope }: { scope: Scope }) {
                       type="button"
                       variant="outline"
                       disabled={workingId === item.id}
-                      onClick={() => handleDecision(item.id, "reject")}
+                      onClick={() => setConfirmModal({ isOpen: true, id: item.id, action: "reject" })}
                     >
                       Rejeitar
                     </Button>
@@ -706,6 +771,10 @@ export function WaterContractsPage({ scope: _scope }: { scope: Scope }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [toggleConfirm, setToggleConfirm] = useState<{
+    isOpen: boolean;
+    contract: WaterContract | null;
+  }>({ isOpen: false, contract: null });
 
   const activeCustomers = useMemo(
     () => waterCustomers.filter((item) => item.estado === "ATIVO" && item.activo),
@@ -764,11 +833,27 @@ export function WaterContractsPage({ scope: _scope }: { scope: Scope }) {
       setError(getErrorMessage(reason, "Nao foi possivel actualizar a ligacao."));
     } finally {
       setSaving(false);
+      setToggleConfirm({ isOpen: false, contract: null });
     }
   }
 
   return (
     <main className="space-y-6">
+      <ConfirmModal
+        isOpen={toggleConfirm.isOpen}
+        title={toggleConfirm.contract?.estado === "ATIVA" ? "Cortar ligação?" : "Reactivar ligação?"}
+        message={
+          toggleConfirm.contract?.estado === "ATIVA"
+            ? `Tem certeza que deseja CORTAR o fornecimento de água para ${toggleConfirm.contract?.consumidorNome}? O cliente será notificado.`
+            : `Tem certeza que deseja REACTIVAR o fornecimento de água para ${toggleConfirm.contract?.consumidorNome}?`
+        }
+        confirmText={toggleConfirm.contract?.estado === "ATIVA" ? "Cortar água" : "Reactivar"}
+        cancelText="Cancelar"
+        onConfirm={() => toggleConfirm.contract && handleToggle(toggleConfirm.contract)}
+        onCancel={() => setToggleConfirm({ isOpen: false, contract: null })}
+        isDanger={toggleConfirm.contract?.estado === "ATIVA"}
+      />
+
       <PageHeader
         badge="Contratos"
         title="Ligacoes activas, cortadas e reactivadas"
@@ -835,7 +920,7 @@ export function WaterContractsPage({ scope: _scope }: { scope: Scope }) {
                       type="button"
                       variant="outline"
                       disabled={saving}
-                      onClick={() => handleToggle(contract)}
+                      onClick={() => setToggleConfirm({ isOpen: true, contract })}
                     >
                       {contract.estado === "ATIVA" ? "Cortar agua" : "Reactivar"}
                     </Button>
@@ -859,6 +944,7 @@ export function WaterReadingsPage({ scope: _scope }: { scope: Scope }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [confirmModal, setConfirmModal] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -908,6 +994,7 @@ export function WaterReadingsPage({ scope: _scope }: { scope: Scope }) {
       setError(getErrorMessage(reason, "Nao foi possivel registar a leitura."));
     } finally {
       setSaving(false);
+      setConfirmModal(false);
     }
   }
 
@@ -915,6 +1002,16 @@ export function WaterReadingsPage({ scope: _scope }: { scope: Scope }) {
 
   return (
     <main className="space-y-6">
+      <ConfirmModal
+        isOpen={confirmModal}
+        title="Registar leitura"
+        message={`Tem certeza que deseja registar a leitura de ${form.leituraActual} m³? Uma fatura será gerada automaticamente.`}
+        confirmText="Registar"
+        cancelText="Cancelar"
+        onConfirm={handleSubmit}
+        onCancel={() => setConfirmModal(false)}
+      />
+
       <PageHeader
         badge="Leituras"
         title="Registo mensal de leituras"
@@ -944,28 +1041,30 @@ export function WaterReadingsPage({ scope: _scope }: { scope: Scope }) {
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">Leitura actual</label>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Leitura actual (m³)</label>
             <Input
               value={form.leituraActual}
               onChange={(event) => setForm((current) => ({ ...current, leituraActual: event.target.value }))}
               className="h-12 rounded-2xl border-slate-200 px-4"
+              type="number"
             />
             <FieldError message={fieldErrors.leituraActual} />
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">Preco por m3</label>
+            <label className="mb-2 block text-sm font-medium text-slate-700">Preco por m³ (MZN)</label>
             <Input
               value={form.precoM3}
               onChange={(event) => setForm((current) => ({ ...current, precoM3: event.target.value }))}
               className="h-12 rounded-2xl border-slate-200 px-4"
+              type="number"
             />
             <FieldError message={fieldErrors.precoM3} />
           </div>
         </div>
 
         <div className="mt-5 flex justify-end">
-          <Button type="button" disabled={saving} onClick={handleSubmit} className="bg-cyan-600 text-white hover:bg-cyan-700">
+          <Button type="button" disabled={saving} onClick={() => setConfirmModal(true)} className="bg-cyan-600 text-white hover:bg-cyan-700">
             Registar leitura
           </Button>
         </div>
@@ -1007,7 +1106,7 @@ export function WaterReadingsPage({ scope: _scope }: { scope: Scope }) {
                     <td className="px-6 py-4 text-slate-600">#{reading.ligacaoId}</td>
                     <td className="px-6 py-4 text-slate-600">{reading.leituraAnterior}</td>
                     <td className="px-6 py-4 text-slate-600">{reading.leituraActual}</td>
-                    <td className="px-6 py-4 text-slate-600">{reading.consumoM3} m3</td>
+                    <td className="px-6 py-4 text-slate-600">{reading.consumoM3} m³</td>
                     <td className="px-6 py-4 font-semibold text-slate-900">{formatMoney(reading.valorPagar)}</td>
                   </tr>
                 ))}
@@ -1027,6 +1126,7 @@ export function WaterBillsPage({ scope: _scope }: { scope: Scope }) {
   const [payingId, setPayingId] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [confirmPayId, setConfirmPayId] = useState<number | null>(null);
 
   async function load() {
     setLoading(true);
@@ -1056,11 +1156,25 @@ export function WaterBillsPage({ scope: _scope }: { scope: Scope }) {
       setError(getErrorMessage(reason, "Nao foi possivel confirmar o pagamento."));
     } finally {
       setPayingId(null);
+      setConfirmPayId(null);
     }
   }
 
+  const billToPay = confirmPayId ? bills.find((b) => b.id === confirmPayId) : null;
+
   return (
     <main className="space-y-6">
+      <ConfirmModal
+        isOpen={confirmPayId !== null}
+        title="Confirmar pagamento"
+        message={`Tem certeza que deseja confirmar o pagamento da fatura #${confirmPayId} no valor de ${billToPay ? formatMoney(billToPay.valorTotal) : ""} via ${formatPaymentMethod(paymentMethod)}?`}
+        confirmText="Confirmar pagamento"
+        cancelText="Cancelar"
+        onConfirm={() => confirmPayId && handlePay(confirmPayId)}
+        onCancel={() => setConfirmPayId(null)}
+        isDanger={false}
+      />
+
       <PageHeader
         badge="Faturas"
         title="Cobranca e comprovativos"
@@ -1119,7 +1233,7 @@ export function WaterBillsPage({ scope: _scope }: { scope: Scope }) {
                       <Button
                         type="button"
                         disabled={payingId === bill.id}
-                        onClick={() => handlePay(bill.id)}
+                        onClick={() => setConfirmPayId(bill.id)}
                         className="bg-emerald-600 text-white hover:bg-emerald-700"
                       >
                         <CreditCard className="h-4 w-4" />

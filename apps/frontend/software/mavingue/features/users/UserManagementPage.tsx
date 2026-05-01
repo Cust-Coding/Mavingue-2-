@@ -137,12 +137,13 @@ export function UserManagementPage({ scope }: { scope: Scope }) {
 
   return (
     <main className="space-y-6">
-      {/* Modal de confirmação para reset de senha */}
+      {/* Confirma de senha */}
       {resetConfirmId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-lg">
-            <h3 className="text-lg font-semibold text-slate-900">Redefinir senha?</h3>
-            <p className="mt-2 text-sm text-slate-600">
+        
+          <div className="max-w-sm rounded-2xl border border-slate-200 bg-gray-900/90 border-dashed p-6 shadow-lg">
+            <h3 className="text-lg font-semibold text-gray-200">Redefimir senha?</h3>
+            <p className="mt-2 text-sm text-slate-300">
               A nova senha será: <span className="font-semibold">1234</span>
             </p>
             <div className="mt-6 flex gap-3">
@@ -160,6 +161,7 @@ export function UserManagementPage({ scope }: { scope: Scope }) {
               >
                 Confirmar
               </Button>
+
             </div>
           </div>
         </div>

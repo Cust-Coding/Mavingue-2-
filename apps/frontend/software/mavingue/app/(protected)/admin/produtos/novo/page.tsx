@@ -102,6 +102,11 @@ export default function NovoProduto() {
     if (fileInput) fileInput.value = '';
   };
 
+  const triggerFileUpload = () => {
+    const fileInput = document.getElementById('file-upload') as HTMLInputElement;
+    if (fileInput) fileInput.click();
+  };
+
   if (!mounted) {
     return (
       <div className="p-6">
@@ -198,7 +203,10 @@ export default function NovoProduto() {
           {/* foto */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Imagem do produto</label>
-            <div className="mt-1 flex justify-center rounded-lg border border-dashed border-slate-300 bg-slate-50 px-6 py-8 hover:bg-slate-100 transition cursor-pointer">
+            <div 
+              onClick={triggerFileUpload}
+              className="mt-1 flex justify-center rounded-lg border border-dashed border-slate-300 bg-slate-50 px-6 py-8 hover:bg-slate-100 transition cursor-pointer"
+            >
               <div className="text-center">
                 {uploading ? (
                   <div className="flex flex-col items-center">
@@ -214,7 +222,10 @@ export default function NovoProduto() {
                     />
                     <button
                       type="button"
-                      onClick={removeImage}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeImage();
+                      }}
                       className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition"
                     >
                       <X className="w-3 h-3" />
@@ -224,26 +235,25 @@ export default function NovoProduto() {
                   <>
                     <Upload className="mx-auto h-8 w-8 text-slate-400" />
                     <div className="mt-2 text-sm text-slate-600">
-                      <label htmlFor="file-upload" className="cursor-pointer text-green-600 hover:text-orange-700">
+                      <span className="text-green-600 hover:text-orange-700">
                         Clique para enviar
-                      </label>
-                      <input
-                        id="file-upload"
-                        type="file"
-                        accept="image/*"
-                        onChange={handleFileChange}
-                        className="hidden"
-                      />
-                      <p className="text-xs text-slate-400 mt-1 text-xs">Só PNG, JPG até 5MB</p>
+                      </span>
+                      <p className="mt-1 text-xs text-slate-400">Só PNG, JPG até 5MB</p>
                     </div>
                   </>
                 )}
               </div>
             </div>
+            <input
+              id="file-upload"
+              type="file"
+              accept="image/png, image/jpeg, image/jpg"
+              onChange={handleFileChange}
+              className="hidden"
+            />
           </div>
         </div>
 
-      
         <div className="p-5 border-t border-slate-100 bg-slate-50 flex gap-3 justify-end">
           <Button
             type="button"
@@ -256,7 +266,7 @@ export default function NovoProduto() {
               if (fileInput) fileInput.value = '';
             }}
           >
-            Limpar
+            Desfazer
           </Button>
           <Button type="submit" className="bg-orange-600 hover:bg-orange-700">
             Criar Produto
