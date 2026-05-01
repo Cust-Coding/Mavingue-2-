@@ -18,6 +18,7 @@ import { getQuickLinks, normalizeRole } from "@/components/layout/navigation";
 import { useI18n } from "@/lib/i18n";
 import { getCartCount, useCartStore } from "@/store/cart.store";
 import Image from "next/image";
+import link from "next/link";
 
 interface MeResponse {
   nome?: string;
@@ -128,7 +129,7 @@ export default function Topbar() {
     localStorage.setItem("theme", nextMode ? "dark" : "light");
   };
 
-  // Placeholder durante hidratação
+  // Placeholder durante hidratacao
   if (!mounted) {
     return (
       <header className="fixed inset-x-0 top-0 z-50 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
@@ -152,7 +153,7 @@ export default function Topbar() {
   }
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
+    <header className="fixed inset-x-0 top-0 z-50 border-b h-25  border-slate-200 bg-white/95 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-950/95">
       <div className="mx-auto flex max-w-7xl items-center px-4 py-7">
         <div className="flex min-w-0 flex-1 items-center gap-3">
           <button
@@ -164,7 +165,7 @@ export default function Topbar() {
             {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
 
-          <Link href="/" className="flex items-center gap-3">
+          <Link href="/" className="flex items-center gap-3 ">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl  text-xl font-black text-white ">
               <Image src="/mavingue_logo_v1.svg" alt="Logo" width={30} height={30} />
             </div>
@@ -174,41 +175,75 @@ export default function Topbar() {
             </div>
           </Link>
 
-          <nav className="ml-4 hidden items-center gap-2 lg:flex">
-            {publicLinks.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="rounded-full px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-orange-50 hover:text-orange-600 dark:text-slate-300 dark:hover:bg-slate-900"
-              >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
+        <nav className="ml-10 hidden items-center gap-1 lg:flex  border-slate-400/50 rounded-2xl border-l-1 h-11  ">
+  {publicLinks.map((plink, index) => (
+    <div key={plink.href} className="flex items-center gap-2 ">
+      {index > 0 && (
+        <span className="h-3 w-px bg-slate-300 dark:bg-slate-700" />
+      )}
+      <Link
+        href={plink.href}
+       className="rounded-full px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-orange-50 hover:text-orange-600 dark:text-slate-300 dark:hover:bg-slate-900"
+      >
+        {plink.label}
+      </Link>
+    </div>
+  ))}
+</nav>
         </div>
+
+
+
 
         <div className="ml-3 flex items-center gap-2">
           <button
             type="button"
             onClick={toggleDarkMode}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 text-slate-700 transition hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900"
+            className="inline-flex h-11 w-20 items-center justify-center rounded-2xl border border-slate-200 text-slate-700 transition hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900"
             aria-label="Alternar tema"
           >
-            {darkMode ? <Sun size={19} /> : <Moon size={19} />}
+           {darkMode ? (
+  <div className="w-full h-full  bg-slate-950/95 rounded-2xl rounded-bl-2xl flex items-center justify-center">
+    <div className="bg-slate-950/95 border-b-1 border-b-orange-500 text-orange-600 w-12 h-full rounded-tl-2xl rounded-tr-2xl rounded-bl-2xl flex items-center justify-center">
+      <Moon size={20} />
+    </div>
+    <div className="bg-slate-500/90 w-8 h-full rounded-tr-2xl rounded-bl-2xl text-white/30  rounded-br-2xl flex items-center justify-center">
+      <Sun size={15} />
+    </div>
+  </div>
+) : (
+  <div className="w-full h-full rounded-tl-2xl rounded-bl-2xl flex items-center justify-center">
+    <div className="  text-slate-600/99 w-12 h-full rounded-tl-2xl rounded-tr-2xl rounded-bl-2xl flex items-center justify-center">
+      <Sun size={19} />
+    </div>
+    <div className="bg-slate-300/90 w-8 h-full rounded-tr-2xl rounded-bl-2xl text-slate-600/20 rounded-br-2xl flex items-center justify-center">
+      <Moon size={19} />
+    </div>
+  </div>
+)}
           </button>
 
-          <div ref={langRef} className="relative">
-            <button
-              type="button"
-              onClick={() => setLangOpen((current) => !current)}
-              className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 text-slate-700 transition hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900"
-              aria-label="Idioma"
-            >
-              <Globe size={19} />
-            </button>
 
+
+
+
+          <div ref={langRef} className="relative">
+          <button
+  type="button"
+  onClick={() => setLangOpen((current) => !current)}
+  className="relative inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 text-slate-700 transition hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-900"
+  aria-label="Idioma"
+>
+  <Globe size={19} />
+  <span className={`absolute -bottom-1 -right-1 text-[10px] font-bold bg-blue-300 dark:bg-slate-800 rounded-full px-1 border border-slate-200 dark:border-slate-700
+ locale === 'pt' 
+    ? 'text-white' : 'text-white'
+}`}>
+  {locale === 'pt' ? 'PT' : 'EN'}
+</span>
+</button>
             {langOpen && (
-              <div className="absolute right-0 top-full mt-3 w-36 overflow-hidden rounded-3xl border border-slate-200 bg-white p-2 shadow-xl dark:border-slate-700 dark:bg-slate-950">
+              <div className="absolute right-0 top-full mt-3 w-36 overflow-hidden rounded-3xl border border-slate-200 bg-white text-slate-500 p-2 shadow-xl dark:border-slate-700 dark:bg-slate-950">
                 {[
                   { value: "pt" as const, label: "Portugues" },
                   { value: "en" as const, label: "English" },
