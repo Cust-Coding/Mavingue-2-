@@ -15,13 +15,42 @@ public enum AppPermission {
     CUSTOMERS_VIEW("customers.view", "Cadastros", "Ver pessoas e clientes registados"),
     CUSTOMERS_MANAGE("customers.manage", "Cadastros", "Criar, editar e sincronizar pessoas e clientes"),
 
+    PRODUCTS_VIEW("products.view", "Produtos", "Ver a lista operacional de produtos"),
+    PRODUCTS_MANAGE("products.manage", "Produtos", "Criar e editar produtos"),
+    PRODUCTS_DELETE("products.delete", "Produtos", "Apagar produtos"),
+    CATEGORIES_MANAGE("categories.manage", "Produtos", "Cadastrar e editar categorias de produtos"),
+
+    STOCK_VIEW("stock.view", "Stock", "Ver stock actual por produto"),
+    STOCK_MOVEMENTS_VIEW("stock.movements.view", "Stock", "Ver historico de movimentos de stock"),
+    STOCK_ADJUST("stock.adjust", "Stock", "Registar entradas e saidas de stock"),
+
+    SALES_VIEW("sales.view", "Vendas", "Ver vendas registadas"),
+    SALES_CREATE("sales.create", "Vendas", "Registar novas vendas"),
+    SALES_PICKUP_MANAGE("sales.pickup.manage", "Vendas", "Actualizar o estado de levantamento"),
+
+    PURCHASES_VIEW("purchases.view", "Compras", "Ver compras e facturas de compra"),
+    PURCHASES_MANAGE("purchases.manage", "Compras", "Registar compras e actualizar a entrada de stock"),
+
+    FERRAGEM_VIEW("ferragem.view", "Ferragem", "Ver ferragens e lojas registadas"),
+    FERRAGEM_MANAGE("ferragem.manage", "Ferragem", "Criar e remover ferragens"),
+
+    ADDRESS_VIEW("address.view", "Configuracao", "Ver zonas e enderecos operacionais"),
+    ADDRESS_MANAGE("address.manage", "Configuracao", "Gerir zonas e enderecos operacionais"),
+
     WATER_OVERVIEW("water.overview", "Agua", "Ver o resumo do modulo de agua"),
     WATER_REQUESTS_REVIEW("water.requests.review", "Agua", "Aprovar ou rejeitar solicitacoes de agua"),
     WATER_CUSTOMERS_VIEW("water.customers.view", "Agua", "Ver clientes e contas de agua"),
     WATER_CUSTOMERS_MANAGE("water.customers.manage", "Agua", "Criar e sincronizar contas de agua"),
     WATER_CONTRACTS_MANAGE("water.contracts.manage", "Agua", "Criar e actualizar ligacoes de agua"),
     WATER_READINGS_MANAGE("water.readings.manage", "Agua", "Registar leituras de agua"),
-    WATER_BILLS_MANAGE("water.bills.manage", "Agua", "Gerir facturas e pagamentos de agua");
+    WATER_BILLS_MANAGE("water.bills.manage", "Agua", "Gerir facturas e pagamentos de agua"),
+
+    REPORTS_VIEW("reports.view", "Relatorios", "Ver a area geral de relatorios"),
+    REPORTS_SALES_VIEW("reports.sales.view", "Relatorios", "Ver relatorios de vendas"),
+    REPORTS_STOCK_VIEW("reports.stock.view", "Relatorios", "Ver relatorios de stock"),
+    REPORTS_WATER_VIEW("reports.water.view", "Relatorios", "Ver relatorios do modulo de agua"),
+
+    AUDIT_VIEW("audit.view", "Auditoria", "Ver o historico operacional e filtros de auditoria");
 
     private final String key;
     private final String group;
@@ -77,8 +106,23 @@ public enum AppPermission {
             defaults.add(USERS_VIEW);
             defaults.add(USERS_MANAGE);
             defaults.add(USERS_VERIFY);
+            defaults.add(USERS_RESET_PASSWORD);
             defaults.add(CUSTOMERS_VIEW);
             defaults.add(CUSTOMERS_MANAGE);
+            defaults.add(PRODUCTS_VIEW);
+            defaults.add(PRODUCTS_MANAGE);
+            defaults.add(PRODUCTS_DELETE);
+            defaults.add(CATEGORIES_MANAGE);
+            defaults.add(STOCK_VIEW);
+            defaults.add(STOCK_MOVEMENTS_VIEW);
+            defaults.add(STOCK_ADJUST);
+            defaults.add(SALES_VIEW);
+            defaults.add(SALES_CREATE);
+            defaults.add(SALES_PICKUP_MANAGE);
+            defaults.add(PURCHASES_VIEW);
+            defaults.add(PURCHASES_MANAGE);
+            defaults.add(FERRAGEM_VIEW);
+            defaults.add(ADDRESS_VIEW);
             defaults.add(WATER_OVERVIEW);
             defaults.add(WATER_REQUESTS_REVIEW);
             defaults.add(WATER_CUSTOMERS_VIEW);
@@ -86,6 +130,10 @@ public enum AppPermission {
             defaults.add(WATER_CONTRACTS_MANAGE);
             defaults.add(WATER_READINGS_MANAGE);
             defaults.add(WATER_BILLS_MANAGE);
+            defaults.add(REPORTS_VIEW);
+            defaults.add(REPORTS_SALES_VIEW);
+            defaults.add(REPORTS_STOCK_VIEW);
+            defaults.add(REPORTS_WATER_VIEW);
         }
 
         return defaults;

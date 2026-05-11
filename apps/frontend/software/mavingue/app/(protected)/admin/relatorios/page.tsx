@@ -1,7 +1,7 @@
-export default function Page() {
-  return (
-    <main>
-      <h1>Admin — Relatórios</h1>
-    </main>
-  );
+"use client";
+
+import { ReportsOverviewPage } from "@/features/reports/ReportsOverviewPage";
+
+export default function AdminReportsPage() {
+  return <ReportsOverviewPage scope="admin" />;
 }

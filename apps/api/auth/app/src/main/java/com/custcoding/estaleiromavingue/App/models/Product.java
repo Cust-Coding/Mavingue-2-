@@ -35,6 +35,10 @@ public class Product {
     @Column(name = "price", nullable = false, precision = 38, scale = 2)
     private BigDecimal price;
 
+    @Size(max = 60)
+    @Column(name = "category", length = 60)
+    private String category;
+
     @Size(max = 500)
     @Column(name = "url_img", length = 500)
     private String urlImg;

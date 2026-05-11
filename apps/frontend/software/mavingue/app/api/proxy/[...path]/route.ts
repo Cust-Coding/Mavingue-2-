@@ -31,10 +31,16 @@ async function handler(req: NextRequest, ctx: { params: Promise<{ path: string[]
   const headers = new Headers();
   const ct = req.headers.get("content-type");
   if (ct) headers.set("content-type", ct);
+  const accept = req.headers.get("accept");
+  if (accept) headers.set("accept", accept);
 
-  // JWT do cookie -> Authorization Bearer
-  const token = req.cookies.get("token")?.value;
-  if (token) headers.set("authorization", `Bearer ${token}`);
+  const incomingAuthorization = req.headers.get("authorization");
+  if (incomingAuthorization) {
+    headers.set("authorization", incomingAuthorization);
+  } else {
+    const token = req.cookies.get("token")?.value;
+    if (token) headers.set("authorization", `Bearer ${token}`);
+  }
 
   const method = req.method.toUpperCase();
   const init: RequestInit = { method, headers };

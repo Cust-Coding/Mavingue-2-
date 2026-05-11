@@ -11,6 +11,7 @@ export const endpoints = {
 
   users: "/api/users",
   products: "/api/products",
+  productCategories: "/api/product-categories",
   ferragem: "/api/ferragem",
   customer: "/api/customer",
   stock: "/api/stock",
@@ -19,6 +20,7 @@ export const endpoints = {
   stockByProduto: (id: number) => `/api/stock/produto/${id}`,
   vendas: "/api/vendas",
   compras: "/api/facturas-compra",
+  auditoria: "/api/auditoria",
   address: "/api/address",
   customerWater: "/api/customer-water",
   customerWaterPending: "/api/customer-water/pendentes",

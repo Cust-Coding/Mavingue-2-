@@ -1,7 +1,7 @@
-export default function Page() {
-  return (
-    <main>
-      <h1>Admin — Relatórios — Vendas</h1>
-    </main>
-  );
+"use client";
+
+import { SalesReportPage } from "@/features/reports/SalesReportPage";
+
+export default function AdminSalesReportPage() {
+  return <SalesReportPage />;
 }

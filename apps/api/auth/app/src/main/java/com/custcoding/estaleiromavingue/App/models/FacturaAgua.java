@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -41,6 +42,12 @@ public class FacturaAgua {
     @Enumerated(EnumType.STRING)
     @Column(name = "forma_pagamento", nullable = false)
     private FormaPagamento formaPagamento;
+
+    @Column(name = "valor_pago", precision = 18, scale = 2)
+    private BigDecimal valorPago;
+
+    @Column(name = "troco", precision = 18, scale = 2)
+    private BigDecimal troco;
 
      @ManyToOne
     @JoinColumn(name = "id_consumidor", nullable = false)

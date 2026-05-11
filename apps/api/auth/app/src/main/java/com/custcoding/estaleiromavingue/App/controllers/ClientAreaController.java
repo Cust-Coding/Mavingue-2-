@@ -1,6 +1,10 @@
 package com.custcoding.estaleiromavingue.App.controllers;
 
+import com.custcoding.estaleiromavingue.App.auth.dto.MeResponse;
+import com.custcoding.estaleiromavingue.App.dtos.client_area.ClientAreaAccountUpdateDTO;
+import com.custcoding.estaleiromavingue.App.dtos.client_area.ClientAreaCustomerUpdateDTO;
 import com.custcoding.estaleiromavingue.App.dtos.client_area.ClientAreaProfileDTO;
+import com.custcoding.estaleiromavingue.App.dtos.customer.CustomerResponseDTO;
 import com.custcoding.estaleiromavingue.App.dtos.customer_water.CustomerWaterClientUpdateDTO;
 import com.custcoding.estaleiromavingue.App.dtos.customer_water.CustomerWaterRequestCreateDTO;
 import com.custcoding.estaleiromavingue.App.dtos.customer_water.CustomerWaterResponseDTO;
@@ -19,6 +23,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -36,6 +41,22 @@ public class ClientAreaController {
     @GetMapping("/profile")
     public ClientAreaProfileDTO profile(Authentication authentication) {
         return clientAreaService.profile(authentication.getName());
+    }
+
+    @PutMapping("/profile/account")
+    public MeResponse updateAccount(
+            @Valid @RequestBody ClientAreaAccountUpdateDTO dto,
+            Authentication authentication
+    ) {
+        return clientAreaService.updateAccount(authentication.getName(), dto);
+    }
+
+    @PutMapping("/profile/customer")
+    public CustomerResponseDTO updateCustomerProfile(
+            @Valid @RequestBody ClientAreaCustomerUpdateDTO dto,
+            Authentication authentication
+    ) {
+        return clientAreaService.updateCustomerProfile(authentication.getName(), dto);
     }
 
     @GetMapping("/compras")

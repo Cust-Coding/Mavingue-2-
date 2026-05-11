@@ -1122,6 +1122,7 @@ export function WaterReadingsPage({ scope: _scope }: { scope: Scope }) {
 export function WaterBillsPage({ scope: _scope }: { scope: Scope }) {
   const [bills, setBills] = useState<WaterBill[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("DINHEIRO_FISICO");
+  const [valorPago, setValorPago] = useState("");
   const [loading, setLoading] = useState(true);
   const [payingId, setPayingId] = useState<number | null>(null);
   const [error, setError] = useState("");
@@ -1145,13 +1146,26 @@ export function WaterBillsPage({ scope: _scope }: { scope: Scope }) {
   }, []);
 
   async function handlePay(id: number) {
+    const currentBill = bills.find((bill) => bill.id === id);
+    if (!currentBill) return;
+
+    if (paymentMethod === "DINHEIRO_FISICO" && Number(valorPago || 0) < Number(currentBill.valorTotal || 0)) {
+      setError("O valor fisico recebido nao pode ser inferior ao total da factura.");
+      return;
+    }
+
     setPayingId(id);
     setError("");
     setSuccess("");
     try {
-      const updated = await payWaterBill(id, { formaPagamento: paymentMethod });
+      const updated = await payWaterBill(id, {
+        formaPagamento: paymentMethod,
+        valorPago: paymentMethod === "DINHEIRO_FISICO" ? Number(valorPago || 0) : undefined,
+      });
       setBills((current) => current.map((bill) => (bill.id === updated.id ? updated : bill)));
       setSuccess("Pagamento confirmado com sucesso.");
+      setValorPago("");
+      printWaterBillDocument(updated, { autoPrint: true });
     } catch (reason) {
       setError(getErrorMessage(reason, "Nao foi possivel confirmar o pagamento."));
     } finally {
@@ -1180,7 +1194,7 @@ export function WaterBillsPage({ scope: _scope }: { scope: Scope }) {
         title="Cobranca e comprovativos"
         description="Nesta pagina ficam apenas as facturas de agua, os pagamentos e a impressao dos comprovativos."
       >
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <select
             value={paymentMethod}
             onChange={(event) => setPaymentMethod(event.target.value as PaymentMethod)}
@@ -1192,6 +1206,17 @@ export function WaterBillsPage({ scope: _scope }: { scope: Scope }) {
               </option>
             ))}
           </select>
+          {paymentMethod === "DINHEIRO_FISICO" ? (
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              value={valorPago}
+              onChange={(event) => setValorPago(event.target.value)}
+              placeholder="Valor recebido"
+              className="h-12 min-w-[220px] rounded-2xl border-slate-200 px-4"
+            />
+          ) : null}
           <Button type="button" variant="outline" onClick={load} disabled={loading}>
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
             Recarregar
@@ -1227,7 +1252,7 @@ export function WaterBillsPage({ scope: _scope }: { scope: Scope }) {
                     </span>
                     <Button type="button" variant="outline" onClick={() => printWaterBillDocument(bill)}>
                       <FileText className="h-4 w-4" />
-                      PDF
+                      Imprimir recibo
                     </Button>
                     {bill.estadoPagamento !== "PAGO" && (
                       <Button

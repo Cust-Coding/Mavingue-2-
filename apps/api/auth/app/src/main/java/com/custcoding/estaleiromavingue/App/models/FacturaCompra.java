@@ -1,10 +1,13 @@
 package com.custcoding.estaleiromavingue.App.models;
 
+import com.custcoding.estaleiromavingue.App.models.status.FormaPagamento;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -36,6 +39,21 @@ public class FacturaCompra {
  @Column(name = "total", precision = 18, scale = 2)
  private BigDecimal total;
 
+ @Enumerated(EnumType.STRING)
+ @Column(name = "forma_pagamento", length = 40)
+ private FormaPagamento formaPagamento = FormaPagamento.DINHEIRO_FISICO;
+
+ @Column(name = "valor_pago", precision = 18, scale = 2)
+ private BigDecimal valorPago;
+
+ @Column(name = "troco", precision = 18, scale = 2)
+ private BigDecimal troco;
+
  @Column(name = "criado_em", nullable = false)
  private Instant criadoEm = Instant.now();
+
+ @Builder.Default
+ @OneToMany(mappedBy = "facturaCompra", cascade = CascadeType.ALL, orphanRemoval = true)
+ @OrderBy("id ASC")
+ private List<FacturaCompraItem> items = new ArrayList<>();
 }

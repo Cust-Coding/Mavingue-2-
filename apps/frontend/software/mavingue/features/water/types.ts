@@ -43,6 +43,8 @@ export interface WaterBill {
   valorTotal: number;
   estadoPagamento: "PENDENTE" | "PAGO" | "ATRASADO" | string;
   formaPagamento: "CARTEIRA_MOVEL" | "CARTAO" | "DINHEIRO_FISICO" | string;
+  valorPago?: number | null;
+  troco?: number | null;
   consumidorId: number;
   consumidorNome: string;
   houseNR: string | null;
@@ -51,6 +53,7 @@ export interface WaterBill {
 
 export interface WaterBillPaymentCreate {
   formaPagamento: "CARTEIRA_MOVEL" | "CARTAO" | "DINHEIRO_FISICO";
+  valorPago?: number;
 }
 
 export interface WaterRequestDecision {

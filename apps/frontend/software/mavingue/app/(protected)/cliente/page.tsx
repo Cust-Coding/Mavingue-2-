@@ -271,7 +271,7 @@ export default function ClienteHome() {
                                 onClick={() => printSaleDocument(order)}
                                 className="text-xs font-medium text-slate-500 transition hover:text-orange-600 dark:text-slate-400 dark:hover:text-orange-400"
                               >
-                                PDF
+                                Recibo
                               </button>
                             </div>
                           </div>
@@ -356,7 +356,7 @@ export default function ClienteHome() {
                           onClick={() => printWaterBillDocument(pendingBill)}
                           className="inline-flex items-center gap-1 text-xs font-medium text-slate-600 transition hover:text-orange-600 dark:text-slate-400 dark:hover:text-orange-400"
                         >
-                          <Download className="h-3 w-3" /> PDF
+                          <Download className="h-3 w-3" /> Recibo
                         </button>
                         <Link
                           href="/cliente/agua"

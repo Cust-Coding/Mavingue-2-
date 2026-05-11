@@ -66,7 +66,7 @@ export default function ClienteCompras() {
           Todas as compras do cliente
         </h1>
         <p className="mt-3 max-w-3xl text-base leading-7 text-slate-500 dark:text-slate-400">
-          Esta tabela mostra todas as compras, o estado de levantamento e o acesso ao PDF de cada documento.
+          Esta tabela mostra todas as compras, o estado de levantamento e o acesso ao recibo de cada documento.
         </p>
 
         <div className="mt-5 flex flex-wrap gap-2">
@@ -122,6 +122,9 @@ export default function ClienteCompras() {
                       label={formatPickupStatus(order.estadoLevantamento)}
                       tone={pickupTone(order.estadoLevantamento)}
                     />
+                    <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-200">
+                      {order.totalItens ?? order.items?.length ?? 1} item(ns)
+                    </span>
                   </div>
 
                   <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
@@ -150,6 +153,25 @@ export default function ClienteCompras() {
                       Nota da equipa: {order.levantamentoNotas}
                     </p>
                   )}
+
+                  {order.items?.length ? (
+                    <div className="mt-4 grid gap-3 md:grid-cols-2">
+                      {order.items.map((item) => (
+                        <div
+                          key={`${order.id}-${item.produtoId}`}
+                          className="rounded-[20px] border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <p className="font-bold text-slate-900 dark:text-white">{item.produtoNome}</p>
+                              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Qtd. {item.quantidade}</p>
+                            </div>
+                            <p className="font-bold text-slate-900 dark:text-white">{formatMoney(item.subtotal)}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
 
                 <div className="flex flex-wrap gap-2 xl:flex-col xl:items-end">
@@ -164,7 +186,7 @@ export default function ClienteCompras() {
                     onClick={() => printSaleDocument(order)}
                     className="inline-flex h-11 items-center justify-center rounded-2xl bg-slate-950 px-4 text-sm font-bold text-white transition hover:bg-orange-600 dark:bg-white dark:text-slate-950"
                   >
-                    Baixar PDF
+                    Imprimir recibo
                   </button>
                 </div>
               </div>

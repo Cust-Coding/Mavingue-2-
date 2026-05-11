@@ -36,11 +36,12 @@ public class PermissionService {
             return AppPermission.allPermissions();
         }
 
-        if (user.getPermissions() == null || user.getPermissions().isEmpty()) {
-            return AppPermission.defaultForRole(user.getRole());
+        LinkedHashSet<AppPermission> permissions = new LinkedHashSet<>(AppPermission.defaultForRole(user.getRole()));
+        if (user.getPermissions() != null && !user.getPermissions().isEmpty()) {
+            permissions.addAll(user.getPermissions());
         }
 
-        return new LinkedHashSet<>(user.getPermissions());
+        return permissions;
     }
 
     public Set<String> effectivePermissionKeys(AppUser user) {

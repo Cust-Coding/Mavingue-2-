@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { Product } from "@/features/products/types";
-import { inferProductCategory } from "@/lib/catalog";
+import { formatCatalogCategory } from "@/lib/catalog";
 import { formatMoney } from "@/lib/formatters";
 import { useCartStore } from "@/store/cart.store";
 
@@ -18,7 +18,7 @@ export function ProductCard({ product }: { product: Product }) {
     return () => window.clearTimeout(timer);
   }, [justAdded]);
 
-  const category = inferProductCategory(product);
+  const category = formatCatalogCategory(product.category);
 
   return (
     <article className="group flex h-full flex-col justify-between rounded-[28px]

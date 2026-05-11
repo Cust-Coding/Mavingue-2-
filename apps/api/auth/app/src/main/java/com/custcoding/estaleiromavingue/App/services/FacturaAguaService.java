@@ -9,9 +9,12 @@ import com.custcoding.estaleiromavingue.App.models.status.EstadoPagamento;
 import com.custcoding.estaleiromavingue.App.repositories.FacturaAguaRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -45,6 +48,15 @@ public class FacturaAguaService {
         FacturaAgua factura = findById(id);
         factura.setEstadoPagamento(EstadoPagamento.PAGO);
         factura.setFormaPagamento(dto.formaPagamento());
+        BigDecimal total = BigDecimal.valueOf(factura.getValorTotal());
+        BigDecimal valorPago = dto.formaPagamento() == com.custcoding.estaleiromavingue.App.models.status.FormaPagamento.DINHEIRO_FISICO
+                ? (dto.valorPago() == null ? total : dto.valorPago())
+                : total;
+        if (valorPago.compareTo(total) < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Valor pago insuficiente para concluir o pagamento");
+        }
+        factura.setValorPago(valorPago);
+        factura.setTroco(valorPago.subtract(total));
         return toDTO(facturaAguaRepository.save(factura));
     }
 
@@ -64,6 +76,8 @@ public class FacturaAguaService {
                 factura.getValorTotal(),
                 factura.getEstadoPagamento(),
                 factura.getFormaPagamento(),
+                factura.getValorPago(),
+                factura.getTroco(),
                 consumidor == null ? null : consumidor.getId(),
                 consumidor == null ? "Consumidor nao identificado" : consumidor.getName(),
                 consumidor == null ? null : consumidor.getHouseNR(),

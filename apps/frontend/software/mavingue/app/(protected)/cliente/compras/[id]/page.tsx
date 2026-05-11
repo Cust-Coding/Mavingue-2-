@@ -62,7 +62,7 @@ export default function ClienteCompraDetalhe() {
                 onClick={() => printSaleDocument(order)}
                 className="inline-flex h-11 items-center justify-center rounded-2xl bg-slate-950 px-4 text-sm font-bold text-white transition hover:bg-orange-600 dark:bg-white dark:text-slate-950"
               >
-                Baixar PDF
+                Imprimir recibo
               </button>
             )}
           </div>
@@ -85,12 +85,12 @@ export default function ClienteCompraDetalhe() {
         <>
           <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Produto</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Resumo</p>
               <div className="mt-3 text-xl font-black text-slate-900 dark:text-white">{order.produtoNome}</div>
             </div>
             <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Quantidade</p>
-              <div className="mt-3 text-xl font-black text-slate-900 dark:text-white">{order.quantidade}</div>
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Itens</p>
+              <div className="mt-3 text-xl font-black text-slate-900 dark:text-white">{order.totalItens ?? order.items?.length ?? 1}</div>
             </div>
             <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Pagamento</p>
@@ -184,6 +184,28 @@ export default function ClienteCompraDetalhe() {
               </div>
             </aside>
           </section>
+
+          {order.items?.length ? (
+            <section className="rounded-[32px] border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">Itens do pedido</p>
+              <div className="mt-5 grid gap-4 md:grid-cols-2">
+                {order.items.map((item) => (
+                  <div
+                    key={`${order.id}-${item.produtoId}`}
+                    className="rounded-[24px] border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-bold text-slate-900 dark:text-white">{item.produtoNome}</p>
+                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Qtd. {item.quantidade}</p>
+                      </div>
+                      <p className="font-bold text-slate-900 dark:text-white">{formatMoney(item.subtotal)}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ) : null}
         </>
       )}
     </main>

@@ -5,8 +5,11 @@ import com.custcoding.estaleiromavingue.App.models.Stock;
 import com.custcoding.estaleiromavingue.App.products.dto.ProductCreateRequest;
 import com.custcoding.estaleiromavingue.App.products.dto.ProductUpdateRequest;
 import com.custcoding.estaleiromavingue.App.repositories.FerragemRepository;
+import com.custcoding.estaleiromavingue.App.repositories.ProductCategoryRepository;
 import com.custcoding.estaleiromavingue.App.repositories.ProductRepository;
 import com.custcoding.estaleiromavingue.App.repositories.StockRepository;
+import com.custcoding.estaleiromavingue.App.services.AuditLogService;
+import com.custcoding.estaleiromavingue.App.services.ProductCategoryService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,14 +24,18 @@ public class ProductService {
     private final ProductRepository repo;
     private final StockRepository stockRepository;
     private final FerragemRepository ferragemRepository;
+    private final ProductCategoryRepository productCategoryRepository;
+    private final ProductCategoryService productCategoryService;
+    private final AuditLogService auditLogService;
 
-    public Product create(ProductCreateRequest req) {
-        Product p = new Product();
-        p.setName(req.name());
-        p.setDescription(req.description());
-        p.setPrice(req.price());
-        p.setUrlImg(req.urlImg());
-        Product saved = repo.save(p);
+    public Product create(String userIdFromAuth, ProductCreateRequest req) {
+        Product product = new Product();
+        product.setName(req.name());
+        product.setDescription(req.description());
+        product.setPrice(req.price());
+        product.setCategory(normalizeCategory(req.category()));
+        product.setUrlImg(req.urlImg());
+        Product saved = repo.save(product);
 
         ferragemRepository.findAll().stream().findFirst().ifPresent(ferragem -> {
             if (stockRepository.findByProduto_Id(saved.getId()).isEmpty()) {
@@ -41,6 +48,7 @@ public class ProductService {
             }
         });
 
+        auditLogService.logByUserId(userIdFromAuth, "PRODUCT_CREATE", "PRODUCT", saved.getId(), "Produto criado: " + saved.getName());
         return saved;
     }
 
@@ -52,28 +60,44 @@ public class ProductService {
     @Transactional(readOnly = true)
     public Product get(Long id) {
         return repo.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Produto não encontrado: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Produto nao encontrado: " + id));
     }
 
-    public Product update(Long id, ProductUpdateRequest req) {
-        Product p = get(id);
+    public Product update(String userIdFromAuth, Long id, ProductUpdateRequest req) {
+        Product product = get(id);
 
-        if (req.name() != null) p.setName(req.name());
-        if (req.description() != null) p.setDescription(req.description());
-        if (req.price() != null) p.setPrice(req.price());
-        if (req.urlImg() != null) p.setUrlImg(req.urlImg());
+        if (req.name() != null) product.setName(req.name());
+        if (req.description() != null) product.setDescription(req.description());
+        if (req.price() != null) product.setPrice(req.price());
+        if (req.category() != null) product.setCategory(normalizeCategory(req.category()));
+        if (req.urlImg() != null) product.setUrlImg(req.urlImg());
 
-        return repo.save(p);
+        Product saved = repo.save(product);
+        auditLogService.logByUserId(userIdFromAuth, "PRODUCT_UPDATE", "PRODUCT", saved.getId(), "Produto actualizado: " + saved.getName());
+        return saved;
     }
 
-    public void delete(Long id) {
-        Product product =  repo.findById(id)
-                        .orElseThrow(() -> new EntityNotFoundException("Produto não encontrado: " + id));
+    public void delete(String userIdFromAuth, Long id) {
+        Product product = repo.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Produto nao encontrado: " + id));
         repo.delete(product);
+        auditLogService.logByUserId(userIdFromAuth, "PRODUCT_DELETE", "PRODUCT", id, "Produto removido: " + product.getName());
     }
+
     public Integer getAvailableStock(Long productId) {
         return stockRepository.findByProduto_Id(productId)
                 .map(stock -> stock.getQuantidade() == null ? 0 : stock.getQuantidade())
                 .orElse(0);
+    }
+
+    private String normalizeCategory(String value) {
+        productCategoryService.ensureDefaultCategories();
+        if (value == null || value.isBlank()) {
+            return "construcao";
+        }
+        String normalized = value.trim().toLowerCase();
+        return productCategoryRepository.findBySlug(normalized)
+                .map(category -> category.getSlug())
+                .orElse(normalized);
     }
 }

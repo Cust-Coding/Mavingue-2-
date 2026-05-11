@@ -9,6 +9,7 @@ public record ProductResponse(
         String name,
         String description,
         BigDecimal price,
+        String category,
         String urlImg,
         Integer stockDisponivel
 ) {
@@ -18,6 +19,7 @@ public record ProductResponse(
                 p.getName(),
                 p.getDescription(),
                 p.getPrice(),
+                p.getCategory(),
                 p.getUrlImg(),
                 stockDisponivel
         );

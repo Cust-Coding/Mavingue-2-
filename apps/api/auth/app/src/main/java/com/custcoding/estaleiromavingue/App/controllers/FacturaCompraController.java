@@ -5,6 +5,7 @@ import com.custcoding.estaleiromavingue.App.dtos.factura_compra.FacturaCompraRes
 import com.custcoding.estaleiromavingue.App.services.FacturaCompraService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,16 +23,19 @@ public class FacturaCompraController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("@permissionService.hasPermission(authentication, 'purchases.manage')")
     public FacturaCompraResponseDTO create(@Valid @RequestBody FacturaCompraCreateDTO dto, Authentication authentication) {
         return service.create(authentication.getName(), dto);
     }
 
     @GetMapping
+    @PreAuthorize("@permissionService.hasPermission(authentication, 'purchases.view')")
     public List<FacturaCompraResponseDTO> list() {
         return service.list();
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("@permissionService.hasPermission(authentication, 'purchases.view')")
     public FacturaCompraResponseDTO get(@PathVariable Long id) {
         return service.get(id);
     }

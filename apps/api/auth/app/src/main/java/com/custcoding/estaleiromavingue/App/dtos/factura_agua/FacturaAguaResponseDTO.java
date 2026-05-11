@@ -3,6 +3,7 @@ package com.custcoding.estaleiromavingue.App.dtos.factura_agua;
 import com.custcoding.estaleiromavingue.App.models.status.EstadoPagamento;
 import com.custcoding.estaleiromavingue.App.models.status.FormaPagamento;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public record FacturaAguaResponseDTO(
@@ -13,6 +14,8 @@ public record FacturaAguaResponseDTO(
         double valorTotal,
         EstadoPagamento estadoPagamento,
         FormaPagamento formaPagamento,
+        BigDecimal valorPago,
+        BigDecimal troco,
         Long consumidorId,
         String consumidorNome,
         String houseNR,

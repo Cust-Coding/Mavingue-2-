@@ -31,7 +31,31 @@ export const catalogSortOptions: { value: CatalogSort; label: string }[] = [
   { value: "preco-desc", label: "Preco decrescente" },
 ];
 
-export function inferProductCategory(product: Product): CatalogCategory {
+function normalizeCatalogCategory(value?: string | null): CatalogCategory | null {
+  if (!value) return null;
+  const normalized = value.trim().toLowerCase();
+
+  if (normalized === "construcao") return "construcao";
+  if (normalized === "ferragem") return "ferragem";
+  if (normalized === "agua") return "agua";
+  if (normalized === "premium") return "premium";
+  return null;
+}
+
+function titleFromSlug(value: string) {
+  return value
+    .split("-")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+export function inferProductCategory(product: Product): string {
+  const explicitCategory = product.category?.trim().toLowerCase();
+  if (explicitCategory) {
+    return explicitCategory;
+  }
+
   const source = `${product.name} ${product.description}`.toLowerCase();
 
   for (const [category, keywords] of Object.entries(categoryMatchers) as Array<
@@ -43,6 +67,18 @@ export function inferProductCategory(product: Product): CatalogCategory {
   }
 
   return "construcao";
+}
+
+export function formatCatalogCategory(category?: string | null) {
+  const normalized = category?.trim().toLowerCase();
+  if (normalized) {
+    return catalogCategories.find((item) => item.value === normalized)?.label ?? titleFromSlug(normalized);
+  }
+  return "Construcao";
+}
+
+function inferCategoryFromValue(category?: string | null): CatalogCategory {
+  return normalizeCatalogCategory(category) ?? "construcao";
 }
 
 export function filterCatalogProducts(products: Product[], params: FilterParams) {

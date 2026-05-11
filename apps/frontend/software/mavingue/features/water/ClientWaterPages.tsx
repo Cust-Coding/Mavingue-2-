@@ -503,7 +503,7 @@ export function ClientWaterBillsPage() {
                     </span>
                     <Button type="button" variant="outline" onClick={() => printWaterBillDocument(bill)}>
                       <FileText className="h-4 w-4" />
-                      PDF
+                      Imprimir recibo
                     </Button>
                   </div>
                 </div>
@@ -519,6 +519,7 @@ export function ClientWaterBillsPage() {
 export function ClientWaterPaymentsPage() {
   const [bills, setBills] = useState<WaterBill[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("DINHEIRO_FISICO");
+  const [valorPago, setValorPago] = useState("");
   const [loading, setLoading] = useState(true);
   const [payingId, setPayingId] = useState<number | null>(null);
   const [error, setError] = useState("");
@@ -541,13 +542,26 @@ export function ClientWaterPaymentsPage() {
   }, []);
 
   async function handlePay(id: number) {
+    const currentBill = bills.find((bill) => bill.id === id);
+    if (!currentBill) return;
+
+    if (paymentMethod === "DINHEIRO_FISICO" && Number(valorPago || 0) < Number(currentBill.valorTotal || 0)) {
+      setError("O valor fisico recebido nao pode ser inferior ao total da factura.");
+      return;
+    }
+
     setPayingId(id);
     setError("");
     setSuccess("");
     try {
-      const updated = await payClientWaterBill(id, { formaPagamento: paymentMethod });
+      const updated = await payClientWaterBill(id, {
+        formaPagamento: paymentMethod,
+        valorPago: paymentMethod === "DINHEIRO_FISICO" ? Number(valorPago || 0) : undefined,
+      });
       setBills((current) => current.map((bill) => (bill.id === updated.id ? updated : bill)));
       setSuccess(`Pagamento confirmado por ${formatPaymentMethod(paymentMethod)}.`);
+      setValorPago("");
+      printWaterBillDocument(updated, { autoPrint: true });
     } catch (reason) {
       setError(getErrorMessage(reason, "Nao foi possivel processar o pagamento."));
     } finally {
@@ -563,15 +577,29 @@ export function ClientWaterPaymentsPage() {
         title="Pagamentos de agua"
         description="Os pagamentos ficam isolados nesta pagina para que a factura e a accao de pagar nao se confundam."
       >
-        <select
-          value={paymentMethod}
-          onChange={(event) => setPaymentMethod(event.target.value as PaymentMethod)}
-          className="h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100"
-        >
-          <option value="DINHEIRO_FISICO">Dinheiro fisico</option>
-          <option value="CARTEIRA_MOVEL">Carteira movel</option>
-          <option value="CARTAO">Cartao</option>
-        </select>
+        <div className="flex flex-wrap gap-3">
+          <select
+            value={paymentMethod}
+            onChange={(event) => setPaymentMethod(event.target.value as PaymentMethod)}
+            className="h-12 rounded-2xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-cyan-400 focus:ring-4 focus:ring-cyan-100"
+          >
+            <option value="DINHEIRO_FISICO">Dinheiro fisico</option>
+            <option value="CARTEIRA_MOVEL">Carteira movel</option>
+            <option value="CARTAO">Cartao</option>
+          </select>
+
+          {paymentMethod === "DINHEIRO_FISICO" ? (
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              value={valorPago}
+              onChange={(event) => setValorPago(event.target.value)}
+              placeholder="Valor recebido"
+              className="h-12 min-w-[220px] rounded-2xl border-slate-200 px-4"
+            />
+          ) : null}
+        </div>
       </PageHeader>
 
       <MessageStack error={error} success={success} />
@@ -594,7 +622,7 @@ export function ClientWaterPaymentsPage() {
                   <div className="flex flex-wrap items-center gap-2">
                     <Button type="button" variant="outline" onClick={() => printWaterBillDocument(bill)}>
                       <FileText className="h-4 w-4" />
-                      PDF
+                      Imprimir recibo
                     </Button>
                     <Button
                       type="button"

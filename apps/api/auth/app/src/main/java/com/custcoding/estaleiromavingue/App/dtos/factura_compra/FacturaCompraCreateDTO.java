@@ -1,10 +1,17 @@
 package com.custcoding.estaleiromavingue.App.dtos.factura_compra;
 
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotNull;
+import com.custcoding.estaleiromavingue.App.models.status.FormaPagamento;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMin;
+
+import java.math.BigDecimal;
+import java.util.List;
 
 public record FacturaCompraCreateDTO(
-        @NotNull Long produtoId,
-        @NotNull @Min(1) Integer quantidade,
-        Long funcionarioId
+        Long produtoId,
+        Integer quantidade,
+        Long funcionarioId,
+        FormaPagamento formaPagamento,
+        @DecimalMin(value = "0.0", inclusive = false) BigDecimal valorPago,
+        List<@Valid FacturaCompraItemCreateDTO> items
 ) {}

@@ -17,7 +17,7 @@ import {
 } from "@/features/users/api";
 import type { PermissionDefinition, Role, UserResponse, UserStatus, UserUpdateRequest } from "@/features/users/types";
 import { getErrorMessage, getFieldErrors } from "@/lib/errors";
-import { getSessionUser } from "@/lib/auth/session";
+import { getSessionUser, updateSessionUser } from "@/lib/auth/session";
 import {
   normalizeEmail,
   normalizeMozPhone,
@@ -92,6 +92,15 @@ export function UserDetailPage({ scope, userId }: { scope: Scope; userId: number
   }, [catalog]);
 
   async function load() {
+    if (!Number.isFinite(userId) || userId <= 0) {
+      setUser(null);
+      setCatalog([]);
+      setSelectedPermissions([]);
+      setError("Identificador de utilizador invalido.");
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError("");
     try {
@@ -172,6 +181,9 @@ export function UserDetailPage({ scope, userId }: { scope: Scope; userId: number
       setUser(updated);
       setSelectedPermissions(Array.from(updated.permissions ?? []));
       setForm((current) => ({ ...current, password: "" }));
+      if (sessionUser?.id === updated.id) {
+        updateSessionUser(updated);
+      }
       setSuccess("Dados da conta actualizados com sucesso.");
     } catch (reason) {
       const apiErrors = getFieldErrors(reason);
@@ -196,6 +208,9 @@ export function UserDetailPage({ scope, userId }: { scope: Scope; userId: number
     try {
       const updated = await updateUserStatus(user.id, status);
       setUser(updated);
+      if (sessionUser?.id === updated.id) {
+        updateSessionUser(updated);
+      }
       setSuccess("Estado actualizado com sucesso.");
     } catch (reason) {
       setError(getErrorMessage(reason, "Nao foi possivel actualizar o estado."));
@@ -232,6 +247,9 @@ export function UserDetailPage({ scope, userId }: { scope: Scope; userId: number
     try {
       const updated = await updateUserPermissions(user.id, selectedPermissions);
       setUser(updated);
+      if (sessionUser?.id === updated.id) {
+        updateSessionUser(updated);
+      }
       setSuccess("Permissoes actualizadas com sucesso.");
     } catch (reason) {
       setError(getErrorMessage(reason, "Nao foi possivel actualizar as permissoes."));

@@ -8,5 +8,6 @@ public record StockAdjustDTO(
         @NotNull Long produtoId,
         @NotNull TipoMovimento tipo,   // ENTRADA ou SAIDA
         @NotNull @Min(1) Integer quantidade,
-        String motivo
+        String motivo,
+        @Min(0) Integer stockMinimo
 ) {}

@@ -1,7 +1,7 @@
-export default function Page() {
-  return (
-    <main>
-      <h1>Admin — Relatórios — Stock</h1>
-    </main>
-  );
+"use client";
+
+import { StockReportPage } from "@/features/reports/StockReportPage";
+
+export default function AdminStockReportPage() {
+  return <StockReportPage />;
 }

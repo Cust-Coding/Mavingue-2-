@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 
@@ -70,14 +71,17 @@ public class AccountSyncService {
 
         String normalizedPhone = phoneNumberService.normalize(user.getPhone());
         if (normalizedPhone != null) {
-            Optional<CustomerProduct> byPhone = customerRepository.findByPhone(normalizedPhone);
+            Optional<CustomerProduct> byPhone = customerRepository.findByPhone(normalizedPhone)
+                    .filter(customer -> canAttachCustomer(customer, user));
             if (byPhone.isPresent()) {
                 return byPhone;
             }
         }
 
-        if (user.getEmail() != null && !user.getEmail().isBlank()) {
-            return customerRepository.findByEmail(user.getEmail().trim().toLowerCase());
+        String normalizedEmail = normalizeEmail(user.getEmail());
+        if (normalizedEmail != null) {
+            return customerRepository.findByEmail(normalizedEmail)
+                    .filter(customer -> canAttachCustomer(customer, user));
         }
 
         return Optional.empty();
@@ -91,22 +95,35 @@ public class AccountSyncService {
         }
 
         if (customer != null && customer.getId() != null) {
-            matches.addAll(customerWaterRepository.findByCustomer_IdOrderByCreatedDesc(customer.getId()));
+            matches.addAll(customerWaterRepository.findByCustomer_IdOrderByCreatedDesc(customer.getId()).stream()
+                    .filter(water -> canAttachWaterRecord(water, user, customer))
+                    .toList());
         }
 
         if (customer != null && customer.getPhone() != null) {
-            matches.addAll(customerWaterRepository.findByPhoneOrderByCreatedDesc(customer.getPhone()));
+            matches.addAll(customerWaterRepository.findByPhoneOrderByCreatedDesc(customer.getPhone()).stream()
+                    .filter(water -> canAttachWaterRecord(water, user, customer))
+                    .toList());
         } else if (user != null && user.getPhone() != null) {
             String normalizedPhone = phoneNumberService.normalize(user.getPhone());
             if (normalizedPhone != null) {
-                matches.addAll(customerWaterRepository.findByPhoneOrderByCreatedDesc(normalizedPhone));
+                matches.addAll(customerWaterRepository.findByPhoneOrderByCreatedDesc(normalizedPhone).stream()
+                        .filter(water -> canAttachWaterRecord(water, user, customer))
+                        .toList());
             }
         }
 
         if (customer != null && customer.getEmail() != null && !customer.getEmail().isBlank()) {
-            matches.addAll(customerWaterRepository.findByEmailOrderByCreatedDesc(customer.getEmail().trim().toLowerCase()));
+            matches.addAll(customerWaterRepository.findByEmailOrderByCreatedDesc(customer.getEmail().trim().toLowerCase(Locale.ROOT)).stream()
+                    .filter(water -> canAttachWaterRecord(water, user, customer))
+                    .toList());
         } else if (user != null && user.getEmail() != null && !user.getEmail().isBlank()) {
-            matches.addAll(customerWaterRepository.findByEmailOrderByCreatedDesc(user.getEmail().trim().toLowerCase()));
+            String normalizedEmail = normalizeEmail(user.getEmail());
+            if (normalizedEmail != null) {
+                matches.addAll(customerWaterRepository.findByEmailOrderByCreatedDesc(normalizedEmail).stream()
+                        .filter(water -> canAttachWaterRecord(water, user, customer))
+                        .toList());
+            }
         }
 
         if (matches.isEmpty()) {
@@ -135,5 +152,47 @@ public class AccountSyncService {
         if (customer != null) {
             customerRepository.save(customer);
         }
+    }
+
+    private boolean canAttachCustomer(CustomerProduct customer, AppUser user) {
+        if (customer.getAppUser() == null) {
+            return true;
+        }
+        return user.getId() != null
+                && customer.getAppUser().getId() != null
+                && customer.getAppUser().getId().equals(user.getId());
+    }
+
+    private boolean canAttachWaterRecord(CustomerWater water, AppUser user, CustomerProduct customer) {
+        if (water.getAppUser() != null) {
+            if (user == null || user.getId() == null || water.getAppUser().getId() == null) {
+                return false;
+            }
+            if (!water.getAppUser().getId().equals(user.getId())) {
+                return false;
+            }
+        }
+
+        if (water.getCustomer() != null) {
+            if (customer != null) {
+                return water.getCustomer().getId() != null && water.getCustomer().getId().equals(customer.getId());
+            }
+
+            if (water.getCustomer().getAppUser() != null) {
+                return user != null
+                        && user.getId() != null
+                        && water.getCustomer().getAppUser().getId() != null
+                        && water.getCustomer().getAppUser().getId().equals(user.getId());
+            }
+        }
+
+        return true;
+    }
+
+    private String normalizeEmail(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim().toLowerCase(Locale.ROOT);
     }
 }

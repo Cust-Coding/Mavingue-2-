@@ -5,11 +5,13 @@ import com.custcoding.estaleiromavingue.App.models.status.FormaPagamento;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 
 public record VendaResponseDTO(
         Long id,
         Long produtoId,
         String produtoNome,
+        String categoria,
         Long clienteId,
         String clienteNome,
         Long funcionarioId,
@@ -20,7 +22,11 @@ public record VendaResponseDTO(
         FormaPagamento formaPagamento,
         EstadoLevantamento estadoLevantamento,
         String levantamentoNotas,
+        BigDecimal valorPago,
+        BigDecimal troco,
         Instant criadoEm,
         Instant atualizadoEm,
-        Instant levantadoEm
+        Instant levantadoEm,
+        Integer totalItens,
+        List<VendaItemResponseDTO> items
 ) {}

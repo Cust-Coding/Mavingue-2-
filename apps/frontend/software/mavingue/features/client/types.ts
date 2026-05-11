@@ -20,6 +20,23 @@ export type ClientProfile = {
   waterCustomers: WaterCustomer[];
 };
 
+export type ClientAccountUpdate = {
+  nome: string;
+  email?: string | null;
+  phone: string;
+};
+
+export type ClientCustomerUpdate = {
+  name: string;
+  sex: "HOMEM" | "MULHER";
+  phone: string;
+  email?: string | null;
+  birthDate: string;
+  provincia: string;
+  cidade: string;
+  bairro: string;
+};
+
 export type ClientOrder = Venda;
 
 export type ClientCheckoutItem = {

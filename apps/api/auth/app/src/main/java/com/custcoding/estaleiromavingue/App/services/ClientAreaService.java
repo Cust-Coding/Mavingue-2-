@@ -1,6 +1,8 @@
 package com.custcoding.estaleiromavingue.App.services;
 
 import com.custcoding.estaleiromavingue.App.auth.dto.MeResponse;
+import com.custcoding.estaleiromavingue.App.dtos.client_area.ClientAreaAccountUpdateDTO;
+import com.custcoding.estaleiromavingue.App.dtos.client_area.ClientAreaCustomerUpdateDTO;
 import com.custcoding.estaleiromavingue.App.dtos.client_area.ClientAreaProfileDTO;
 import com.custcoding.estaleiromavingue.App.dtos.customer.CustomerResponseDTO;
 import com.custcoding.estaleiromavingue.App.dtos.customer_water.CustomerWaterClientUpdateDTO;
@@ -22,6 +24,7 @@ import com.custcoding.estaleiromavingue.App.models.LigacaoAgua;
 import com.custcoding.estaleiromavingue.App.models.Owner;
 import com.custcoding.estaleiromavingue.App.models.Venda;
 import com.custcoding.estaleiromavingue.App.models.status.EstadoPagamento;
+import com.custcoding.estaleiromavingue.App.models.status.FormaPagamento;
 import com.custcoding.estaleiromavingue.App.repositories.CustomerRepository;
 import com.custcoding.estaleiromavingue.App.repositories.CustomerWaterRepository;
 import com.custcoding.estaleiromavingue.App.repositories.FacturaAguaRepository;
@@ -41,11 +44,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.math.BigDecimal;
 
 @Service
 @RequiredArgsConstructor
@@ -63,6 +68,9 @@ public class ClientAreaService {
     private final ProprietarioRepository proprietarioRepository;
     private final VendaService vendaService;
     private final CustomerWaterService customerWaterService;
+    private final AccountSyncService accountSyncService;
+    private final PhoneNumberService phoneNumberService;
+    private final PermissionService permissionService;
 
     @Transactional(readOnly = true)
     public ClientAreaProfileDTO profile(String userIdFromAuth) {
@@ -72,7 +80,7 @@ public class ClientAreaService {
                 .toList();
 
         return new ClientAreaProfileDTO(
-                new MeResponse(user.getId(), user.getNome(), user.getEmail(), user.getPhone(), user.getRole(), user.getStatus(), java.util.Set.of()),
+                toAccountResponse(user),
                 findCustomer(user).map(this::toCustomerResponse).orElse(null),
                 waterCustomers.stream()
                         .filter(item -> "ATIVO".equals(item.estado()))
@@ -81,6 +89,89 @@ public class ClientAreaService {
                         .orElse(null),
                 waterCustomers
         );
+    }
+
+    @Transactional
+    public MeResponse updateAccount(String userIdFromAuth, ClientAreaAccountUpdateDTO dto) {
+        AppUser user = findCurrentUser(userIdFromAuth);
+
+        String nome = dto.nome() == null ? "" : dto.nome().trim();
+        if (nome.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Nome e obrigatorio");
+        }
+
+        String normalizedPhone = phoneNumberService.normalizeRequired(dto.phone());
+        String normalizedEmail = normalizeEmail(dto.email());
+
+        appUserRepository.findByPhone(normalizedPhone).ifPresent(existing -> {
+            if (!existing.getId().equals(user.getId())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ja existe uma conta com este numero de telefone");
+            }
+        });
+
+        if (normalizedEmail != null) {
+            appUserRepository.findByEmail(normalizedEmail).ifPresent(existing -> {
+                if (!existing.getId().equals(user.getId())) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ja existe uma conta com este email");
+                }
+            });
+        }
+
+        user.setNome(nome);
+        user.setPhone(normalizedPhone);
+        user.setEmail(normalizedEmail);
+        user.setUpdatedAt(LocalDateTime.now());
+
+        AppUser saved = appUserRepository.save(user);
+        accountSyncService.syncUser(saved);
+        return toAccountResponse(saved);
+    }
+
+    @Transactional
+    public CustomerResponseDTO updateCustomerProfile(String userIdFromAuth, ClientAreaCustomerUpdateDTO dto) {
+        AppUser user = findCurrentUser(userIdFromAuth);
+        CustomerProduct customer = findCustomer(user).orElseGet(CustomerProduct::new);
+
+        String normalizedPhone = phoneNumberService.normalizeRequired(dto.phone());
+        String normalizedEmail = normalizeEmail(dto.email());
+
+        customerRepository.findByPhone(normalizedPhone).ifPresent(existing -> {
+            if (customer.getId() == null || !existing.getId().equals(customer.getId())) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ja existe um cadastro com este numero de telefone");
+            }
+        });
+
+        if (normalizedEmail != null) {
+            customerRepository.findByEmail(normalizedEmail).ifPresent(existing -> {
+                if (customer.getId() == null || !existing.getId().equals(customer.getId())) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ja existe um cadastro com este email");
+                }
+            });
+        }
+
+        customer.setName(dto.name().trim());
+        customer.setSex(dto.sex());
+        customer.setPhone(normalizedPhone);
+        customer.setEmail(normalizedEmail);
+        customer.setBirthDate(dto.birthDate());
+        customer.setProvincia(dto.provincia().trim());
+        customer.setCidade(dto.cidade().trim());
+        customer.setBairro(dto.bairro().trim());
+        customer.setAppUser(user);
+        customer.setContaActiva(user.isActive());
+        if (customer.getElegivelConta() == null) {
+            customer.setElegivelConta(Boolean.TRUE);
+        }
+        if (customer.getTemServicoAgua() == null) {
+            customer.setTemServicoAgua(Boolean.FALSE);
+        }
+        if (customer.getObservacoes() == null || customer.getObservacoes().isBlank()) {
+            customer.setObservacoes("Cadastro sincronizado com a conta do cliente.");
+        }
+
+        CustomerProduct saved = customerRepository.save(customer);
+        accountSyncService.syncWaterForCustomer(saved);
+        return toCustomerResponse(saved);
     }
 
     @Transactional(readOnly = true)
@@ -190,6 +281,15 @@ public class ClientAreaService {
 
         factura.setEstadoPagamento(EstadoPagamento.PAGO);
         factura.setFormaPagamento(dto.formaPagamento());
+        BigDecimal total = BigDecimal.valueOf(factura.getValorTotal());
+        BigDecimal valorPago = dto.formaPagamento() == FormaPagamento.DINHEIRO_FISICO
+                ? (dto.valorPago() == null ? total : dto.valorPago())
+                : total;
+        if (valorPago.compareTo(total) < 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Valor pago insuficiente para concluir o pagamento");
+        }
+        factura.setValorPago(valorPago);
+        factura.setTroco(valorPago.subtract(total));
         return toFacturaResponse(facturaAguaRepository.save(factura));
     }
 
@@ -221,33 +321,53 @@ public class ClientAreaService {
     }
 
     private Optional<CustomerProduct> findCustomer(AppUser user) {
-        return customerRepository.findByAppUser_Id(user.getId())
-                .or(() -> customerRepository.findByPhone(user.getPhone()))
-                .or(() -> {
-                    String email = normalizeEmail(user.getEmail());
-                    return email == null ? Optional.empty() : customerRepository.findByEmail(email);
-                });
+        Optional<CustomerProduct> linked = customerRepository.findByAppUser_Id(user.getId());
+        if (linked.isPresent()) {
+            return linked;
+        }
+
+        String normalizedPhone = phoneNumberService.normalize(user.getPhone());
+        if (normalizedPhone != null) {
+            Optional<CustomerProduct> byPhone = customerRepository.findByPhone(normalizedPhone)
+                    .filter(candidate -> canAccessCustomer(user, candidate));
+            if (byPhone.isPresent()) {
+                return byPhone;
+            }
+        }
+
+        String email = normalizeEmail(user.getEmail());
+        if (email != null) {
+            return customerRepository.findByEmail(email)
+                    .filter(candidate -> canAccessCustomer(user, candidate));
+        }
+
+        return Optional.empty();
     }
 
     private List<CustomerWater> findWaterCustomers(AppUser user) {
         LinkedHashMap<Long, CustomerWater> items = new LinkedHashMap<>();
+        CustomerProduct customer = findCustomer(user).orElse(null);
 
         customerWaterRepository.findByAppUser_IdOrderByCreatedDesc(user.getId())
                 .forEach(item -> items.put(item.getId(), item));
 
-        findCustomer(user).ifPresent(customer ->
-                customerWaterRepository.findByCustomer_IdOrderByCreatedDesc(customer.getId())
-                        .forEach(item -> items.put(item.getId(), item))
-        );
+        if (customer != null) {
+            customerWaterRepository.findByCustomer_IdOrderByCreatedDesc(customer.getId()).stream()
+                    .filter(item -> canAccessWaterCustomer(user, customer, item))
+                    .forEach(item -> items.put(item.getId(), item));
+        }
 
-        if (user.getPhone() != null) {
-            customerWaterRepository.findByPhoneOrderByCreatedDesc(user.getPhone())
+        String normalizedPhone = phoneNumberService.normalize(user.getPhone());
+        if (normalizedPhone != null) {
+            customerWaterRepository.findByPhoneOrderByCreatedDesc(normalizedPhone).stream()
+                    .filter(item -> canAccessWaterCustomer(user, customer, item))
                     .forEach(item -> items.put(item.getId(), item));
         }
 
         String email = normalizeEmail(user.getEmail());
         if (email != null) {
-            customerWaterRepository.findByEmailOrderByCreatedDesc(email)
+            customerWaterRepository.findByEmailOrderByCreatedDesc(email).stream()
+                    .filter(item -> canAccessWaterCustomer(user, customer, item))
                     .forEach(item -> items.put(item.getId(), item));
         }
 
@@ -277,6 +397,18 @@ public class ClientAreaService {
                 customer.getAppUser() == null ? null : customer.getAppUser().getId(),
                 customer.getObservacoes(),
                 customer.getCreated()
+        );
+    }
+
+    private MeResponse toAccountResponse(AppUser user) {
+        return new MeResponse(
+                user.getId(),
+                user.getNome(),
+                user.getEmail(),
+                user.getPhone(),
+                user.getRole(),
+                user.getStatus(),
+                permissionService.effectivePermissionKeys(user)
         );
     }
 
@@ -340,6 +472,8 @@ public class ClientAreaService {
                 factura.getValorTotal(),
                 factura.getEstadoPagamento(),
                 factura.getFormaPagamento(),
+                factura.getValorPago(),
+                factura.getTroco(),
                 consumidor == null ? null : consumidor.getId(),
                 consumidor == null ? "Consumidor nao identificado" : consumidor.getName(),
                 consumidor == null ? null : consumidor.getHouseNR(),
@@ -358,6 +492,34 @@ public class ClientAreaService {
             return null;
         }
         return value.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private boolean canAccessCustomer(AppUser user, CustomerProduct customer) {
+        if (customer.getAppUser() == null) {
+            return true;
+        }
+        return customer.getAppUser().getId() != null && customer.getAppUser().getId().equals(user.getId());
+    }
+
+    private boolean canAccessWaterCustomer(AppUser user, CustomerProduct customer, CustomerWater waterCustomer) {
+        if (waterCustomer.getAppUser() != null) {
+            return waterCustomer.getAppUser().getId() != null
+                    && waterCustomer.getAppUser().getId().equals(user.getId());
+        }
+
+        if (waterCustomer.getCustomer() != null) {
+            if (customer != null) {
+                return waterCustomer.getCustomer().getId() != null
+                        && waterCustomer.getCustomer().getId().equals(customer.getId());
+            }
+
+            if (waterCustomer.getCustomer().getAppUser() != null) {
+                return waterCustomer.getCustomer().getAppUser().getId() != null
+                        && waterCustomer.getCustomer().getAppUser().getId().equals(user.getId());
+            }
+        }
+
+        return true;
     }
 
     private Funcionario resolveCheckoutFuncionario() {

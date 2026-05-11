@@ -17,6 +17,7 @@ import com.custcoding.estaleiromavingue.App.security.tokens.resetpassword.ResetP
 import com.custcoding.estaleiromavingue.App.security.tokens.verification.VerificationToken;
 import com.custcoding.estaleiromavingue.App.security.tokens.verification.VerificationTokenRepository;
 import com.custcoding.estaleiromavingue.App.services.AccountSyncService;
+import com.custcoding.estaleiromavingue.App.services.AuditLogService;
 import com.custcoding.estaleiromavingue.App.services.EmailValidatorService;
 import com.custcoding.estaleiromavingue.App.services.PasswordPolicyService;
 import com.custcoding.estaleiromavingue.App.services.PermissionService;
@@ -58,6 +59,7 @@ public class AuthService {
     private final ResetPassowordTokenRepository resetPassowordTokenRepository;
     private final PhoneNumberService phoneNumberService;
     private final AccountSyncService accountSyncService;
+    private final AuditLogService auditLogService;
     private final PermissionService permissionService;
     private final PasswordPolicyService passwordPolicyService;
 
@@ -100,6 +102,7 @@ public class AuthService {
             throw buildStatusException(status);
         }
 
+        auditLogService.logUser(user, "LOGIN", "AUTH", user.getId(), "Login efectuado com sucesso");
         return new LoginResponse(jwt.generate(user));
     }
 

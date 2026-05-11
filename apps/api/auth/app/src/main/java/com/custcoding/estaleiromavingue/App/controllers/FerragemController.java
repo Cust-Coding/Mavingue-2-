@@ -2,12 +2,10 @@ package com.custcoding.estaleiromavingue.App.controllers;
 
 import com.custcoding.estaleiromavingue.App.dtos.ferragem.FerragemCreateDTO;
 import com.custcoding.estaleiromavingue.App.dtos.ferragem.FerragemResponseDTO;
-import com.custcoding.estaleiromavingue.App.models.Ferragem;
 import com.custcoding.estaleiromavingue.App.services.FerragemService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
-import lombok.NoArgsConstructor;
-import org.springframework.stereotype.Service;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -33,6 +31,7 @@ public class FerragemController {
     }
 
     @PostMapping("/")
+    @PreAuthorize("@permissionService.hasPermission(authentication, 'ferragem.manage')")
     public FerragemResponseDTO postFerragem(
             @Valid @RequestBody FerragemCreateDTO ferragem
     ){
@@ -40,6 +39,7 @@ public class FerragemController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("@permissionService.hasPermission(authentication, 'ferragem.manage')")
     public void deleteFerragem(
             @PathVariable("id") Long id
     ){

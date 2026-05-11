@@ -18,6 +18,8 @@ public record ProductCreateRequest(
         @NotNull
         @DecimalMin(value = "0.0", inclusive = false)
         BigDecimal price,
+        @Size(max = 60)
+        String category,
         @Size(max = 5000000)
         String urlImg
 ) {}

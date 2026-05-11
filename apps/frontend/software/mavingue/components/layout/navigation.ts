@@ -22,6 +22,20 @@ const navigation: Record<NormalizedRole, NavGroup[]> = {
       items: [{ label: "Dashboard", href: "/admin" }],
     },
     {
+      id: "comercial",
+      label: "Comercial",
+      items: [
+        { label: "Produtos", href: "/admin/produtos", permissions: ["products.view"] },
+        { label: "Novo produto", href: "/admin/produtos/novo", permissions: ["products.manage"] },
+        { label: "Categorias", href: "/admin/categorias", permissions: ["categories.manage"] },
+        { label: "Vendas", href: "/admin/vendas", permissions: ["sales.view"] },
+        { label: "Nova venda", href: "/admin/vendas/nova", permissions: ["sales.create"] },
+        { label: "Compras", href: "/admin/compras", permissions: ["purchases.view"] },
+        { label: "Stock", href: "/admin/stock", permissions: ["stock.view"] },
+        { label: "Movimentos", href: "/admin/stock/movimentos", permissions: ["stock.movements.view"] },
+      ],
+    },
+    {
       id: "operacoes",
       label: "Utilizadores",
       items: [
@@ -32,7 +46,10 @@ const navigation: Record<NormalizedRole, NavGroup[]> = {
     {
       id: "cadastros",
       label: "Cadastros",
-      items: [{ label: "Pessoas e clientes", href: "/admin/clientes", permissions: ["customers.view"] }],
+      items: [
+        { label: "Pessoas e clientes", href: "/admin/clientes", permissions: ["customers.view"] },
+        { label: "Ferragem", href: "/admin/ferragem", permissions: ["ferragem.view"] },
+      ],
     },
     {
       id: "agua",
@@ -44,6 +61,17 @@ const navigation: Record<NormalizedRole, NavGroup[]> = {
         { label: "Contratos", href: "/admin/agua/contratos", permissions: ["water.contracts.manage"] },
         { label: "Leituras", href: "/admin/agua/leituras", permissions: ["water.readings.manage"] },
         { label: "Faturas", href: "/admin/agua/faturas", permissions: ["water.bills.manage"] },
+      ],
+    },
+    {
+      id: "relatorios",
+      label: "Relatorios",
+      items: [
+        { label: "Visao geral", href: "/admin/relatorios", permissions: ["reports.view"] },
+        { label: "Vendas", href: "/admin/relatorios/vendas", permissions: ["reports.sales.view"] },
+        { label: "Stock", href: "/admin/relatorios/stock", permissions: ["reports.stock.view"] },
+        { label: "Agua", href: "/admin/relatorios/agua", permissions: ["reports.water.view"] },
+        { label: "Auditoria", href: "/admin/auditoria", permissions: ["audit.view"] },
       ],
     },
   ],
@@ -66,10 +94,14 @@ const navigation: Record<NormalizedRole, NavGroup[]> = {
       id: "comercial",
       label: "Comercial",
       items: [
-        { label: "Produtos", href: "/staff/produtos" },
-        { label: "Vendas", href: "/staff/vendas" },
-        { label: "Compras", href: "/staff/compras" },
-        { label: "Stock", href: "/staff/stock" },
+        { label: "Produtos", href: "/staff/produtos", permissions: ["products.view"] },
+        { label: "Novo produto", href: "/staff/produtos/novo", permissions: ["products.manage"] },
+        { label: "Categorias", href: "/staff/categorias", permissions: ["categories.manage"] },
+        { label: "Vendas", href: "/staff/vendas", permissions: ["sales.view"] },
+        { label: "Nova venda", href: "/staff/vendas/nova", permissions: ["sales.create"] },
+        { label: "Compras", href: "/staff/compras", permissions: ["purchases.view"] },
+        { label: "Stock", href: "/staff/stock", permissions: ["stock.view"] },
+        { label: "Movimentos", href: "/staff/stock/movimentos", permissions: ["stock.movements.view"] },
       ],
     },
     {
@@ -82,6 +114,16 @@ const navigation: Record<NormalizedRole, NavGroup[]> = {
         { label: "Contratos", href: "/staff/agua/contratos", permissions: ["water.contracts.manage"] },
         { label: "Leituras", href: "/staff/agua/leituras", permissions: ["water.readings.manage"] },
         { label: "Faturas", href: "/staff/agua/faturas", permissions: ["water.bills.manage"] },
+      ],
+    },
+    {
+      id: "relatorios",
+      label: "Relatorios",
+      items: [
+        { label: "Visao geral", href: "/staff/relatorios", permissions: ["reports.view"] },
+        { label: "Vendas", href: "/staff/relatorios/vendas", permissions: ["reports.sales.view"] },
+        { label: "Stock", href: "/staff/relatorios/stock", permissions: ["reports.stock.view"] },
+        { label: "Auditoria", href: "/staff/auditoria", permissions: ["audit.view"] },
       ],
     },
   ],

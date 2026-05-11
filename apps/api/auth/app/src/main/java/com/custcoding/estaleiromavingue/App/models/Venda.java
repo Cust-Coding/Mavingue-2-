@@ -7,6 +7,8 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -25,8 +27,8 @@ public class Venda {
     @JoinColumn(name = "id_produto", nullable = false)
     private Product produto;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "id_cliente", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_cliente")
     private CustomerProduct cliente;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -37,7 +39,7 @@ public class Venda {
     private Integer quantidade;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "forma_pagamento", nullable = false)
+    @Column(name = "forma_pagamento")
     private FormaPagamento formaPagamento;
 
     // opcional (se quiseres guardar o total calculado)
@@ -54,9 +56,20 @@ public class Venda {
     @Column(name = "levantamento_notas", length = 500)
     private String levantamentoNotas;
 
+    @Column(name = "valor_pago", precision = 18, scale = 2)
+    private BigDecimal valorPago;
+
+    @Column(name = "troco", precision = 18, scale = 2)
+    private BigDecimal troco;
+
     @Column(name = "atualizado_em")
     private Instant atualizadoEm = Instant.now();
 
     @Column(name = "levantado_em")
     private Instant levantadoEm;
+
+    @Builder.Default
+    @OneToMany(mappedBy = "venda", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("id ASC")
+    private List<ItemVenda> items = new ArrayList<>();
 }

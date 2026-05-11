@@ -2,15 +2,17 @@ import PermissionGate from "@/components/layout/PermissionGate";
 import { UserDetailPage } from "@/features/users/UserDetailPage";
 
 type PageProps = {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 };
 
-export default function AdminUserEditPage({ params }: PageProps) {
+export default async function AdminUserEditPage({ params }: PageProps) {
+  const { id } = await params;
+
   return (
     <PermissionGate permissions={["users.view"]}>
-      <UserDetailPage scope="admin" userId={Number(params.id)} />
+      <UserDetailPage scope="admin" userId={Number(id)} />
     </PermissionGate>
   );
 }

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Boxes, ChevronDown, Droplets, LayoutDashboard, Menu, ShoppingCart, Users } from "lucide-react";
+import { Boxes, Building2, ChevronDown, Droplets, FileText, LayoutDashboard, Menu, ShoppingCart, Users } from "lucide-react";
 import { getNavigation } from "@/components/layout/navigation";
 import { getSessionUser } from "@/lib/auth/session";
 import { cn } from "@/lib/utils/index";
@@ -14,6 +14,8 @@ const groupIcons = {
   cadastros: Users,
   comercial: ShoppingCart,
   agua: Droplets,
+  relatorios: FileText,
+  infra: Building2,
   area: LayoutDashboard,
   compras: Boxes,
 } as const;
@@ -33,7 +35,9 @@ export default function Sidebar() {
   const [isDesktop, setIsDesktop] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    const mountFrame = window.requestAnimationFrame(() => {
+      setMounted(true);
+    });
 
     const checkDesktop = () => {
       setIsDesktop(window.innerWidth >= 1024);
@@ -44,7 +48,10 @@ export default function Sidebar() {
 
     checkDesktop();
     window.addEventListener("resize", checkDesktop);
-    return () => window.removeEventListener("resize", checkDesktop);
+    return () => {
+      window.cancelAnimationFrame(mountFrame);
+      window.removeEventListener("resize", checkDesktop);
+    };
   }, []);
 
   useEffect(() => {

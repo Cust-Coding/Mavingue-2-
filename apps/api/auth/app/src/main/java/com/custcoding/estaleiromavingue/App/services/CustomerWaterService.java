@@ -23,6 +23,7 @@ import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -143,25 +144,32 @@ public class CustomerWaterService {
     @Transactional(readOnly = true)
     public List<CustomerWaterResponseDTO> listForUser(AppUser user) {
         LinkedHashMap<Long, CustomerWaterResponseDTO> items = new LinkedHashMap<>();
+        CustomerProduct customer = findLinkedCustomerForUser(user).orElse(null);
 
         customerWaterRepository.findByAppUser_IdOrderByCreatedDesc(user.getId())
                 .stream()
                 .map(this::toResponse)
                 .forEach(item -> items.put(item.id(), item));
 
-        customerRepository.findByAppUser_Id(user.getId()).ifPresent(customer ->
-                customerWaterRepository.findByCustomer_IdOrderByCreatedDesc(customer.getId()).stream()
-                        .map(this::toResponse)
-                        .forEach(item -> items.put(item.id(), item))
-        );
+        if (customer != null) {
+            customerWaterRepository.findByCustomer_IdOrderByCreatedDesc(customer.getId()).stream()
+                    .filter(request -> canAccessWaterRequest(user, customer, request))
+                    .map(this::toResponse)
+                    .forEach(item -> items.put(item.id(), item));
+        }
 
-        customerWaterRepository.findByPhoneOrderByCreatedDesc(user.getPhone()).stream()
-                .map(this::toResponse)
-                .forEach(item -> items.put(item.id(), item));
+        String normalizedPhone = phoneNumberService.normalize(user.getPhone());
+        if (normalizedPhone != null) {
+            customerWaterRepository.findByPhoneOrderByCreatedDesc(normalizedPhone).stream()
+                    .filter(request -> canAccessWaterRequest(user, customer, request))
+                    .map(this::toResponse)
+                    .forEach(item -> items.put(item.id(), item));
+        }
 
         String email = normalizeEmail(user.getEmail());
         if (email != null) {
             customerWaterRepository.findByEmailOrderByCreatedDesc(email).stream()
+                    .filter(request -> canAccessWaterRequest(user, customer, request))
                     .map(this::toResponse)
                     .forEach(item -> items.put(item.id(), item));
         }
@@ -246,11 +254,8 @@ public class CustomerWaterService {
     }
 
     private void ensureRequestOwnership(AppUser user, CustomerWater request) {
-        boolean ownedByUserId = request.getAppUser() != null && request.getAppUser().getId().equals(user.getId());
-        boolean ownedByPhone = request.getPhone() != null && request.getPhone().equals(user.getPhone());
-        boolean ownedByEmail = request.getEmail() != null && request.getEmail().equalsIgnoreCase(blankToNull(user.getEmail()) == null ? "" : user.getEmail());
-
-        if (!ownedByUserId && !ownedByPhone && !ownedByEmail) {
+        CustomerProduct customer = findLinkedCustomerForUser(user).orElse(null);
+        if (!canAccessWaterRequest(user, customer, request)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Pedido de agua nao encontrado");
         }
     }
@@ -325,5 +330,57 @@ public class CustomerWaterService {
             return null;
         }
         return value.trim();
+    }
+
+    private Optional<CustomerProduct> findLinkedCustomerForUser(AppUser user) {
+        Optional<CustomerProduct> linked = customerRepository.findByAppUser_Id(user.getId());
+        if (linked.isPresent()) {
+            return linked;
+        }
+
+        String normalizedPhone = phoneNumberService.normalize(user.getPhone());
+        if (normalizedPhone != null) {
+            Optional<CustomerProduct> byPhone = customerRepository.findByPhone(normalizedPhone)
+                    .filter(customer -> canAccessCustomer(user, customer));
+            if (byPhone.isPresent()) {
+                return byPhone;
+            }
+        }
+
+        String email = normalizeEmail(user.getEmail());
+        if (email != null) {
+            return customerRepository.findByEmail(email)
+                    .filter(customer -> canAccessCustomer(user, customer));
+        }
+
+        return Optional.empty();
+    }
+
+    private boolean canAccessCustomer(AppUser user, CustomerProduct customer) {
+        if (customer.getAppUser() == null) {
+            return true;
+        }
+        return customer.getAppUser().getId() != null && customer.getAppUser().getId().equals(user.getId());
+    }
+
+    private boolean canAccessWaterRequest(AppUser user, CustomerProduct customer, CustomerWater request) {
+        if (request.getAppUser() != null) {
+            return request.getAppUser().getId() != null && request.getAppUser().getId().equals(user.getId());
+        }
+
+        if (request.getCustomer() != null) {
+            if (customer != null) {
+                return request.getCustomer().getId() != null && request.getCustomer().getId().equals(customer.getId());
+            }
+
+            if (request.getCustomer().getAppUser() != null) {
+                return request.getCustomer().getAppUser().getId() != null
+                        && request.getCustomer().getAppUser().getId().equals(user.getId());
+            }
+        }
+
+        boolean ownedByPhone = request.getPhone() != null && request.getPhone().equals(phoneNumberService.normalize(user.getPhone()));
+        boolean ownedByEmail = request.getEmail() != null && request.getEmail().equalsIgnoreCase(normalizeEmail(user.getEmail()) == null ? "" : normalizeEmail(user.getEmail()));
+        return ownedByPhone || ownedByEmail;
     }
 }

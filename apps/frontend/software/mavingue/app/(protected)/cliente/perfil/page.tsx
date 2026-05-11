@@ -3,7 +3,11 @@
 import { useEffect, useState } from "react";
 import { Empty, ErrorBox, Loading } from "@/components/ui/State";
 import { clientApi } from "@/features/client/api";
-import type { ClientProfile } from "@/features/client/types";
+import type {
+  ClientAccountUpdate,
+  ClientCustomerUpdate,
+  ClientProfile,
+} from "@/features/client/types";
 import {
   User,
   Mail,
@@ -16,16 +20,15 @@ import {
   Edit2,
   X,
   Check,
-  Plus,
 } from "lucide-react";
-import { apiPut } from "@/lib/http/client";
+import { updateSessionUser } from "@/lib/auth/session";
 
 type EditField =
   | "nome"
-  | "email2"
+  | "email"
+  | "phone"
   | "customer_name"
   | "customer_phone"
-  | "customer_phone2"
   | "customer_sexo"
   | "customer_birthDate"
   | "customer_cidade"
@@ -37,12 +40,11 @@ export default function Perfil() {
   const [profile, setProfile] = useState<ClientProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
+  const [success, setSuccess] = useState("");
   const [mounted, setMounted] = useState(false);
   const [editingField, setEditingField] = useState<EditField>(null);
   const [saving, setSaving] = useState(false);
   const [fieldValue, setFieldValue] = useState("");
-  const [showEmail2, setShowEmail2] = useState(false);
-  const [showPhone2, setShowPhone2] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -50,22 +52,25 @@ export default function Perfil() {
 
   useEffect(() => {
     if (!mounted) return;
-
-    (async () => {
-      setLoading(true);
-      setErr("");
-
-      try {
-        setProfile(await clientApi.profile());
-      } catch (error: any) {
-        setErr(error?.message ?? "Erro ao carregar o perfil");
-      } finally {
-        setLoading(false);
-      }
-    })();
+    void loadProfile();
   }, [mounted]);
 
+  async function loadProfile() {
+    setLoading(true);
+    setErr("");
+
+    try {
+      setProfile(await clientApi.profile());
+    } catch (error: unknown) {
+      setErr(toErrorMessage(error, "Erro ao carregar o perfil"));
+    } finally {
+      setLoading(false);
+    }
+  }
+
   const startEdit = (field: EditField, currentValue: string) => {
+    setErr("");
+    setSuccess("");
     setEditingField(field);
     setFieldValue(currentValue ?? "");
   };
@@ -76,71 +81,84 @@ export default function Perfil() {
   };
 
   const formatDate = (value?: string | null) => {
-    if (!value) return "—";
+    if (!value) return "--";
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return value;
     return date.toLocaleDateString("pt-PT");
   };
 
+  const roleLabel = (role?: string | null) => {
+    if (role === "ADMIN") return "Administrador";
+    if (role === "FUNCIONARIO") return "Funcionario";
+    if (role === "CLIENTE") return "Cliente";
+    return role || "--";
+  };
+
   const saveField = async () => {
     if (!profile || !editingField) return;
 
-    setSaving(true);
-    try {
-      const isAccountField = editingField === "nome" || editingField === "email2";
+    const account = profile.account;
+    const customer = profile.customer;
+    const nextValue = fieldValue.trim();
 
-      if (isAccountField) {
-        const updateData: Record<string, any> = {
-          nome: editingField === "nome" ? fieldValue.trim() : profile.account.nome,
-          email: profile.account.email,
-          phone: profile.account.phone,
+    setSaving(true);
+    setErr("");
+    setSuccess("");
+
+    try {
+      if (editingField === "nome" || editingField === "email" || editingField === "phone") {
+        const payload: ClientAccountUpdate = {
+          nome: editingField === "nome" ? nextValue : account.nome,
+          email:
+            editingField === "email"
+              ? nextValue || null
+              : account.email,
+          phone: editingField === "phone" ? nextValue : account.phone,
         };
 
-        await apiPut(`/api/users/${profile.account.id}`, updateData);
+        const updatedAccount = await clientApi.updateAccount(payload);
+        updateSessionUser(updatedAccount);
+        localStorage.setItem("me_name", updatedAccount.nome);
 
-        setProfile({
-          ...profile,
-          account: {
-            ...profile.account,
-            ...updateData,
-          },
-        });
+        setProfile((current) =>
+          current
+            ? {
+                ...current,
+                account: updatedAccount,
+              }
+            : current
+        );
+        setSuccess("Dados da conta actualizados com sucesso.");
       } else {
-        const customer = profile.customer;
         if (!customer) return;
 
-        const updateData: Record<string, any> = {
-          name: editingField === "customer_name" ? fieldValue.trim() : customer.name,
-          phone: editingField === "customer_phone" ? fieldValue.trim() : customer.phone,
-          sex: editingField === "customer_sexo" ? fieldValue : customer.sex,
-          birthDate:
-            editingField === "customer_birthDate" ? fieldValue : customer.birthDate,
-          cidade: editingField === "customer_cidade" ? fieldValue.trim() : customer.cidade,
-          provincia:
-            editingField === "customer_provincia" ? fieldValue.trim() : customer.provincia,
-          bairro: editingField === "customer_bairro" ? fieldValue.trim() : customer.bairro,
+        const payload: ClientCustomerUpdate = {
+          name: editingField === "customer_name" ? nextValue : customer.name,
+          phone: editingField === "customer_phone" ? nextValue : customer.phone,
+          sex: editingField === "customer_sexo" ? (fieldValue as "HOMEM" | "MULHER") : customer.sex,
+          birthDate: editingField === "customer_birthDate" ? fieldValue : customer.birthDate,
+          cidade: editingField === "customer_cidade" ? nextValue : customer.cidade,
+          provincia: editingField === "customer_provincia" ? nextValue : customer.provincia,
+          bairro: editingField === "customer_bairro" ? nextValue : customer.bairro,
           email: customer.email,
         };
 
-        await apiPut(`/api/customer/${customer.id}`, updateData);
-
-        setProfile({
-          ...profile,
-          customer: {
-            ...customer,
-            ...updateData,
-          },
-        });
+        const updatedCustomer = await clientApi.updateCustomer(payload);
+        setProfile((current) =>
+          current
+            ? {
+                ...current,
+                customer: updatedCustomer,
+              }
+            : current
+        );
+        setSuccess("Cadastro do cliente actualizado com sucesso.");
       }
 
       setEditingField(null);
       setFieldValue("");
-    } catch (error: any) {
-      if (error?.status === 403) {
-        setErr("Você não tem permissão para editar este campo. Contacte o suporte.");
-      } else {
-        setErr(error?.message ?? "Erro ao salvar");
-      }
+    } catch (error: unknown) {
+      setErr(toErrorMessage(error, "Erro ao salvar"));
     } finally {
       setSaving(false);
     }
@@ -180,7 +198,7 @@ export default function Perfil() {
                 Perfil
               </p>
               <h1 className="mt-2 text-3xl font-black tracking-tight md:text-4xl">
-                Dados da conta e módulo de água
+                Dados da conta e modulo de agua
               </h1>
               <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300">
                 Aqui pode rever e ajustar os dados principais da sua conta e do cadastro de cliente.
@@ -191,6 +209,30 @@ export default function Perfil() {
 
         {loading && <Loading />}
         {err && <ErrorBox text={err} />}
+        {success && (
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/20 dark:text-emerald-300">
+            {success}
+          </div>
+        )}
+
+        {!loading && !err && profile ? (
+          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {[
+              { label: "Conta", value: account?.nome || "--" },
+              { label: "Perfil comercial", value: customer ? "Ligado" : "Pendente" },
+              { label: "Contas de agua", value: profile.waterCustomers.length },
+              { label: "Role", value: roleLabel(account?.role) },
+            ].map((card) => (
+              <div
+                key={card.label}
+                className="rounded-[24px] border border-slate-200/70 bg-white/80 p-5 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-900/50"
+              >
+                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">{card.label}</p>
+                <div className="mt-3 text-xl font-black text-slate-900 dark:text-white">{card.value}</div>
+              </div>
+            ))}
+          </section>
+        ) : null}
 
         {!loading && !err && profile && (
           <div className="grid gap-6 lg:grid-cols-3">
@@ -208,7 +250,7 @@ export default function Perfil() {
                 <EditableRow
                   label="Nome"
                   icon={<User className="h-3.5 w-3.5 text-slate-400" />}
-                  value={account?.nome || "—"}
+                  value={account?.nome || "--"}
                   isEditing={editingField === "nome"}
                   editingValue={fieldValue}
                   placeholder="Nome completo"
@@ -219,39 +261,38 @@ export default function Perfil() {
                   saving={saving}
                 />
 
-                <StaticRow
+                <EditableRow
                   label="Email principal"
                   icon={<Mail className="h-3.5 w-3.5 text-slate-400" />}
-                  value={account?.email || "—"}
+                  value={account?.email || "--"}
+                  isEditing={editingField === "email"}
+                  editingValue={fieldValue}
+                  placeholder="seu@email.com"
+                  onStartEdit={() => startEdit("email", account?.email || "")}
+                  onChange={(value) => setFieldValue(value)}
+                  onSave={saveField}
+                  onCancel={cancelEdit}
+                  saving={saving}
                 />
 
-                {showEmail2 ? (
-                  <EditableRow
-                    label="Email secundário"
-                    icon={<Mail className="h-3.5 w-3.5 text-slate-400" />}
-                    value="—"
-                    isEditing={editingField === "email2"}
-                    editingValue={fieldValue}
-                    placeholder="seu@email2.com"
-                    onStartEdit={() => startEdit("email2", "")}
-                    onChange={(value) => setFieldValue(value)}
-                    onSave={saveField}
-                    onCancel={cancelEdit}
-                    saving={saving}
-                  />
-                ) : (
-                  <ActionRow
-                    label="Email secundário"
-                    icon={<Mail className="h-3.5 w-3.5 text-slate-400" />}
-                    actionLabel="Adicionar"
-                    onAction={() => setShowEmail2(true)}
-                  />
-                )}
+                <EditableRow
+                  label="Telefone da conta"
+                  icon={<Phone className="h-3.5 w-3.5 text-slate-400" />}
+                  value={account?.phone || "--"}
+                  isEditing={editingField === "phone"}
+                  editingValue={fieldValue}
+                  placeholder="84 123 4567"
+                  onStartEdit={() => startEdit("phone", account?.phone || "")}
+                  onChange={(value) => setFieldValue(value)}
+                  onSave={saveField}
+                  onCancel={cancelEdit}
+                  saving={saving}
+                />
 
                 <StaticRow
                   label="Role"
                   icon={<Shield className="h-3.5 w-3.5 text-slate-400" />}
-                  value={account?.role || "—"}
+                  value={roleLabel(account?.role)}
                   pill
                 />
               </div>
@@ -274,7 +315,7 @@ export default function Perfil() {
                       <EditableRow
                         label="Nome"
                         icon={<User className="h-3.5 w-3.5 text-slate-400" />}
-                        value={customer.name || "—"}
+                        value={customer.name || "--"}
                         isEditing={editingField === "customer_name"}
                         editingValue={fieldValue}
                         placeholder="Nome do cliente"
@@ -288,7 +329,7 @@ export default function Perfil() {
                       <EditableRow
                         label="Telefone principal"
                         icon={<Phone className="h-3.5 w-3.5 text-slate-400" />}
-                        value={customer.phone || "—"}
+                        value={customer.phone || "--"}
                         isEditing={editingField === "customer_phone"}
                         editingValue={fieldValue}
                         placeholder="84 123 4567"
@@ -298,22 +339,6 @@ export default function Perfil() {
                         onCancel={cancelEdit}
                         saving={saving}
                       />
-
-                      {showPhone2 ? (
-                        <StaticRow
-                          label="Telefone secundário"
-                          icon={<Phone className="h-3.5 w-3.5 text-slate-400" />}
-                          value="Campo em desenvolvimento no backend"
-                          note
-                        />
-                      ) : (
-                        <ActionRow
-                          label="Telefone secundário"
-                          icon={<Phone className="h-3.5 w-3.5 text-slate-400" />}
-                          actionLabel="Adicionar"
-                          onAction={() => setShowPhone2(true)}
-                        />
-                      )}
 
                       <EditableRow
                         label="Sexo"
@@ -351,7 +376,7 @@ export default function Perfil() {
                       <EditableRow
                         label="Cidade"
                         icon={<MapPin className="h-3.5 w-3.5 text-slate-400" />}
-                        value={customer.cidade || "—"}
+                        value={customer.cidade || "--"}
                         isEditing={editingField === "customer_cidade"}
                         editingValue={fieldValue}
                         placeholder="Cidade"
@@ -363,12 +388,12 @@ export default function Perfil() {
                       />
 
                       <EditableRow
-                        label="Província"
+                        label="Provincia"
                         icon={<MapPin className="h-3.5 w-3.5 text-slate-400" />}
-                        value={customer.provincia || "—"}
+                        value={customer.provincia || "--"}
                         isEditing={editingField === "customer_provincia"}
                         editingValue={fieldValue}
-                        placeholder="Província"
+                        placeholder="Provincia"
                         onStartEdit={() => startEdit("customer_provincia", customer.provincia || "")}
                         onChange={(value) => setFieldValue(value)}
                         onSave={saveField}
@@ -379,7 +404,7 @@ export default function Perfil() {
                       <EditableRow
                         label="Bairro"
                         icon={<MapPin className="h-3.5 w-3.5 text-slate-400" />}
-                        value={customer.bairro || "—"}
+                        value={customer.bairro || "--"}
                         isEditing={editingField === "customer_bairro"}
                         editingValue={fieldValue}
                         placeholder="Bairro"
@@ -392,7 +417,7 @@ export default function Perfil() {
                     </>
                   ) : (
                     <div className="px-1 py-2">
-                      <Empty text="Não existe cadastro comercial ligado a este email." />
+                      <Empty text="Nao existe cadastro comercial ligado a esta conta." />
                     </div>
                   )}
                 </div>
@@ -403,7 +428,7 @@ export default function Perfil() {
                   <div className="flex items-center gap-2">
                     <Droplets className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
                     <h2 className="text-md font-semibold text-slate-800 dark:text-white">
-                      Contas e pedidos de água
+                      Contas e pedidos de agua
                     </h2>
                   </div>
                 </div>
@@ -424,7 +449,7 @@ export default function Perfil() {
                           </div>
 
                           <div className="space-y-2 text-sm">
-                            <InfoLine label="Proprietário" value={waterCustomer.name} />
+                            <InfoLine label="Proprietario" value={waterCustomer.name} />
                             <InfoLine label="Telefone" value={waterCustomer.phone} />
                             <InfoLine
                               label="Local"
@@ -449,7 +474,7 @@ export default function Perfil() {
                       ))}
                     </div>
                   ) : (
-                    <Empty text="Não existe cadastro de água ligado a este email." />
+                    <Empty text="Nao existe cadastro de agua ligado a esta conta." />
                   )}
                 </div>
               </section>
@@ -459,6 +484,13 @@ export default function Perfil() {
       </div>
     </main>
   );
+}
+
+function toErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error && error.message.trim()) {
+    return error.message;
+  }
+  return fallback;
 }
 
 function StaticRow({
@@ -494,43 +526,6 @@ function StaticRow({
             )}
           </div>
         </div>
-      </div>
-    </div>
-  );
-}
-
-function ActionRow({
-  label,
-  icon,
-  actionLabel,
-  onAction,
-}: {
-  label: string;
-  icon: React.ReactNode;
-  actionLabel: string;
-  onAction: () => void;
-}) {
-  return (
-    <div className="rounded-2xl px-1 py-3 transition hover:bg-slate-50/80 dark:hover:bg-slate-800/30">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-400">
-            {label}
-          </p>
-          <div className="mt-1 flex items-center gap-2">
-            {icon}
-            <span className="text-sm text-slate-500 dark:text-slate-400">—</span>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={onAction}
-          className="inline-flex items-center gap-1 rounded-xl border border-dashed border-slate-300 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-orange-500 hover:text-orange-600 dark:border-slate-700 dark:text-slate-300 dark:hover:border-orange-400 dark:hover:text-orange-300"
-        >
-          <Plus className="h-3.5 w-3.5" />
-          {actionLabel}
-        </button>
       </div>
     </div>
   );
