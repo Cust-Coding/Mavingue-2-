@@ -1,42 +1,83 @@
 import type { FacturaCompra } from "@/features/purchases/types";
 import type { FormaPagamento, Venda } from "@/features/sales/types";
 import type { WaterBill } from "@/features/water/types";
-import { formatDateTime, formatMoney, formatPaymentMethod, formatPickupStatus } from "@/lib/formatters";
+import { formatPaymentMethod, formatPickupStatus } from "@/lib/formatters";
+
+type PrintDocumentOptions = {
+  autoPrint?: boolean;
+};
+
+type SummaryRow = {
+  label: string;
+  value: string;
+  strong?: boolean;
+};
+
+type ReceiptItem = {
+  description: string;
+  note?: string;
+  quantity: string;
+  unitPrice: string;
+  total: string;
+};
+
+type WaterInvoiceItem = {
+  description: string;
+  consumption: string;
+  unitPrice: string;
+  total: string;
+};
+
+type ReceiptDocumentDefinition = {
+  kind: "receipt";
+  title: string;
+  numberLabel: string;
+  number: string;
+  partyTitle: string;
+  partyLines: string[];
+  dateLabel: string;
+  dateValue: string;
+  items: ReceiptItem[];
+  summary: SummaryRow[];
+  noteTitle: string;
+  noteText: string;
+};
+
+type WaterDocumentDefinition = {
+  kind: "water";
+  title: string;
+  numberLabel: string;
+  number: string;
+  partyTitle: string;
+  partyLines: string[];
+  dateLabel: string;
+  dateValue: string;
+  reading?: {
+    previous: string;
+    current: string;
+    total: string;
+  };
+  items: WaterInvoiceItem[];
+  summary: SummaryRow[];
+  noteTitle: string;
+  noteText: string;
+};
+
+type DocumentDefinition = ReceiptDocumentDefinition | WaterDocumentDefinition;
 
 type DocumentSection = {
   title: string;
   rows: Array<{ label: string; value: string }>;
 };
 
-type DocumentItem = {
-  title: string;
-  subtitle?: string;
-  quantity: string;
-  unitPrice: string;
-  total: string;
+const COMPANY = {
+  name: "MAVINGUE",
+  website: "www.estaleiromavingueonline.com",
+  email: "mavingue@gmail.com",
+  phone: "+258 84 579 0023",
 };
 
-type SummaryRow = {
-  label: string;
-  value: string;
-  highlight?: boolean;
-};
-
-type PrintDocumentOptions = {
-  autoPrint?: boolean;
-};
-
-type ReceiptDefinition = {
-  title: string;
-  subtitle: string;
-  reference: string;
-  dateLabel: string;
-  accent: string;
-  sections: DocumentSection[];
-  items?: DocumentItem[];
-  totals?: SummaryRow[];
-  note?: string;
-};
+const DEFAULT_NOTE = "Tenha um bom dia e obrigado!\n\nMavingue";
 
 function escapeHtml(value: string) {
   return value
@@ -47,436 +88,682 @@ function escapeHtml(value: string) {
     .replaceAll("'", "&#39;");
 }
 
-function buildHtml(document: ReceiptDefinition) {
-  const sections = document.sections
+function compactLines(lines: Array<string | null | undefined>) {
+  return lines.map((line) => (line ?? "").trim()).filter(Boolean);
+}
+
+function formatPrintNumber(value: number | string | null | undefined) {
+  const amount = Number(value ?? 0);
+  return new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(Number.isFinite(amount) ? amount : 0);
+}
+
+function formatPrintCurrency(value: number | string | null | undefined, placement: "prefix" | "suffix" = "prefix") {
+  const amount = formatPrintNumber(value);
+  return placement === "prefix" ? `MZN ${amount}` : `${amount} MZN`;
+}
+
+function formatPrintDate(value?: string | null) {
+  if (!value) return "-- --- ----";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-- --- ----";
+
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  })
+    .format(date)
+    .replaceAll(",", "")
+    .toUpperCase();
+}
+
+function buildDocumentNumber(id: number, value?: string | null) {
+  const date = value ? new Date(value) : new Date();
+  const safeDate = Number.isNaN(date.getTime()) ? new Date() : date;
+  const day = String(safeDate.getDate()).padStart(2, "0");
+  const month = String(safeDate.getMonth() + 1).padStart(2, "0");
+  const year = String(safeDate.getFullYear());
+  return `${day}${month}${year}-${String(id).padStart(2, "0")}`;
+}
+
+function buildCompanyHeader() {
+  return `
+    <header class="company-header">
+      <div class="company-logo">
+        <img src="/mavingue_logo_v1.svg" alt="Mavingue" />
+      </div>
+      <div class="company-copy">
+        <div class="company-name">${escapeHtml(COMPANY.name)}</div>
+        <div>${escapeHtml(COMPANY.website)}</div>
+        <div>${escapeHtml(COMPANY.email)}</div>
+        <div>${escapeHtml(COMPANY.phone)}</div>
+      </div>
+    </header>
+    <div class="rule"></div>
+  `;
+}
+
+function buildPartyBlock(title: string, lines: string[]) {
+  const renderedLines = compactLines(lines)
+    .map((line) => `<div class="info-line">${escapeHtml(line)}</div>`)
+    .join("");
+
+  return `
+    <section class="party-block">
+      <div class="small-label">${escapeHtml(title)}</div>
+      <div class="info-stack">${renderedLines}</div>
+    </section>
+  `;
+}
+
+function buildReceiptTable(items: ReceiptItem[]) {
+  const rows = items
     .map(
-      (section) => `
-        <section class="section">
-          <h2>${escapeHtml(section.title)}</h2>
-          <div class="info-grid">
-            ${section.rows
-              .map(
-                (row) => `
-                  <article class="info-card">
-                    <span class="label">${escapeHtml(row.label)}</span>
-                    <strong>${escapeHtml(row.value)}</strong>
-                  </article>
-                `
-              )
-              .join("")}
-          </div>
-        </section>
+      (item) => `
+        <tr>
+          <td class="description-cell">
+            <div>${escapeHtml(item.description)}</div>
+            ${item.note ? `<span class="table-note">${escapeHtml(item.note)}</span>` : ""}
+          </td>
+          <td class="align-right">${escapeHtml(item.quantity)}</td>
+          <td class="align-right">${escapeHtml(item.unitPrice)}</td>
+          <td class="align-right">${escapeHtml(item.total)}</td>
+        </tr>
       `
     )
     .join("");
 
-  const items = document.items?.length
-    ? `
-        <section class="section">
-          <h2>Itens do recibo</h2>
-          <div class="table-shell">
-            <table>
-              <thead>
-                <tr>
-                  <th>Produto / servico</th>
-                  <th>Qtd.</th>
-                  <th>Preco unitario</th>
-                  <th>Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${document.items
-                  .map(
-                    (item) => `
-                      <tr>
-                        <td>
-                          <strong>${escapeHtml(item.title)}</strong>
-                          ${item.subtitle ? `<span>${escapeHtml(item.subtitle)}</span>` : ""}
-                        </td>
-                        <td>${escapeHtml(item.quantity)}</td>
-                        <td>${escapeHtml(item.unitPrice)}</td>
-                        <td>${escapeHtml(item.total)}</td>
-                      </tr>
-                    `
-                  )
-                  .join("")}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      `
-    : "";
+  return `
+    <table class="document-table">
+      <thead>
+        <tr>
+          <th>NOME DO PRODUTO</th>
+          <th class="align-right">QTD</th>
+          <th class="align-right">PRECO UNIT.</th>
+          <th class="align-right">MONTANTE</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+}
 
-  const totals = document.totals?.length
-    ? `
-        <section class="section totals-section">
-          <h2>Resumo financeiro</h2>
-          <div class="totals">
-            ${document.totals
-              .map(
-                (row) => `
-                  <div class="total-row ${row.highlight ? "highlight" : ""}">
-                    <span>${escapeHtml(row.label)}</span>
-                    <strong>${escapeHtml(row.value)}</strong>
-                  </div>
-                `
-              )
-              .join("")}
-          </div>
-        </section>
+function buildWaterTable(items: WaterInvoiceItem[]) {
+  const rows = items
+    .map(
+      (item) => `
+        <tr>
+          <td class="description-cell">${escapeHtml(item.description)}</td>
+          <td class="align-right">${escapeHtml(item.consumption)}</td>
+          <td class="align-right">${escapeHtml(item.unitPrice)}</td>
+          <td class="align-right">${escapeHtml(item.total)}</td>
+        </tr>
       `
-    : "";
+    )
+    .join("");
 
-  const note = document.note
-    ? `
-        <section class="section note">
-          <h2>Observacao</h2>
-          <p>${escapeHtml(document.note)}</p>
-        </section>
+  return `
+    <table class="document-table">
+      <thead>
+        <tr>
+          <th>DESCRICAO</th>
+          <th class="align-right">CONSUMO (m³)</th>
+          <th class="align-right">PRECO/m³</th>
+          <th class="align-right">TOTAL</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+}
+
+function buildSummary(rows: SummaryRow[]) {
+  return `
+    <section class="summary-block">
+      ${rows
+        .map(
+          (row) => `
+            <div class="summary-row ${row.strong ? "summary-row-strong" : ""}">
+              <span>${escapeHtml(row.label)}</span>
+              <strong>${escapeHtml(row.value)}</strong>
+            </div>
+          `
+        )
+        .join("")}
+    </section>
+  `;
+}
+
+function buildWaterReadingBlock(
+  reading:
+    | {
+        previous: string;
+        current: string;
+        total: string;
+      }
+    | undefined
+) {
+  if (!reading) return "";
+
+  return `
+    <section class="reading-block">
+      <div class="reading-panel left-panel">
+        <div class="reading-heading">Leitura</div>
+        <div class="reading-columns">
+          <div>
+            <div class="reading-label">Anterior</div>
+            <div class="reading-value">${escapeHtml(reading.previous)}</div>
+          </div>
+          <div>
+            <div class="reading-label">Atual</div>
+            <div class="reading-value">${escapeHtml(reading.current)}</div>
+          </div>
+        </div>
+      </div>
+      <div class="reading-panel right-panel">
+        <div class="reading-heading">Consumo</div>
+        <div class="reading-label centered">Total</div>
+        <div class="reading-value">${escapeHtml(reading.total)}</div>
+      </div>
+    </section>
+  `;
+}
+
+function buildToolbar() {
+  return `
+    <div class="screen-actions">
+      <button class="screen-button secondary" onclick="window.close()">Fechar</button>
+      <button class="screen-button secondary" onclick="window.print()">Guardar PDF</button>
+      <button class="screen-button primary" onclick="window.print()">Imprimir</button>
+    </div>
+  `;
+}
+
+function buildDocumentHtml(document: DocumentDefinition) {
+  const companyHeader = buildCompanyHeader();
+  const partyBlock = buildPartyBlock(document.partyTitle, document.partyLines);
+  const noteText = document.noteText.trim() || DEFAULT_NOTE;
+
+  const body =
+    document.kind === "receipt"
+      ? `
+        <article class="print-sheet">
+          ${companyHeader}
+
+          <section class="top-grid">
+            <div>
+              ${partyBlock}
+            </div>
+            <div class="doc-meta">
+              <h1 class="doc-title">${escapeHtml(document.title)}</h1>
+              <div class="small-label tight">${escapeHtml(document.numberLabel)}</div>
+              <div class="doc-number">${escapeHtml(document.number)}</div>
+            </div>
+          </section>
+
+          <section class="date-row">
+            <div class="date-block">
+              <div class="small-label">${escapeHtml(document.dateLabel)}</div>
+              <div class="date-value">${escapeHtml(document.dateValue)}</div>
+            </div>
+          </section>
+
+          <section class="table-section">
+            ${buildReceiptTable(document.items)}
+            ${buildSummary(document.summary)}
+          </section>
+
+          <section class="note-block">
+            <div class="small-label">${escapeHtml(document.noteTitle)}</div>
+            <div class="note-text">${escapeHtml(noteText).replaceAll("\n", "<br />")}</div>
+          </section>
+        </article>
       `
-    : "";
+      : `
+        <article class="print-sheet">
+          ${companyHeader}
+
+          <section class="top-grid">
+            <div>
+              ${partyBlock}
+            </div>
+            <div class="doc-meta">
+              <h1 class="doc-title">${escapeHtml(document.title)}</h1>
+              <div class="small-label tight">${escapeHtml(document.numberLabel)}</div>
+              <div class="doc-number">${escapeHtml(document.number)}</div>
+            </div>
+          </section>
+
+          <section class="water-layout">
+            <div>
+              ${buildWaterReadingBlock(document.reading)}
+            </div>
+            <div class="date-block water-date-block">
+              <div class="small-label">${escapeHtml(document.dateLabel)}</div>
+              <div class="date-value">${escapeHtml(document.dateValue)}</div>
+            </div>
+          </section>
+
+          <section class="table-section water-table-section">
+            ${buildWaterTable(document.items)}
+            ${buildSummary(document.summary)}
+          </section>
+
+          <section class="note-block water-note-block">
+            <div class="small-label">${escapeHtml(document.noteTitle)}</div>
+            <div class="note-text">${escapeHtml(noteText).replaceAll("\n", "<br />")}</div>
+          </section>
+        </article>
+      `;
 
   return `
     <!doctype html>
     <html lang="pt">
       <head>
         <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>${escapeHtml(document.title)}</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Special+Elite&display=swap" rel="stylesheet" />
         <style>
           :root {
-            --accent: ${document.accent};
-            --ink: #0f172a;
-            --muted: #64748b;
-            --line: #e2e8f0;
+            --ink: #262626;
+            --muted: #707070;
+            --line: #d8d8d8;
+            --line-soft: #ededed;
             --paper: #ffffff;
-            --soft: #f8fafc;
-          }
-
-          @page {
-            size: A4;
-            margin: 14mm;
+            --screen: #e7e5e4;
           }
 
           * {
             box-sizing: border-box;
           }
 
+          html,
           body {
             margin: 0;
-            background: #e2e8f0;
+            padding: 0;
+            background: var(--screen);
             color: var(--ink);
-            font-family: "Segoe UI", Arial, sans-serif;
+            font-family: "Courier Prime", "Courier New", monospace;
           }
 
-          .sheet {
-            max-width: 860px;
-            margin: 24px auto;
-            background: var(--paper);
-            border-radius: 28px;
-            box-shadow: 0 28px 60px rgba(15, 23, 42, 0.14);
-            overflow: hidden;
-          }
-
-          .header {
-            display: grid;
-            gap: 22px;
-            grid-template-columns: 1.2fr 0.8fr;
-            padding: 28px;
-            background:
-              radial-gradient(circle at top right, rgba(255,255,255,.16), transparent 38%),
-              linear-gradient(135deg, #0f172a, #1e293b 58%, var(--accent));
-            color: white;
-          }
-
-          .brand {
-            display: flex;
-            gap: 18px;
-            align-items: center;
-          }
-
-          .brand img {
-            width: 74px;
-            height: 74px;
-            border-radius: 20px;
-            background: rgba(255,255,255,.9);
-            padding: 10px;
-          }
-
-          .brand-copy h1 {
+          @page {
+            size: A4;
             margin: 0;
+          }
+
+          .screen-shell {
+            padding: 24px 12px 36px;
+          }
+
+          .print-sheet {
+            width: min(794px, 100%);
+            min-height: 1123px;
+            margin: 0 auto;
+            background: var(--paper);
+            box-shadow: 0 16px 42px rgba(38, 38, 38, 0.14);
+            padding: 72px 68px 92px;
+          }
+
+          .company-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 24px;
+          }
+
+          .company-logo img {
+            width: 58px;
+            height: auto;
+            display: block;
+          }
+
+          .company-copy {
+            text-align: right;
+            color: var(--muted);
+            font-size: 13px;
+            line-height: 1.7;
+          }
+
+          .company-name {
+            margin-bottom: 6px;
+            color: #111111;
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 0.28em;
+          }
+
+          .rule {
+            margin: 32px 0 28px;
+            border-top: 1px solid var(--line);
+          }
+
+          .top-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 248px;
+            gap: 36px;
+            align-items: start;
+          }
+
+          .doc-meta {
+            text-align: left;
+            padding-top: 4px;
+          }
+
+          .doc-title {
+            margin: 0 0 10px;
+            color: #1a1a1a;
+            font-family: "Special Elite", "Courier New", monospace;
             font-size: 30px;
             line-height: 1.1;
-            font-weight: 900;
+            letter-spacing: 0.18em;
           }
 
-          .brand-copy p {
-            margin: 8px 0 0;
-            color: rgba(255,255,255,.82);
-            line-height: 1.6;
-          }
-
-          .meta {
-            display: grid;
-            gap: 12px;
-            align-content: start;
-          }
-
-          .meta-card {
-            border: 1px solid rgba(255,255,255,.18);
-            border-radius: 18px;
-            background: rgba(255,255,255,.08);
-            padding: 14px 16px;
-          }
-
-          .meta-card span {
-            display: block;
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: .22em;
-            color: rgba(255,255,255,.68);
-            margin-bottom: 8px;
-          }
-
-          .meta-card strong {
-            display: block;
-            font-size: 15px;
-          }
-
-          .content {
-            padding: 26px 28px 10px;
-          }
-
-          .section {
-            margin-bottom: 18px;
-            border: 1px solid var(--line);
-            border-radius: 22px;
-            padding: 18px;
-            background: var(--paper);
-          }
-
-          .section h2 {
-            margin: 0 0 14px;
-            font-size: 15px;
-            font-weight: 900;
-            letter-spacing: .04em;
+          .small-label {
+            color: #111111;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.34em;
             text-transform: uppercase;
           }
 
-          .info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 12px;
+          .small-label.tight {
+            letter-spacing: 0.28em;
           }
 
-          .info-card {
-            border-radius: 18px;
-            border: 1px solid var(--line);
-            background: var(--soft);
-            padding: 14px;
+          .party-block,
+          .date-block,
+          .note-block {
+            max-width: 330px;
           }
 
-          .label {
-            display: block;
+          .info-stack {
+            margin-top: 12px;
+          }
+
+          .info-line {
+            margin: 0 0 10px;
             color: var(--muted);
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: .16em;
-            margin-bottom: 8px;
-          }
-
-          .info-card strong {
             font-size: 15px;
-            line-height: 1.5;
+            line-height: 1.35;
           }
 
-          .table-shell {
-            overflow: hidden;
-            border: 1px solid var(--line);
-            border-radius: 18px;
+          .doc-number {
+            margin-top: 6px;
+            color: var(--muted);
+            font-size: 14px;
+            line-height: 1.35;
           }
 
-          table {
+          .date-row {
+            margin-top: 34px;
+          }
+
+          .date-value {
+            margin-top: 10px;
+            color: var(--muted);
+            font-size: 16px;
+            line-height: 1.35;
+          }
+
+          .water-layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 248px;
+            gap: 36px;
+            align-items: start;
+            margin-top: 34px;
+          }
+
+          .water-date-block {
+            margin-left: auto;
+          }
+
+          .reading-block {
+            display: grid;
+            grid-template-columns: 2.3fr 0.95fr;
+            width: 100%;
+            max-width: 324px;
+            border: 1px solid #cbcbcb;
+          }
+
+          .reading-panel {
+            padding: 10px 10px 12px;
+          }
+
+          .left-panel {
+            border-right: 1px solid #cbcbcb;
+          }
+
+          .reading-heading {
+            margin: 0 0 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--line);
+            color: #111111;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.24em;
+            text-align: center;
+          }
+
+          .reading-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 18px;
+          }
+
+          .reading-label {
+            margin-bottom: 8px;
+            color: #111111;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.24em;
+            text-transform: uppercase;
+          }
+
+          .reading-label.centered {
+            text-align: center;
+          }
+
+          .reading-value {
+            color: var(--muted);
+            font-size: 15px;
+            line-height: 1.3;
+            text-align: center;
+          }
+
+          .table-section {
+            margin-top: 34px;
+          }
+
+          .water-table-section {
+            margin-top: 48px;
+          }
+
+          .document-table {
             width: 100%;
             border-collapse: collapse;
           }
 
-          th, td {
-            padding: 14px 16px;
+          .document-table thead th {
+            padding: 0 0 8px;
+            border-bottom: 3px solid #2b2b2b;
+            color: #111111;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.28em;
+            text-transform: uppercase;
             text-align: left;
-            border-bottom: 1px solid var(--line);
+          }
+
+          .document-table tbody td {
+            padding: 10px 0 9px;
+            border-bottom: 1px solid var(--line-soft);
+            color: var(--muted);
+            font-size: 15px;
+            line-height: 1.35;
             vertical-align: top;
           }
 
-          th {
-            background: var(--soft);
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: .16em;
-            color: var(--muted);
+          .description-cell {
+            padding-right: 18px;
           }
 
-          td strong {
+          .table-note {
             display: block;
-            font-size: 14px;
-            margin-bottom: 4px;
-          }
-
-          td span {
-            display: block;
-            color: var(--muted);
+            margin-top: 3px;
+            color: #9a9a9a;
             font-size: 12px;
           }
 
-          tbody tr:last-child td {
-            border-bottom: none;
+          .align-right {
+            text-align: right !important;
+            padding-left: 12px !important;
+            white-space: nowrap;
           }
 
-          .totals {
-            display: grid;
-            gap: 10px;
+          .summary-block {
+            width: min(300px, 100%);
+            margin: 18px 0 0 auto;
           }
 
-          .total-row {
+          .summary-row {
             display: flex;
+            align-items: baseline;
             justify-content: space-between;
-            gap: 20px;
-            border-radius: 16px;
-            border: 1px solid var(--line);
-            background: var(--soft);
-            padding: 14px 16px;
-          }
-
-          .total-row.highlight {
-            border-color: color-mix(in srgb, var(--accent) 30%, white);
-            background: color-mix(in srgb, var(--accent) 10%, white);
-          }
-
-          .note p {
-            margin: 0;
+            gap: 24px;
+            padding: 5px 0;
             color: var(--muted);
-            line-height: 1.7;
+            font-size: 15px;
+            line-height: 1.35;
           }
 
-          .footer {
-            display: flex;
-            justify-content: space-between;
-            gap: 16px;
-            align-items: center;
-            padding: 0 28px 24px;
+          .summary-row strong {
+            color: inherit;
+            font-size: inherit;
+          }
+
+          .summary-row-strong {
+            margin-top: 2px;
+            padding-top: 12px;
+            border-top: 3px solid #2b2b2b;
+            color: #161616;
+            font-size: 18px;
+            font-weight: 700;
+          }
+
+          .summary-row-strong strong {
+            font-size: 18px;
+          }
+
+          .note-block {
+            margin-top: 108px;
+          }
+
+          .water-note-block {
+            margin-top: 128px;
+          }
+
+          .note-text {
+            margin-top: 12px;
             color: var(--muted);
-            font-size: 12px;
+            font-size: 15px;
+            line-height: 1.8;
           }
 
-          .actions {
+          .screen-actions {
+            width: min(794px, 100%);
+            margin: 18px auto 0;
             display: flex;
-            justify-content: flex-end;
+            justify-content: center;
             gap: 12px;
-            padding: 0 28px 28px;
+            flex-wrap: wrap;
           }
 
-          button {
+          .screen-button {
             appearance: none;
-            border: none;
-            border-radius: 999px;
-            padding: 12px 18px;
-            font-weight: 800;
-            cursor: pointer;
-            font-family: inherit;
-          }
-
-          .secondary {
+            border: 1px solid #cfcfcf;
             background: white;
-            color: var(--ink);
-            border: 1px solid #cbd5e1;
+            color: #111111;
+            border-radius: 999px;
+            padding: 11px 18px;
+            font: inherit;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
           }
 
-          .primary {
-            background: var(--accent);
+          .screen-button.primary {
+            background: #111111;
+            border-color: #111111;
             color: white;
           }
 
+          @media (max-width: 860px) {
+            .screen-shell {
+              padding: 0;
+            }
+
+            .print-sheet {
+              min-height: auto;
+              padding: 42px 24px 56px;
+              box-shadow: none;
+            }
+
+            .top-grid,
+            .water-layout {
+              grid-template-columns: 1fr;
+            }
+
+            .doc-meta,
+            .water-date-block {
+              margin-left: 0;
+            }
+
+            .summary-block {
+              margin-left: 0;
+            }
+
+            .reading-block {
+              max-width: none;
+            }
+
+            .screen-actions {
+              padding: 12px;
+            }
+          }
+
           @media print {
+            html,
             body {
               background: white;
             }
 
-            .sheet {
-              margin: 0;
-              max-width: none;
+            .screen-shell {
+              padding: 0;
+            }
+
+            .print-sheet {
+              width: auto;
+              min-height: 0;
               box-shadow: none;
-              border-radius: 0;
             }
 
-            .actions {
+            .screen-actions {
               display: none;
-            }
-          }
-
-          @media (max-width: 760px) {
-            .sheet {
-              margin: 0;
-              border-radius: 0;
-            }
-
-            .header {
-              grid-template-columns: 1fr;
-            }
-
-            .footer {
-              flex-direction: column;
-              align-items: flex-start;
-            }
-
-            .actions {
-              flex-direction: column;
             }
           }
         </style>
       </head>
       <body>
-        <main class="sheet">
-          <header class="header">
-            <div class="brand">
-              <img src="/mavingue_logo_v1.svg" alt="Mavingue" />
-              <div class="brand-copy">
-                <h1>${escapeHtml(document.title)}</h1>
-                <p>${escapeHtml(document.subtitle)}</p>
-              </div>
-            </div>
-
-            <div class="meta">
-              <article class="meta-card">
-                <span>Referencia</span>
-                <strong>${escapeHtml(document.reference)}</strong>
-              </article>
-              <article class="meta-card">
-                <span>Data do registo</span>
-                <strong>${escapeHtml(document.dateLabel)}</strong>
-              </article>
-              <article class="meta-card">
-                <span>Emitido por</span>
-                <strong>Mavingue</strong>
-              </article>
-            </div>
-          </header>
-
-          <div class="content">
-            ${sections}
-            ${items}
-            ${totals}
-            ${note}
-          </div>
-
-          <div class="footer">
-            <span>Documento emitido pelo sistema Mavingue.</span>
-            <span>Guarde este recibo para controlo interno e conferencias futuras.</span>
-          </div>
-
-          <div class="actions">
-            <button class="secondary" onclick="window.close()">Fechar</button>
-            <button class="secondary" onclick="window.print()">Baixar PDF</button>
-            <button class="primary" onclick="window.print()">Imprimir recibo</button>
-          </div>
+        <main class="screen-shell">
+          ${body}
+          ${buildToolbar()}
         </main>
       </body>
     </html>
@@ -517,22 +804,35 @@ function printInHiddenFrame(html: string) {
     window.setTimeout(() => iframe.remove(), 1500);
   };
 
+  const triggerPrint = () => {
+    const perform = () => {
+      frameWindow.focus();
+      frameWindow.print();
+      window.setTimeout(cleanup, 15000);
+    };
+
+    const fontsReady = frameWindow.document.fonts?.ready;
+    if (fontsReady) {
+      fontsReady.finally(() => window.setTimeout(perform, 120));
+      return;
+    }
+
+    window.setTimeout(perform, 350);
+  };
+
   frameWindow.onafterprint = cleanup;
   frameWindow.document.open();
   frameWindow.document.write(html);
   frameWindow.document.close();
 
   iframe.onload = () => {
-    window.setTimeout(() => {
-      frameWindow.focus();
-      frameWindow.print();
-      window.setTimeout(cleanup, 15000);
-    }, 350);
+    triggerPrint();
   };
 }
 
-function openReceipt(document: ReceiptDefinition, options?: PrintDocumentOptions) {
-  const html = buildHtml(document);
+function openDocument(document: DocumentDefinition, options?: PrintDocumentOptions) {
+  const html = buildDocumentHtml(document);
+
   if (options?.autoPrint) {
     printInHiddenFrame(html);
     return;
@@ -541,18 +841,101 @@ function openReceipt(document: ReceiptDefinition, options?: PrintDocumentOptions
   openPopupDocument(html);
 }
 
-export function openPrintableDocument(title: string, subtitle: string, sections: DocumentSection[], options?: PrintDocumentOptions) {
-  openReceipt(
-    {
-      title,
-      subtitle,
-      reference: title,
-      dateLabel: formatDateTime(new Date().toISOString()),
-      accent: "#f97316",
-      sections,
-    },
-    options
+function fallbackNote(custom?: string | null) {
+  return custom?.trim() || DEFAULT_NOTE;
+}
+
+function buildReceiptSummary(total: number, valorPago?: number | null, troco?: number | null) {
+  const rows: SummaryRow[] = [];
+
+  if (valorPago != null) {
+    rows.push({ label: "Subtotal", value: formatPrintCurrency(total) });
+    rows.push({ label: "Valor pago", value: formatPrintCurrency(valorPago) });
+    rows.push({ label: "Troco", value: formatPrintCurrency(troco ?? 0) });
+  }
+
+  rows.push({ label: "TOTAL", value: formatPrintCurrency(total), strong: true });
+  return rows;
+}
+
+function buildWaterSummary(bill: WaterBill) {
+  const rows: SummaryRow[] = [];
+  const consumo = Number(bill.consumoM3 ?? 0);
+  const consumoValor = Number(bill.valor ?? 0);
+
+  rows.push({
+    label: "Subtotal",
+    value: formatPrintCurrency(consumoValor, "suffix"),
+  });
+
+  if (Number(bill.taxaFixa ?? 0) > 0) {
+    rows.push({
+      label: "Taxa fixa",
+      value: formatPrintCurrency(bill.taxaFixa, "suffix"),
+    });
+  }
+
+  if (bill.valorPago != null) {
+    rows.push({
+      label: "Valor pago",
+      value: formatPrintCurrency(bill.valorPago, "suffix"),
+    });
+  }
+
+  if (bill.troco != null && Number(bill.troco) > 0) {
+    rows.push({
+      label: "Troco",
+      value: formatPrintCurrency(bill.troco, "suffix"),
+    });
+  }
+
+  rows.push({
+    label: "TOTAL",
+    value: formatPrintCurrency(consumo > 0 || consumoValor > 0 ? bill.valorTotal : 0, "suffix"),
+    strong: true,
+  });
+
+  return rows;
+}
+
+function buildOpenPrintableFallback(title: string, subtitle: string, sections: DocumentSection[]) {
+  const primarySection = sections[0];
+  const otherRows = sections.slice(1).flatMap((section) =>
+    section.rows.map((row) => ({
+      description: `${section.title}: ${row.label}`,
+      quantity: "1",
+      unitPrice: "—",
+      total: row.value,
+    }))
   );
+
+  return {
+    kind: "receipt" as const,
+    title,
+    numberLabel: "NUMERO DO DOCUMENTO",
+    number: subtitle,
+    partyTitle: primarySection?.title || "DETALHES",
+    partyLines: primarySection?.rows.map((row) => `${row.label}: ${row.value}`) || [subtitle],
+    dateLabel: "DATA DO DOCUMENTO",
+    dateValue: formatPrintDate(new Date().toISOString()),
+    items: otherRows.length
+      ? otherRows
+      : [
+          {
+            description: subtitle,
+            quantity: "1",
+            unitPrice: "—",
+            total: "—",
+          },
+        ],
+    summary: [{ label: "TOTAL", value: "—", strong: true }],
+    noteTitle: "NOTA",
+    noteText: DEFAULT_NOTE,
+  };
+}
+
+export function openPrintableDocument(title: string, subtitle: string, sections: DocumentSection[], options?: PrintDocumentOptions) {
+  openDocument(buildOpenPrintableFallback(title, subtitle, sections), options);
 }
 
 export function printSaleDocument(sale: Venda, options?: PrintDocumentOptions) {
@@ -568,44 +951,34 @@ export function printSaleDocument(sale: Venda, options?: PrintDocumentOptions) {
         },
       ];
 
-  openReceipt(
+  const partyLines = compactLines([
+    sale.clienteNome || "Cliente de balcao",
+    sale.clienteId ? `Cliente #${sale.clienteId}` : "Venda presencial",
+    sale.funcionarioNome ? `Atendido por ${sale.funcionarioNome}` : null,
+    sale.formaPagamento ? `Pagamento: ${formatPaymentMethod(sale.formaPagamento)}` : null,
+    sale.estadoLevantamento ? `Estado: ${formatPickupStatus(sale.estadoLevantamento)}` : null,
+  ]);
+
+  openDocument(
     {
-      title: "Recibo de venda",
-      subtitle: "Comprovativo comercial com itens, pagamento e estado do levantamento.",
-      reference: `VEN-${sale.id}`,
-      dateLabel: formatDateTime(sale.criadoEm),
-      accent: "#f97316",
-      sections: [
-        {
-          title: "Participantes",
-          rows: [
-            { label: "Cliente", value: sale.clienteNome || "Cliente de balcao" },
-            { label: "Funcionario", value: sale.funcionarioNome || "Operador nao identificado" },
-          ],
-        },
-        {
-          title: "Pagamento e entrega",
-          rows: [
-            { label: "Metodo", value: formatPaymentMethod(sale.formaPagamento) },
-            { label: "Estado", value: formatPickupStatus(sale.estadoLevantamento) },
-            { label: "Itens", value: String(sale.totalItens ?? items.length) },
-            { label: "Unidades", value: String(sale.quantidade ?? 0) },
-          ],
-        },
-      ],
+      kind: "receipt",
+      title: "RECIBO",
+      numberLabel: "NUMERO DO RECIBO",
+      number: buildDocumentNumber(sale.id, sale.criadoEm),
+      partyTitle: sale.clienteNome ? "CLIENTE" : "OPERADOR",
+      partyLines,
+      dateLabel: "DATA DO RECIBO",
+      dateValue: formatPrintDate(sale.criadoEm),
       items: items.map((item) => ({
-        title: item.produtoNome,
-        subtitle: item.categoria || undefined,
+        description: item.produtoNome,
+        note: item.categoria || undefined,
         quantity: String(item.quantidade),
-        unitPrice: formatMoney(item.precoUnitario),
-        total: formatMoney(item.subtotal),
+        unitPrice: formatPrintCurrency(item.precoUnitario),
+        total: formatPrintCurrency(item.subtotal),
       })),
-      totals: [
-        { label: "Valor total", value: formatMoney(sale.total), highlight: true },
-        { label: "Valor pago", value: formatMoney(sale.valorPago ?? sale.total) },
-        { label: "Troco", value: formatMoney(sale.troco ?? 0) },
-      ],
-      note: sale.levantamentoNotas || undefined,
+      summary: buildReceiptSummary(sale.total, sale.valorPago, sale.troco),
+      noteTitle: "NOTA",
+      noteText: fallbackNote(sale.levantamentoNotas),
     },
     options
   );
@@ -624,80 +997,75 @@ export function printPurchaseDocument(purchase: FacturaCompra, options?: PrintDo
         },
       ];
 
-  openReceipt(
+  openDocument(
     {
-      title: "Recibo de compra interna",
-      subtitle: "Documento de entrada de stock com comprovativo financeiro e detalhe dos itens.",
-      reference: `COM-${purchase.id}`,
-      dateLabel: formatDateTime(purchase.criadoEm),
-      accent: "#10b981",
-      sections: [
-        {
-          title: "Resumo da operacao",
-          rows: [
-            { label: "Funcionario", value: purchase.funcionarioNome || "Operador nao identificado" },
-            { label: "Metodo", value: formatPaymentMethod((purchase.formaPagamento ?? "DINHEIRO_FISICO") as FormaPagamento) },
-            { label: "Itens", value: String(purchase.totalItens ?? items.length) },
-            { label: "Unidades", value: String(purchase.quantidade ?? 0) },
-          ],
-        },
-      ],
+      kind: "receipt",
+      title: "RECIBO",
+      numberLabel: "NUMERO DO RECIBO",
+      number: buildDocumentNumber(purchase.id, purchase.criadoEm),
+      partyTitle: "RESPONSAVEL",
+      partyLines: compactLines([
+        purchase.funcionarioNome || "Operador nao identificado",
+        `Compra interna de stock`,
+        `Pagamento: ${formatPaymentMethod((purchase.formaPagamento ?? "DINHEIRO_FISICO") as FormaPagamento)}`,
+        `Itens: ${String(purchase.totalItens ?? items.length)}`,
+        `Unidades: ${String(purchase.quantidade ?? 0)}`,
+      ]),
+      dateLabel: "DATA DO RECIBO",
+      dateValue: formatPrintDate(purchase.criadoEm),
       items: items.map((item) => ({
-        title: item.produtoNome,
-        subtitle: item.categoria || undefined,
+        description: item.produtoNome,
+        note: item.categoria || undefined,
         quantity: String(item.quantidade),
-        unitPrice: formatMoney(item.precoUnitario),
-        total: formatMoney(item.subtotal),
+        unitPrice: formatPrintCurrency(item.precoUnitario),
+        total: formatPrintCurrency(item.subtotal),
       })),
-      totals: [
-        { label: "Total da compra", value: formatMoney(purchase.total), highlight: true },
-        { label: "Valor pago", value: formatMoney(purchase.valorPago ?? purchase.total) },
-        { label: "Troco", value: formatMoney(purchase.troco ?? 0) },
-      ],
+      summary: buildReceiptSummary(purchase.total, purchase.valorPago, purchase.troco),
+      noteTitle: "NOTA",
+      noteText: DEFAULT_NOTE,
     },
     options
   );
 }
 
 export function printWaterBillDocument(bill: WaterBill, options?: PrintDocumentOptions) {
-  openReceipt(
+  const consumption = Number(bill.consumoM3 ?? 0);
+  const unitPrice = consumption > 0 ? Number(bill.valor ?? 0) / consumption : 0;
+
+  openDocument(
     {
-      title: "Recibo de pagamento de agua",
-      subtitle: "Comprovativo da factura de agua com valores cobrados e estado do pagamento.",
-      reference: `AG-${bill.id}`,
-      dateLabel: formatDateTime(bill.data),
-      accent: "#06b6d4",
-      sections: [
-        {
-          title: "Consumidor",
-          rows: [
-            { label: "Nome", value: bill.consumidorNome },
-            { label: "Casa", value: bill.houseNR || "-" },
-            { label: "Estado", value: bill.estadoPagamento },
-            { label: "Metodo", value: formatPaymentMethod((bill.formaPagamento || "DINHEIRO_FISICO") as FormaPagamento) },
-          ],
-        },
-      ],
+      kind: "water",
+      title: "Fatura",
+      numberLabel: "Numero da Fatura",
+      number: buildDocumentNumber(bill.id, bill.data),
+      partyTitle: "CLIENTE",
+      partyLines: compactLines([
+        bill.consumidorNome,
+        bill.houseNR ? `Casa ${bill.houseNR}` : null,
+        bill.formaPagamento ? formatPaymentMethod(bill.formaPagamento) : null,
+        bill.estadoPagamento || null,
+      ]),
+      dateLabel: "DATA DO RECIBO",
+      dateValue: formatPrintDate(bill.data),
+      reading:
+        bill.leituraAnterior != null && bill.leituraActual != null && bill.consumoM3 != null
+          ? {
+              previous: formatPrintNumber(bill.leituraAnterior),
+              current: formatPrintNumber(bill.leituraActual),
+              total: formatPrintNumber(bill.consumoM3),
+            }
+          : undefined,
       items: [
         {
-          title: "Taxa fixa",
-          quantity: "1",
-          unitPrice: formatMoney(bill.taxaFixa),
-          total: formatMoney(bill.taxaFixa),
-        },
-        {
-          title: "Consumo de agua",
-          subtitle: `Leitura #${bill.leituraId}`,
-          quantity: "1",
-          unitPrice: formatMoney(bill.valor),
-          total: formatMoney(bill.valor),
+          description: "Agua",
+          consumption: bill.consumoM3 != null ? formatPrintNumber(bill.consumoM3) : "0.00",
+          unitPrice: formatPrintCurrency(unitPrice, "suffix"),
+          total: formatPrintCurrency(bill.valor, "suffix"),
         },
       ],
-      totals: [
-        { label: "Valor total", value: formatMoney(bill.valorTotal), highlight: true },
-        { label: "Valor pago", value: formatMoney(bill.valorPago ?? bill.valorTotal) },
-        { label: "Troco", value: formatMoney(bill.troco ?? 0) },
-      ],
+      summary: buildWaterSummary(bill),
+      noteTitle: "NOTAS",
+      noteText: DEFAULT_NOTE,
     },
     options
   );
@@ -719,38 +1087,33 @@ export function printCheckoutDocument(orders: Venda[], paymentMethod: FormaPagam
         ]
   );
 
-  openReceipt(
+  const total = orders.reduce((sum, order) => sum + Number(order.total || 0), 0);
+
+  openDocument(
     {
-      title: "Recibo de checkout",
-      subtitle: "Comprovativo consolidado das compras realizadas na area do cliente.",
-      reference: orders.map((order) => `VEN-${order.id}`).join(", "),
-      dateLabel: formatDateTime(orders[0]?.criadoEm ?? new Date().toISOString()),
-      accent: "#f97316",
-      sections: [
-        {
-          title: "Resumo do checkout",
-          rows: [
-            { label: "Pedidos gravados", value: String(orders.length) },
-            { label: "Metodo", value: formatPaymentMethod(paymentMethod) },
-            { label: "Itens", value: String(flattenedItems.length) },
-            { label: "Total de unidades", value: String(flattenedItems.reduce((sum, item) => sum + Number(item.quantidade || 0), 0)) },
-          ],
-        },
-      ],
+      kind: "receipt",
+      title: "RECIBO",
+      numberLabel: "NUMERO DO RECIBO",
+      number: orders.length ? orders.map((order) => buildDocumentNumber(order.id, order.criadoEm)).join(", ") : "CHECKOUT",
+      partyTitle: "CLIENTE",
+      partyLines: compactLines([
+        "Checkout de cliente",
+        `${orders.length} pedido(s) registado(s)`,
+        `Pagamento: ${formatPaymentMethod(paymentMethod)}`,
+        `${flattenedItems.reduce((sum, item) => sum + Number(item.quantidade || 0), 0)} unidade(s)`,
+      ]),
+      dateLabel: "DATA DO RECIBO",
+      dateValue: formatPrintDate(orders[0]?.criadoEm ?? new Date().toISOString()),
       items: flattenedItems.map((item) => ({
-        title: item.produtoNome,
-        subtitle: item.categoria || undefined,
+        description: item.produtoNome,
+        note: item.categoria || undefined,
         quantity: String(item.quantidade),
-        unitPrice: formatMoney(item.precoUnitario),
-        total: formatMoney(item.subtotal),
+        unitPrice: formatPrintCurrency(item.precoUnitario),
+        total: formatPrintCurrency(item.subtotal),
       })),
-      totals: [
-        {
-          label: "Total consolidado",
-          value: formatMoney(orders.reduce((sum, order) => sum + Number(order.total || 0), 0)),
-          highlight: true,
-        },
-      ],
+      summary: [{ label: "TOTAL", value: formatPrintCurrency(total), strong: true }],
+      noteTitle: "NOTA",
+      noteText: DEFAULT_NOTE,
     },
     options
   );

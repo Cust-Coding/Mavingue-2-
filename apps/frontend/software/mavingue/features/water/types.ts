@@ -49,6 +49,9 @@ export interface WaterBill {
   consumidorNome: string;
   houseNR: string | null;
   leituraId: number;
+  leituraAnterior?: number | null;
+  leituraActual?: number | null;
+  consumoM3?: number | null;
 }
 
 export interface WaterBillPaymentCreate {

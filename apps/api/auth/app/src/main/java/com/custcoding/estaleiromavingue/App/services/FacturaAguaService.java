@@ -81,7 +81,10 @@ public class FacturaAguaService {
                 consumidor == null ? null : consumidor.getId(),
                 consumidor == null ? "Consumidor nao identificado" : consumidor.getName(),
                 consumidor == null ? null : consumidor.getHouseNR(),
-                leitura == null ? null : leitura.getId()
+                leitura == null ? null : leitura.getId(),
+                leitura == null ? null : leitura.getLeituraAnterior(),
+                leitura == null ? null : leitura.getLeituraActual(),
+                leitura == null ? null : leitura.getConsumoM3()
         );
     }
 }
