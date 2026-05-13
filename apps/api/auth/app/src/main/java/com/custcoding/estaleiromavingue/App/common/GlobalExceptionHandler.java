@@ -9,6 +9,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
@@ -89,6 +90,8 @@ public class GlobalExceptionHandler {
         } else if (lower.contains("app_user") && lower.contains("phone")) {
             fieldErrors.put("telefone", "Ja existe uma conta com este numero de telefone.");
             msg = "Ja existe uma conta com este numero de telefone.";
+        } else if (lower.contains("app_user_permissions") && lower.contains("permission_key")) {
+            msg = "Foi detectada uma regra antiga nas permissoes dos utilizadores. Reinicie o servidor e tente novamente.";
         } else if (lower.contains("t_customer_product") && lower.contains("email")) {
             fieldErrors.put("email", "Ja existe um cadastro com este email.");
             msg = "Ja existe um cadastro com este email.";
@@ -105,6 +108,12 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new ApiError(msg, HttpStatus.BAD_REQUEST.value(), Instant.now(), fieldErrors));
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ApiError> noResourceFound(NoResourceFoundException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ApiError("Recurso nao encontrado", HttpStatus.NOT_FOUND.value(), Instant.now()));
     }
 
     @ExceptionHandler(Exception.class)

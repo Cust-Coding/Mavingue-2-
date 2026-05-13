@@ -21,6 +21,9 @@ public record CustomerResponseDTO(
         Boolean contaActiva,
         Boolean temServicoAgua,
         Long appUserId,
+        Boolean contaDesativadaPeloCliente,
+        @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss")
+        LocalDateTime contaDesativadaEm,
         String observacoes,
         @JsonFormat(pattern = "dd/MM/yyyy HH:mm:ss")
         LocalDateTime created

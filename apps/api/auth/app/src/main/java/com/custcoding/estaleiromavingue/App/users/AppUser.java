@@ -59,6 +59,13 @@ public class AppUser {
     @Column(name = "updated_at", nullable = true)
     private LocalDateTime updatedAt;
 
+    @Column(name = "desativada_pelo_cliente", nullable = true)
+    @Builder.Default
+    private Boolean desativadaPeloCliente = false;
+
+    @Column(name = "desativada_pelo_cliente_em", nullable = true)
+    private LocalDateTime desativadaPeloClienteEm;
+
     public boolean isActive() {
         UserStatus effectiveStatus = status == null ? (Boolean.TRUE.equals(enabled) ? UserStatus.ATIVO : UserStatus.PENDENTE_REVISAO) : status;
         return effectiveStatus == UserStatus.ATIVO && Boolean.TRUE.equals(enabled);

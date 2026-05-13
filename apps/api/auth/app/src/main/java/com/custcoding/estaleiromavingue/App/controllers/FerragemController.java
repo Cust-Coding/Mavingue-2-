@@ -18,7 +18,7 @@ public class FerragemController {
 
     private final FerragemService ferragemService;
 
-    @GetMapping("/")
+    @GetMapping({ "", "/" })
     public List<FerragemResponseDTO> getFerragens(){
         return this.ferragemService.getFerragens();
     }
@@ -30,7 +30,7 @@ public class FerragemController {
         return this.ferragemService.getFerragemById(id);
     }
 
-    @PostMapping("/")
+    @PostMapping({ "", "/" })
     @PreAuthorize("@permissionService.hasPermission(authentication, 'ferragem.manage')")
     public FerragemResponseDTO postFerragem(
             @Valid @RequestBody FerragemCreateDTO ferragem

@@ -39,6 +39,8 @@ public class CustomerMapper {
                 c.getContaActiva(),
                 c.getTemServicoAgua(),
                 c.getAppUser() == null ? null : c.getAppUser().getId(),
+                c.getAppUser() != null && Boolean.TRUE.equals(c.getAppUser().getDesativadaPeloCliente()),
+                c.getAppUser() == null ? null : c.getAppUser().getDesativadaPeloClienteEm(),
                 c.getObservacoes(),
                 c.getCreated()
         );

@@ -73,7 +73,7 @@ public class FacturaCompraService {
         BigDecimal total = BigDecimal.ZERO;
 
         for (FacturaCompraItemCreateDTO itemRequest : requestedItems) {
-            Product produto = productRepo.findById(itemRequest.produtoId())
+            Product produto = productRepo.findByIdAndAtivoTrue(itemRequest.produtoId())
                     .orElseThrow(() -> new EntityNotFoundException("Produto nao encontrado: " + itemRequest.produtoId()));
 
             stockService.adjust(new StockAdjustDTO(

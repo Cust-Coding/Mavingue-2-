@@ -1,7 +1,7 @@
-export default function Page() {
-  return (
-    <main className="bg-gray-100 ">
-      <h1>Admin — Relatórios — Água</h1>
-    </main>
-  );
+"use client";
+
+import { WaterReportPage } from "@/features/reports/WaterReportPage";
+
+export default function AdminWaterReportPage() {
+  return <WaterReportPage />;
 }

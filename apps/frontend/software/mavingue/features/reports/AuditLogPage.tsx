@@ -13,7 +13,7 @@ const actionOptions = [
   { value: "LOGIN", label: "Login" },
   { value: "PRODUCT_CREATE", label: "Criar produto" },
   { value: "PRODUCT_UPDATE", label: "Editar produto" },
-  { value: "PRODUCT_DELETE", label: "Apagar produto" },
+  { value: "PRODUCT_DELETE", label: "Desativar produto" },
   { value: "PURCHASE_CREATE", label: "Registar compra" },
   { value: "SALE_CREATE", label: "Registar venda" },
   { value: "SALE_PICKUP_UPDATE", label: "Actualizar levantamento" },

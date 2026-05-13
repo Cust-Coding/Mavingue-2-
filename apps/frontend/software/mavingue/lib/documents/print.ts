@@ -23,8 +23,6 @@ type ReceiptItem = {
 
 type WaterInvoiceItem = {
   description: string;
-  consumption: string;
-  unitPrice: string;
   total: string;
 };
 
@@ -48,6 +46,8 @@ type WaterDocumentDefinition = {
   title: string;
   numberLabel: string;
   number: string;
+  statusText?: string;
+  referenceNumber?: string;
   partyTitle: string;
   partyLines: string[];
   dateLabel: string;
@@ -198,8 +198,6 @@ function buildWaterTable(items: WaterInvoiceItem[]) {
       (item) => `
         <tr>
           <td class="description-cell">${escapeHtml(item.description)}</td>
-          <td class="align-right">${escapeHtml(item.consumption)}</td>
-          <td class="align-right">${escapeHtml(item.unitPrice)}</td>
           <td class="align-right">${escapeHtml(item.total)}</td>
         </tr>
       `
@@ -211,9 +209,7 @@ function buildWaterTable(items: WaterInvoiceItem[]) {
       <thead>
         <tr>
           <th>DESCRICAO</th>
-          <th class="align-right">CONSUMO (m³)</th>
-          <th class="align-right">PRECO/m³</th>
-          <th class="align-right">TOTAL</th>
+          <th class="align-right">VALOR</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>
@@ -222,6 +218,8 @@ function buildWaterTable(items: WaterInvoiceItem[]) {
 }
 
 function buildSummary(rows: SummaryRow[]) {
+  if (!rows.length) return "";
+
   return `
     <section class="summary-block">
       ${rows
@@ -235,6 +233,21 @@ function buildSummary(rows: SummaryRow[]) {
         )
         .join("")}
     </section>
+  `;
+}
+
+function buildWaterMetaDetails(statusText?: string | null, referenceNumber?: string | null) {
+  const rows = compactLines([
+    statusText ? `Estado: ${statusText}` : null,
+    referenceNumber ? `Referencia: ${referenceNumber}` : null,
+  ]);
+
+  if (!rows.length) return "";
+
+  return `
+    <div class="water-meta-details">
+      ${rows.map((row) => `<div class="water-meta-line">${escapeHtml(row)}</div>`).join("")}
+    </div>
   `;
 }
 
@@ -335,6 +348,7 @@ function buildDocumentHtml(document: DocumentDefinition) {
               <h1 class="doc-title">${escapeHtml(document.title)}</h1>
               <div class="small-label tight">${escapeHtml(document.numberLabel)}</div>
               <div class="doc-number">${escapeHtml(document.number)}</div>
+              ${buildWaterMetaDetails(document.statusText, document.referenceNumber)}
             </div>
           </section>
 
@@ -403,6 +417,7 @@ function buildDocumentHtml(document: DocumentDefinition) {
           }
 
           .print-sheet {
+            position: relative;
             width: min(794px, 100%);
             min-height: 1123px;
             margin: 0 auto;
@@ -499,6 +514,20 @@ function buildDocumentHtml(document: DocumentDefinition) {
             color: var(--muted);
             font-size: 14px;
             line-height: 1.35;
+          }
+
+          .water-meta-details {
+            margin-top: 16px;
+            display: grid;
+            gap: 6px;
+          }
+
+          .water-meta-line {
+            color: #14532d;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
           }
 
           .date-row {
@@ -860,20 +889,6 @@ function buildReceiptSummary(total: number, valorPago?: number | null, troco?: n
 
 function buildWaterSummary(bill: WaterBill) {
   const rows: SummaryRow[] = [];
-  const consumo = Number(bill.consumoM3 ?? 0);
-  const consumoValor = Number(bill.valor ?? 0);
-
-  rows.push({
-    label: "Subtotal",
-    value: formatPrintCurrency(consumoValor, "suffix"),
-  });
-
-  if (Number(bill.taxaFixa ?? 0) > 0) {
-    rows.push({
-      label: "Taxa fixa",
-      value: formatPrintCurrency(bill.taxaFixa, "suffix"),
-    });
-  }
 
   if (bill.valorPago != null) {
     rows.push({
@@ -888,12 +903,6 @@ function buildWaterSummary(bill: WaterBill) {
       value: formatPrintCurrency(bill.troco, "suffix"),
     });
   }
-
-  rows.push({
-    label: "TOTAL",
-    value: formatPrintCurrency(consumo > 0 || consumoValor > 0 ? bill.valorTotal : 0, "suffix"),
-    strong: true,
-  });
 
   return rows;
 }
@@ -1029,23 +1038,28 @@ export function printPurchaseDocument(purchase: FacturaCompra, options?: PrintDo
 }
 
 export function printWaterBillDocument(bill: WaterBill, options?: PrintDocumentOptions) {
-  const consumption = Number(bill.consumoM3 ?? 0);
-  const unitPrice = consumption > 0 ? Number(bill.valor ?? 0) / consumption : 0;
+  const valorFactura = Number(bill.valorFactura ?? Number(bill.valor ?? 0) + Number(bill.taxaFixa ?? 0));
+  const multa = Number(bill.multaValor ?? 0);
+  const divida = Number(bill.dividaValor ?? 0);
+  const total = Number(bill.valorTotal ?? valorFactura + multa + divida);
 
   openDocument(
     {
       kind: "water",
-      title: "Fatura",
-      numberLabel: "Numero da Fatura",
+      title: bill.estadoPagamento === "PAGO" ? "Recibo de pagamento" : "Fatura",
+      numberLabel: bill.estadoPagamento === "PAGO" ? "Numero do Recibo" : "Numero da Fatura",
       number: buildDocumentNumber(bill.id, bill.data),
+      statusText: bill.estadoPagamento === "PAGO" ? "Pago" : undefined,
+      referenceNumber: "843892980",
       partyTitle: "CLIENTE",
       partyLines: compactLines([
         bill.consumidorNome,
+        bill.ligacaoId ? `Contrato #${bill.ligacaoId}` : null,
         bill.houseNR ? `Casa ${bill.houseNR}` : null,
-        bill.formaPagamento ? formatPaymentMethod(bill.formaPagamento) : null,
-        bill.estadoPagamento || null,
+        bill.formaPagamento ? `Pagamento: ${formatPaymentMethod(bill.formaPagamento)}` : null,
+        bill.estadoPagamento === "PAGO" ? "Estado: Pago" : bill.estadoPagamento ? `Estado: ${bill.estadoPagamento}` : null,
       ]),
-      dateLabel: "DATA DO RECIBO",
+      dateLabel: bill.estadoPagamento === "PAGO" ? "DATA DO RECIBO" : "DATA DA FATURA",
       dateValue: formatPrintDate(bill.data),
       reading:
         bill.leituraAnterior != null && bill.leituraActual != null && bill.consumoM3 != null
@@ -1057,10 +1071,20 @@ export function printWaterBillDocument(bill: WaterBill, options?: PrintDocumentO
           : undefined,
       items: [
         {
-          description: "Agua",
-          consumption: bill.consumoM3 != null ? formatPrintNumber(bill.consumoM3) : "0.00",
-          unitPrice: formatPrintCurrency(unitPrice, "suffix"),
-          total: formatPrintCurrency(bill.valor, "suffix"),
+          description: "Valor a pagar",
+          total: formatPrintCurrency(valorFactura, "suffix"),
+        },
+        {
+          description: `Multa (${formatPrintNumber(bill.percentualMulta ?? 0)}%)`,
+          total: formatPrintCurrency(multa, "suffix"),
+        },
+        {
+          description: "Divida",
+          total: formatPrintCurrency(divida, "suffix"),
+        },
+        {
+          description: "Total",
+          total: formatPrintCurrency(total, "suffix"),
         },
       ],
       summary: buildWaterSummary(bill),

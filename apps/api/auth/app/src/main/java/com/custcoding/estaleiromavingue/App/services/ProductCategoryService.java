@@ -89,7 +89,7 @@ public class ProductCategoryService {
         category.setDescription(normalizeDescription(dto.description()));
 
         if (!previousSlug.equals(nextSlug)) {
-            List<Product> products = productRepository.findAllByCategory(previousSlug);
+            List<Product> products = productRepository.findAllByCategoryAndAtivoTrue(previousSlug);
             for (Product product : products) {
                 product.setCategory(nextSlug);
             }

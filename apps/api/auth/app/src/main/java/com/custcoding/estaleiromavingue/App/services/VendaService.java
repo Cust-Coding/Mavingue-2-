@@ -160,7 +160,7 @@ public class VendaService {
         BigDecimal total = BigDecimal.ZERO;
 
         for (VendaCheckoutItemDTO itemRequest : items) {
-            Product produto = productRepo.findById(itemRequest.produtoId())
+            Product produto = productRepo.findByIdAndAtivoTrue(itemRequest.produtoId())
                     .orElseThrow(() -> new EntityNotFoundException("Produto nao encontrado: " + itemRequest.produtoId()));
 
             stockService.adjust(new StockAdjustDTO(

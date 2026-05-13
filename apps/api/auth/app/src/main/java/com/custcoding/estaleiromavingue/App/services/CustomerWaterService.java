@@ -1,6 +1,7 @@
 package com.custcoding.estaleiromavingue.App.services;
 
 import com.custcoding.estaleiromavingue.App.dtos.customer_water.CustomerWaterApprovalDTO;
+import com.custcoding.estaleiromavingue.App.dtos.customer_water.CustomerWaterActivationDTO;
 import com.custcoding.estaleiromavingue.App.dtos.customer_water.CustomerWaterClientUpdateDTO;
 import com.custcoding.estaleiromavingue.App.dtos.customer_water.CustomerWaterCreateDTO;
 import com.custcoding.estaleiromavingue.App.dtos.customer_water.CustomerWaterRequestCreateDTO;
@@ -70,11 +71,8 @@ public class CustomerWaterService {
         customerWater.setCustomer(customer);
         customerWater.setAppUser(customer == null ? null : customer.getAppUser());
         customerWater.setReferenciaLocal(dto.referenciaLocal().trim());
-        customerWater.setEstado((customerWater.getHouseNR() == null || customerWater.getAdressId() == null)
-                ? EstadoServicoAgua.AGUARDANDO_DADOS_CASA
-                : EstadoServicoAgua.ATIVO);
+        applyOperationalState(customerWater);
         customerWater.setPedidoAgua(true);
-        customerWater.setActivo(customerWater.getEstado() == EstadoServicoAgua.ATIVO);
         customerWater.setObservacoes(blankToNull(dto.observacoes()));
         customerWater.setUpdated(LocalDateTime.now());
 
@@ -100,11 +98,8 @@ public class CustomerWaterService {
         existing.setCustomer(customer);
         existing.setAppUser(customer == null ? existing.getAppUser() : customer.getAppUser());
         existing.setReferenciaLocal(dto.referenciaLocal().trim());
-        existing.setEstado((existing.getHouseNR() == null || existing.getAdressId() == null)
-                ? EstadoServicoAgua.AGUARDANDO_DADOS_CASA
-                : EstadoServicoAgua.ATIVO);
+        applyOperationalState(existing);
         existing.setPedidoAgua(true);
-        existing.setActivo(existing.getEstado() == EstadoServicoAgua.ATIVO);
         existing.setObservacoes(blankToNull(dto.observacoes()));
         existing.setUpdated(LocalDateTime.now());
 
@@ -118,15 +113,39 @@ public class CustomerWaterService {
     }
 
     @Transactional
-    public CustomerWaterResponseDTO approve(Long id, CustomerWaterApprovalDTO dto) {
+    public CustomerWaterResponseDTO activate(Long id, CustomerWaterActivationDTO dto) {
         CustomerWater existing = findCustomer(id);
-        existing.setEstado(EstadoServicoAgua.AGUARDANDO_DADOS_CASA);
-        existing.setActivo(false);
+        existing.setHouseNR(dto.houseNR().trim());
+        existing.setAdressId(findAdress(dto.adressId()));
+        existing.setEstado(EstadoServicoAgua.ATIVO);
+        existing.setActivo(true);
         existing.setUpdated(LocalDateTime.now());
         existing.setObservacoes(dto.observacoes() == null || dto.observacoes().isBlank()
-                ? "Pedido aprovado. O cliente deve completar os dados da casa."
+                ? "Instalacao de agua concluida. Conta activada pela equipa."
                 : dto.observacoes().trim());
-        return toResponse(customerWaterRepository.save(existing));
+
+        CustomerWater saved = customerWaterRepository.save(existing);
+        syncRelatedCustomer(saved);
+        return toResponse(saved);
+    }
+
+    @Transactional
+    public CustomerWaterResponseDTO approve(Long id, CustomerWaterApprovalDTO dto) {
+        CustomerWater existing = findCustomer(id);
+        if (dto.houseNR() != null) {
+            existing.setHouseNR(blankToNull(dto.houseNR()));
+        }
+        if (dto.adressId() != null) {
+            existing.setAdressId(findAdress(dto.adressId()));
+        }
+        applyOperationalState(existing);
+        existing.setUpdated(LocalDateTime.now());
+        existing.setObservacoes(dto.observacoes() == null || dto.observacoes().isBlank()
+                ? buildApprovalNote(existing)
+                : dto.observacoes().trim());
+        CustomerWater saved = customerWaterRepository.save(existing);
+        syncRelatedCustomer(saved);
+        return toResponse(saved);
     }
 
     @Transactional
@@ -195,6 +214,8 @@ public class CustomerWaterService {
         request.setAppUser(user);
         request.setCustomer(customerRepository.findByAppUser_Id(user.getId()).orElse(null));
         request.setReferenciaLocal(dto.referenciaLocal().trim());
+        request.setHouseNR(blankToNull(dto.houseNR()));
+        request.setAdressId(dto.adressId() == null ? null : findAdress(dto.adressId()));
         request.setEstado(EstadoServicoAgua.PENDENTE_APROVACAO);
         request.setPedidoAgua(true);
         request.setActivo(false);
@@ -215,25 +236,7 @@ public class CustomerWaterService {
     public CustomerWaterResponseDTO completeForClient(AppUser user, Long requestId, CustomerWaterClientUpdateDTO dto) {
         CustomerWater existing = findCustomer(requestId);
         ensureRequestOwnership(user, existing);
-
-        if (existing.getEstado() != EstadoServicoAgua.AGUARDANDO_DADOS_CASA) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "O pedido de agua ainda nao foi aprovado");
-        }
-
-        existing.setHouseNR(dto.houseNR().trim());
-        existing.setAdressId(findAdress(dto.adressId()));
-        existing.setEstado(EstadoServicoAgua.ATIVO);
-        existing.setActivo(true);
-        existing.setUpdated(LocalDateTime.now());
-        existing.setObservacoes("Dados da casa confirmados pelo cliente");
-
-        CustomerWater saved = customerWaterRepository.save(existing);
-        if (existing.getCustomer() != null) {
-            existing.getCustomer().setTemServicoAgua(Boolean.TRUE);
-            customerRepository.save(existing.getCustomer());
-            accountSyncService.syncWaterForCustomer(existing.getCustomer());
-        }
-        return toResponse(saved);
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "A activacao da agua e concluida pela equipa apos a instalacao.");
     }
 
     @Transactional
@@ -316,6 +319,28 @@ public class CustomerWaterService {
 
     private String normalize(String value) {
         return value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private void applyOperationalState(CustomerWater customerWater) {
+        boolean ready = customerWater.getHouseNR() != null && customerWater.getAdressId() != null;
+        customerWater.setEstado(ready ? EstadoServicoAgua.ATIVO : EstadoServicoAgua.AGUARDANDO_DADOS_CASA);
+        customerWater.setActivo(ready);
+    }
+
+    private String buildApprovalNote(CustomerWater customerWater) {
+        if (Boolean.TRUE.equals(customerWater.getActivo())) {
+            return "Pedido aprovado e conta pronta para contrato de agua.";
+        }
+        return "Pedido aprovado. A equipa vai concluir os dados do imovel para activar o servico apos a instalacao.";
+    }
+
+    private void syncRelatedCustomer(CustomerWater customerWater) {
+        if (customerWater.getCustomer() == null) {
+            return;
+        }
+        customerWater.getCustomer().setTemServicoAgua(Boolean.TRUE);
+        customerRepository.save(customerWater.getCustomer());
+        accountSyncService.syncWaterForCustomer(customerWater.getCustomer());
     }
 
     private String normalizeEmail(String value) {

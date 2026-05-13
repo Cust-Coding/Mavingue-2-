@@ -12,6 +12,8 @@ export type Customer = {
   contaActiva: boolean;
   temServicoAgua: boolean;
   appUserId: number | null;
+  contaDesativadaPeloCliente?: boolean;
+  contaDesativadaEm?: string | null;
   observacoes?: string | null;
   created?: string;
 };

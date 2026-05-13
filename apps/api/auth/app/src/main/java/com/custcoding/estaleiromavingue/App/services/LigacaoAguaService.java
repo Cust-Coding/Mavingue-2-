@@ -80,13 +80,20 @@ public class LigacaoAguaService {
     private LigacaoAguaResponseDTO toDTO(LigacaoAgua ligacao) {
         CustomerWater consumidor = ligacao.getConsumidor();
         Funcionario funcionario = ligacao.getFuncionario();
+        String adress = consumidor == null || consumidor.getAdressId() == null
+                ? null
+                : consumidor.getAdressId().getName() + ", " + consumidor.getAdressId().getBairro();
         return new LigacaoAguaResponseDTO(
                 ligacao.getId(),
                 ligacao.getData(),
                 ligacao.getEstado(),
                 consumidor == null ? null : consumidor.getId(),
                 consumidor == null ? "Consumidor nao identificado" : consumidor.getName(),
+                consumidor == null ? null : consumidor.getReferenciaLocal(),
                 consumidor == null ? null : consumidor.getHouseNR(),
+                adress,
+                consumidor == null ? null : consumidor.getPhone(),
+                consumidor == null ? null : consumidor.getEmail(),
                 funcionario == null ? null : funcionario.getId(),
                 funcionario == null ? "Operador nao identificado" : funcionario.getNome()
         );

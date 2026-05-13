@@ -44,6 +44,7 @@ public class StockService {
     @Transactional(readOnly = true)
     public List<StockResponseDTO> list() {
         return stockRepo.findAll().stream()
+                .filter(stock -> stock.getProduto() != null && Boolean.TRUE.equals(stock.getProduto().getAtivo()))
                 .map(this::toStockResponse)
                 .toList();
     }
@@ -77,7 +78,7 @@ public class StockService {
 
     @Transactional
     public StockResponseDTO adjust(StockAdjustDTO dto) {
-        Product product = productRepo.findById(dto.produtoId())
+        Product product = productRepo.findByIdAndAtivoTrue(dto.produtoId())
                 .orElseThrow(() -> new EntityNotFoundException("Produto nao encontrado: " + dto.produtoId()));
 
         Stock stock = stockRepo.findByProduto_Id(product.getId()).orElseGet(() -> {

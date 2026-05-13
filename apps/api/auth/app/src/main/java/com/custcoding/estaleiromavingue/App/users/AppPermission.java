@@ -41,13 +41,16 @@ public enum AppPermission {
     WATER_REQUESTS_REVIEW("water.requests.review", "Agua", "Aprovar ou rejeitar solicitacoes de agua"),
     WATER_CUSTOMERS_VIEW("water.customers.view", "Agua", "Ver clientes e contas de agua"),
     WATER_CUSTOMERS_MANAGE("water.customers.manage", "Agua", "Criar e sincronizar contas de agua"),
+    WATER_CUSTOMERS_ACTIVATE("water.customers.activate", "Agua", "Activar contas de agua apos instalacao"),
     WATER_CONTRACTS_MANAGE("water.contracts.manage", "Agua", "Criar e actualizar ligacoes de agua"),
     WATER_READINGS_MANAGE("water.readings.manage", "Agua", "Registar leituras de agua"),
     WATER_BILLS_MANAGE("water.bills.manage", "Agua", "Gerir facturas e pagamentos de agua"),
+    WATER_BILLING_RULES_MANAGE("water.billing-rules.manage", "Agua", "Gerir regras de cobranca por metro cubico"),
 
     REPORTS_VIEW("reports.view", "Relatorios", "Ver a area geral de relatorios"),
     REPORTS_SALES_VIEW("reports.sales.view", "Relatorios", "Ver relatorios de vendas"),
     REPORTS_STOCK_VIEW("reports.stock.view", "Relatorios", "Ver relatorios de stock"),
+    REPORTS_SYSTEM_STATUS_VIEW("reports.system-status.view", "Relatorios", "Ver o estado tecnico do sistema"),
     REPORTS_WATER_VIEW("reports.water.view", "Relatorios", "Ver relatorios do modulo de agua"),
 
     AUDIT_VIEW("audit.view", "Auditoria", "Ver o historico operacional e filtros de auditoria");
@@ -127,12 +130,15 @@ public enum AppPermission {
             defaults.add(WATER_REQUESTS_REVIEW);
             defaults.add(WATER_CUSTOMERS_VIEW);
             defaults.add(WATER_CUSTOMERS_MANAGE);
+            defaults.add(WATER_CUSTOMERS_ACTIVATE);
             defaults.add(WATER_CONTRACTS_MANAGE);
             defaults.add(WATER_READINGS_MANAGE);
             defaults.add(WATER_BILLS_MANAGE);
+            defaults.add(WATER_BILLING_RULES_MANAGE);
             defaults.add(REPORTS_VIEW);
             defaults.add(REPORTS_SALES_VIEW);
             defaults.add(REPORTS_STOCK_VIEW);
+            defaults.add(REPORTS_SYSTEM_STATUS_VIEW);
             defaults.add(REPORTS_WATER_VIEW);
         }
 

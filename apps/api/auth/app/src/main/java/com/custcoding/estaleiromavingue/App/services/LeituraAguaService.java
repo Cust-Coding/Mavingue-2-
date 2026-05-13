@@ -26,6 +26,7 @@ public class LeituraAguaService {
     private final LeituraAguaRepository leituraAguaRepository;
     private final LigacaoAguaRepository ligacaoAguaRepository;
     private final FacturaAguaRepository facturaAguaRepository;
+    private final WaterBillingRuleService waterBillingRuleService;
 
     @Transactional(readOnly = true)
     public List<LeituraAguaResponseDTO> list() {
@@ -62,7 +63,9 @@ public class LeituraAguaService {
         }
 
         double consumo = dto.leituraActual() - leituraAnterior;
-        double valorPagar = consumo * dto.precoM3();
+        double precoM3 = dto.precoM3() == null ? waterBillingRuleService.currentPrecoM3().doubleValue() : dto.precoM3();
+        double taxaFixa = waterBillingRuleService.currentTaxaFixa().doubleValue();
+        double valorPagar = consumo * precoM3;
 
         LeituraAgua leitura = LeituraAgua.builder()
                 .data(LocalDateTime.now())
@@ -77,9 +80,11 @@ public class LeituraAguaService {
 
         FacturaAgua factura = FacturaAgua.builder()
                 .data(LocalDateTime.now())
-                .taxaFixa(150)
+                .taxaFixa(taxaFixa)
                 .valor(valorPagar)
-                .valorTotal(valorPagar + 150)
+                .valorTotal(valorPagar + taxaFixa)
+                .percentualMulta(waterBillingRuleService.currentPercentualMulta().doubleValue())
+                .multaValor(0d)
                 .estadoPagamento(EstadoPagamento.PENDENTE)
                 .formaPagamento(FormaPagamento.DINHEIRO_FISICO)
                 .consumidor(ligacao.getConsumidor())

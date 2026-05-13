@@ -349,6 +349,8 @@ public class AppUserService {
     private void applyStatus(AppUser user, UserStatus status) {
         user.setStatus(status);
         user.setEnabled(status == UserStatus.ATIVO);
+        user.setDesativadaPeloCliente(Boolean.FALSE);
+        user.setDesativadaPeloClienteEm(null);
     }
 
     private AppUser findUser(Long id) {
@@ -390,7 +392,9 @@ public class AppUserService {
                 user.getPhone(),
                 user.getRole(),
                 resolveStatus(user),
-                permissionService.effectivePermissionKeys(user)
+                permissionService.effectivePermissionKeys(user),
+                user.getDesativadaPeloCliente(),
+                user.getDesativadaPeloClienteEm()
         );
     }
 }

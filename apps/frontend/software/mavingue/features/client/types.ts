@@ -11,6 +11,8 @@ export type ClientAccount = {
   role: Role;
   status: UserStatus;
   permissions: string[];
+  desativadaPeloCliente?: boolean;
+  desativadaPeloClienteEm?: string | null;
 };
 
 export type ClientProfile = {

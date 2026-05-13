@@ -1,6 +1,7 @@
 package com.custcoding.estaleiromavingue.App.controllers;
 
 import com.custcoding.estaleiromavingue.App.dtos.factura_agua.FacturaAguaPagamentoDTO;
+import com.custcoding.estaleiromavingue.App.dtos.factura_agua.FacturaAguaMultaAplicacaoDTO;
 import com.custcoding.estaleiromavingue.App.dtos.factura_agua.FacturaAguaResponseDTO;
 import com.custcoding.estaleiromavingue.App.services.FacturaAguaService;
 import jakarta.validation.Valid;
@@ -39,5 +40,11 @@ public class FacturaAguaController {
     @PreAuthorize("@permissionService.hasPermission(authentication, 'water.bills.manage')")
     public FacturaAguaResponseDTO pagar(@PathVariable Long id, @Valid @RequestBody FacturaAguaPagamentoDTO dto) {
         return facturaAguaService.pagar(id, dto);
+    }
+
+    @PatchMapping("/aplicar-multa")
+    @PreAuthorize("@permissionService.hasPermission(authentication, 'water.bills.manage')")
+    public List<FacturaAguaResponseDTO> aplicarMulta(@RequestBody(required = false) FacturaAguaMultaAplicacaoDTO dto) {
+        return facturaAguaService.aplicarMulta(dto);
     }
 }

@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -54,17 +55,16 @@ public class ProductService {
 
     @Transactional(readOnly = true)
     public List<Product> list() {
-        return repo.findAll();
+        return repo.findAllByAtivoTrueOrderByIdDesc();
     }
 
     @Transactional(readOnly = true)
     public Product get(Long id) {
-        return repo.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Produto nao encontrado: " + id));
+        return findActiveProduct(id);
     }
 
     public Product update(String userIdFromAuth, Long id, ProductUpdateRequest req) {
-        Product product = get(id);
+        Product product = findActiveProduct(id);
 
         if (req.name() != null) product.setName(req.name());
         if (req.description() != null) product.setDescription(req.description());
@@ -77,11 +77,13 @@ public class ProductService {
         return saved;
     }
 
+    @Transactional
     public void delete(String userIdFromAuth, Long id) {
-        Product product = repo.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Produto nao encontrado: " + id));
-        repo.delete(product);
-        auditLogService.logByUserId(userIdFromAuth, "PRODUCT_DELETE", "PRODUCT", id, "Produto removido: " + product.getName());
+        Product product = findActiveProduct(id);
+        product.setAtivo(Boolean.FALSE);
+        product.setApagadoEm(LocalDateTime.now());
+        repo.save(product);
+        auditLogService.logByUserId(userIdFromAuth, "PRODUCT_DELETE", "PRODUCT", id, "Produto arquivado: " + product.getName());
     }
 
     public Integer getAvailableStock(Long productId) {
@@ -99,5 +101,10 @@ public class ProductService {
         return productCategoryRepository.findBySlug(normalized)
                 .map(category -> category.getSlug())
                 .orElse(normalized);
+    }
+
+    private Product findActiveProduct(Long id) {
+        return repo.findByIdAndAtivoTrue(id)
+                .orElseThrow(() -> new EntityNotFoundException("Produto nao encontrado: " + id));
     }
 }

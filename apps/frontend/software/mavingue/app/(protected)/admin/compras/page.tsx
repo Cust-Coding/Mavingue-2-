@@ -232,7 +232,7 @@ export default function AdminCompras() {
               return (
                 <article
                   key={product.id}
-                  className={`rounded-[28px] border p-4 transition ${
+                  className={`overflow-hidden rounded-[28px] border p-4 transition ${
                     selectedQuantity > 0
                       ? "border-emerald-300 bg-emerald-50/70 shadow-sm"
                       : "border-slate-200 bg-slate-50 hover:border-emerald-200 hover:bg-white"
@@ -252,13 +252,13 @@ export default function AdminCompras() {
                     </div>
                   </div>
 
-                  <div className="mt-4 flex items-center justify-between gap-3">
-                    <div className="rounded-2xl bg-white px-3 py-2">
+                  <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                    <div className="min-w-0 rounded-2xl bg-white px-3 py-2">
                       <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-400">Subtotal</p>
                       <p className="mt-1 text-sm font-bold text-slate-900">{formatMoney(product.price * selectedQuantity)}</p>
                     </div>
 
-                    <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-2 py-2">
+                    <div className="flex w-full items-center justify-between gap-2 rounded-2xl border border-slate-200 bg-white px-2 py-2 sm:w-auto sm:justify-start">
                       <button
                         type="button"
                         onClick={() => updateQuantity(product.id, selectedQuantity - 1)}
@@ -271,7 +271,7 @@ export default function AdminCompras() {
                         min={0}
                         value={selectedQuantity}
                         onChange={(event) => updateQuantity(product.id, Number(event.target.value))}
-                        className="h-8 w-16 rounded-xl border border-slate-200 text-center text-sm font-bold text-slate-900 outline-none"
+                        className="h-8 min-w-0 flex-1 rounded-xl border border-slate-200 text-center text-sm font-bold text-slate-900 outline-none sm:w-16 sm:flex-none"
                       />
                       <button
                         type="button"

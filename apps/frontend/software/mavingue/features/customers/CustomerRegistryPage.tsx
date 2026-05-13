@@ -51,6 +51,13 @@ const initialForm: FormState = {
 
 type Scope = "admin" | "staff";
 
+function formatDateTime(value?: string | null) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString("pt-PT");
+}
+
 export function CustomerRegistryPage({ scope }: { scope: Scope }) {
   const [items, setItems] = useState<Customer[]>([]);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -460,7 +467,17 @@ export function CustomerRegistryPage({ scope }: { scope: Scope }) {
                         <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${item.contaActiva ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700"}`}>
                           {item.appUserId ? (item.contaActiva ? "Conta activa" : "Conta ligada") : "Sem conta"}
                         </span>
+                        {item.contaDesativadaPeloCliente && (
+                          <span className="rounded-full bg-rose-100 px-2.5 py-1 text-xs font-semibold text-rose-700">
+                            Desativada pelo cliente
+                          </span>
+                        )}
                       </div>
+                      {item.contaDesativadaEm && (
+                        <div className="mt-2 text-xs text-rose-600">
+                          Pedido do cliente em {formatDateTime(item.contaDesativadaEm)}
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${item.temServicoAgua ? "bg-cyan-100 text-cyan-700" : "bg-slate-100 text-slate-600"}`}>

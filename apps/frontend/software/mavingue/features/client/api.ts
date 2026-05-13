@@ -1,4 +1,4 @@
-import { apiGet, apiPost, apiPut } from "@/lib/http/client";
+import { apiDelete, apiGet, apiPost, apiPut } from "@/lib/http/client";
 import { endpoints } from "@/lib/http/endpoints";
 import type {
   ClientAccount,
@@ -16,6 +16,7 @@ export const clientApi = {
     apiPut<ClientAccount>(`${endpoints.clientArea.profile}/account`, payload),
   updateCustomer: (payload: ClientCustomerUpdate) =>
     apiPut<Customer>(`${endpoints.clientArea.profile}/customer`, payload),
+  deactivateAccount: () => apiDelete<void>(endpoints.clientArea.deactivateAccount),
   listOrders: () => apiGet<ClientOrder[]>(endpoints.clientArea.compras),
   getOrder: (id: number) => apiGet<ClientOrder>(endpoints.clientArea.compraById(id)),
   checkout: (payload: ClientCheckoutRequest) =>

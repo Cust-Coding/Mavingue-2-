@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { CheckCircle2, KeyRound, RefreshCw, ShieldCheck, UserCheck, Users } from "lucide-react";
+import { CheckCircle2, KeyRound, Loader2, RefreshCw, ShieldCheck, UserCheck, Users } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import {
   listPendingUsers,
@@ -29,7 +29,10 @@ const statusStyles: Record<UserStatus, string> = {
   PENDENTE_VERIFICACAO: "bg-blue-100 text-blue-700",
 };
 
-function statusLabel(status: UserStatus) {
+function statusLabel(status: UserStatus, desativadaPeloCliente?: boolean) {
+  if (status === "INATIVO" && desativadaPeloCliente) {
+    return "Desativada pelo cliente";
+  }
   switch (status) {
     case "ATIVO":
       return "Activo";
@@ -42,6 +45,20 @@ function statusLabel(status: UserStatus) {
     default:
       return status;
   }
+}
+
+function statusStyle(status: UserStatus, desativadaPeloCliente?: boolean) {
+  if (status === "INATIVO" && desativadaPeloCliente) {
+    return "bg-rose-100 text-rose-700";
+  }
+  return statusStyles[status];
+}
+
+function formatDateTime(value?: string | null) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString("pt-PT");
 }
 
 export function UserManagementPage({ scope }: { scope: Scope }) {
@@ -72,7 +89,7 @@ export function UserManagementPage({ scope }: { scope: Scope }) {
     [users]
   );
 
-  async function load() {
+  const load = useCallback(async () => {
     setError("");
     setLoading(true);
     try {
@@ -87,11 +104,11 @@ export function UserManagementPage({ scope }: { scope: Scope }) {
     } finally {
       setLoading(false);
     }
-  }
+  }, [canVerify]);
 
   useEffect(() => {
-    load();
-  }, []);
+    void load();
+  }, [load]);
 
   async function refresh() {
     setRefreshing(true);
@@ -151,6 +168,7 @@ export function UserManagementPage({ scope }: { scope: Scope }) {
                 type="button"
                 variant="outline"
                 onClick={() => setResetConfirmId(null)}
+                disabled={workingId === resetConfirmId}
               >
                 Cancelar
               </Button>
@@ -158,8 +176,10 @@ export function UserManagementPage({ scope }: { scope: Scope }) {
                 type="button"
                 className="bg-red-600 text-white hover:bg-red-700"
                 onClick={() => handleResetPassword(resetConfirmId)}
+                disabled={workingId === resetConfirmId}
               >
-                Confirmar
+                {workingId === resetConfirmId ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                {workingId === resetConfirmId ? "A processar..." : "Confirmar"}
               </Button>
 
             </div>
@@ -235,7 +255,10 @@ export function UserManagementPage({ scope }: { scope: Scope }) {
                     <p className="mt-1 text-sm text-slate-500">
                       {user.email || "Sem email"} | {user.phone}
                     </p>
-                    <p className="mt-2 text-xs text-slate-500">{statusLabel(user.status)}</p>
+                    <p className="mt-2 text-xs text-slate-500">{statusLabel(user.status, user.desativadaPeloCliente)}</p>
+                    {user.desativadaPeloClienteEm && (
+                      <p className="mt-1 text-xs text-rose-600">Pedido do cliente em {formatDateTime(user.desativadaPeloClienteEm)}</p>
+                    )}
                   </div>
 
                   <div className="flex flex-wrap gap-2">
@@ -314,8 +337,8 @@ export function UserManagementPage({ scope }: { scope: Scope }) {
                     <td className="px-6 py-4 text-slate-600">{user.phone}</td>
                     <td className="px-6 py-4 text-slate-600">{roleLabels[user.role]}</td>
                     <td className="px-6 py-4">
-                      <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusStyles[user.status]}`}>
-                        {statusLabel(user.status)}
+                      <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusStyle(user.status, user.desativadaPeloCliente)}`}>
+                        {statusLabel(user.status, user.desativadaPeloCliente)}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-slate-600">

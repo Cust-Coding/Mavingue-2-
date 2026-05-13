@@ -63,6 +63,7 @@ public class ClientAreaService {
     private final LigacaoAguaRepository ligacaoAguaRepository;
     private final LeituraAguaRepository leituraAguaRepository;
     private final FacturaAguaRepository facturaAguaRepository;
+    private final FacturaAguaService facturaAguaService;
     private final FuncionarioRepository funcionarioRepository;
     private final FerragemRepository ferragemRepository;
     private final ProprietarioRepository proprietarioRepository;
@@ -281,7 +282,7 @@ public class ClientAreaService {
 
         factura.setEstadoPagamento(EstadoPagamento.PAGO);
         factura.setFormaPagamento(dto.formaPagamento());
-        BigDecimal total = BigDecimal.valueOf(factura.getValorTotal());
+        BigDecimal total = BigDecimal.valueOf(factura.getValorTotal() + (factura.getMultaValor() == null ? 0d : factura.getMultaValor()));
         BigDecimal valorPago = dto.formaPagamento() == FormaPagamento.DINHEIRO_FISICO
                 ? (dto.valorPago() == null ? total : dto.valorPago())
                 : total;
@@ -395,6 +396,8 @@ public class ClientAreaService {
                 customer.getContaActiva(),
                 customer.getTemServicoAgua(),
                 customer.getAppUser() == null ? null : customer.getAppUser().getId(),
+                customer.getAppUser() != null && Boolean.TRUE.equals(customer.getAppUser().getDesativadaPeloCliente()),
+                customer.getAppUser() == null ? null : customer.getAppUser().getDesativadaPeloClienteEm(),
                 customer.getObservacoes(),
                 customer.getCreated()
         );
@@ -408,8 +411,26 @@ public class ClientAreaService {
                 user.getPhone(),
                 user.getRole(),
                 user.getStatus(),
-                permissionService.effectivePermissionKeys(user)
+                permissionService.effectivePermissionKeys(user),
+                user.getDesativadaPeloCliente(),
+                user.getDesativadaPeloClienteEm()
         );
+    }
+
+    @Transactional
+    public void deactivateOwnAccount(String userIdFromAuth) {
+        AppUser user = findCurrentUser(userIdFromAuth);
+        if (user.getRole() != com.custcoding.estaleiromavingue.App.users.Role.CLIENTE) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Apenas clientes podem suspender a propria conta");
+        }
+
+        user.setStatus(UserStatus.INATIVO);
+        user.setEnabled(Boolean.FALSE);
+        user.setDesativadaPeloCliente(Boolean.TRUE);
+        user.setDesativadaPeloClienteEm(LocalDateTime.now());
+        user.setUpdatedAt(LocalDateTime.now());
+        AppUser saved = appUserRepository.save(user);
+        accountSyncService.syncUser(saved);
     }
 
     private CustomerWaterResponseDTO toWaterCustomerResponse(CustomerWater customerWater) {
@@ -437,13 +458,20 @@ public class ClientAreaService {
     private LigacaoAguaResponseDTO toLigacaoResponse(LigacaoAgua ligacao) {
         CustomerWater consumidor = ligacao.getConsumidor();
         Funcionario funcionario = ligacao.getFuncionario();
+        String adress = consumidor == null || consumidor.getAdressId() == null
+                ? null
+                : consumidor.getAdressId().getName() + ", " + consumidor.getAdressId().getBairro();
         return new LigacaoAguaResponseDTO(
                 ligacao.getId(),
                 ligacao.getData(),
                 ligacao.getEstado(),
                 consumidor == null ? null : consumidor.getId(),
                 consumidor == null ? "Consumidor nao identificado" : consumidor.getName(),
+                consumidor == null ? null : consumidor.getReferenciaLocal(),
                 consumidor == null ? null : consumidor.getHouseNR(),
+                adress,
+                consumidor == null ? null : consumidor.getPhone(),
+                consumidor == null ? null : consumidor.getEmail(),
                 funcionario == null ? null : funcionario.getId(),
                 funcionario == null ? "Operador nao identificado" : funcionario.getNome()
         );
@@ -462,26 +490,7 @@ public class ClientAreaService {
     }
 
     private FacturaAguaResponseDTO toFacturaResponse(FacturaAgua factura) {
-        CustomerWater consumidor = factura.getConsumidor();
-        LeituraAgua leitura = factura.getLeitura();
-        return new FacturaAguaResponseDTO(
-                factura.getId(),
-                factura.getData(),
-                factura.getTaxaFixa(),
-                factura.getValor(),
-                factura.getValorTotal(),
-                factura.getEstadoPagamento(),
-                factura.getFormaPagamento(),
-                factura.getValorPago(),
-                factura.getTroco(),
-                consumidor == null ? null : consumidor.getId(),
-                consumidor == null ? "Consumidor nao identificado" : consumidor.getName(),
-                consumidor == null ? null : consumidor.getHouseNR(),
-                leitura == null ? null : leitura.getId(),
-                leitura == null ? null : leitura.getLeituraAnterior(),
-                leitura == null ? null : leitura.getLeituraActual(),
-                leitura == null ? null : leitura.getConsumoM3()
-        );
+        return facturaAguaService.toDTO(factura);
     }
 
     private String resolvePhone(AppUser user) {

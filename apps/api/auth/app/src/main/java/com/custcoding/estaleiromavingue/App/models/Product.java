@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "table_product")
@@ -42,4 +43,11 @@ public class Product {
     @Size(max = 500)
     @Column(name = "url_img", length = 500)
     private String urlImg;
+
+    @Column(name = "ativo", nullable = false)
+    @Builder.Default
+    private Boolean ativo = Boolean.TRUE;
+
+    @Column(name = "apagado_em")
+    private LocalDateTime apagadoEm;
 }

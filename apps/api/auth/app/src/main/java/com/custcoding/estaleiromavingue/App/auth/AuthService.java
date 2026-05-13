@@ -99,7 +99,7 @@ public class AuthService {
 
         UserStatus status = resolveStatus(user);
         if (status != UserStatus.ATIVO) {
-            throw buildStatusException(status);
+            throw buildStatusException(user, status);
         }
 
         auditLogService.logUser(user, "LOGIN", "AUTH", user.getId(), "Login efectuado com sucesso");
@@ -118,7 +118,9 @@ public class AuthService {
                 user.getPhone(),
                 user.getRole(),
                 resolveStatus(user),
-                permissionService.effectivePermissionKeys(user)
+                permissionService.effectivePermissionKeys(user),
+                user.getDesativadaPeloCliente(),
+                user.getDesativadaPeloClienteEm()
         );
     }
 
@@ -380,6 +382,8 @@ public class AuthService {
     private void activateUser(AppUser user) {
         user.setStatus(UserStatus.ATIVO);
         user.setEnabled(true);
+        user.setDesativadaPeloCliente(Boolean.FALSE);
+        user.setDesativadaPeloClienteEm(null);
         user.setUpdatedAt(LocalDateTime.now());
         userRepo.save(user);
         accountSyncService.syncUser(user);
@@ -392,11 +396,16 @@ public class AuthService {
         return Boolean.TRUE.equals(user.getEnabled()) ? UserStatus.ATIVO : UserStatus.PENDENTE_REVISAO;
     }
 
-    private ResponseStatusException buildStatusException(UserStatus status) {
+    private ResponseStatusException buildStatusException(AppUser user, UserStatus status) {
         return switch (status) {
             case PENDENTE_VERIFICACAO -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Conta pendente de verificacao por email.");
             case PENDENTE_REVISAO -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Conta pendente de verificacao pela equipa.");
-            case INATIVO -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Conta inactiva. Contacte um administrador.");
+            case INATIVO -> new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    Boolean.TRUE.equals(user.getDesativadaPeloCliente())
+                            ? "Conta suspensa a seu pedido. Contacte a equipa para reactivar o acesso."
+                            : "Conta inactiva. Contacte um administrador."
+            );
             case ATIVO -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Conta indisponivel.");
         };
     }

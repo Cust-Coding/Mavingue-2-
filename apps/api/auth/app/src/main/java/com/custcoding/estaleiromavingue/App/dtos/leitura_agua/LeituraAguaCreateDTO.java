@@ -11,7 +11,6 @@ public record LeituraAguaCreateDTO(
         @DecimalMin(value = "0.0", inclusive = true, message = "Leitura actual invalida")
         Double leituraActual,
 
-        @NotNull(message = "Preco por metro cubico e obrigatorio")
         @DecimalMin(value = "0.0", inclusive = true, message = "Preco por metro cubico invalido")
         Double precoM3
 ) {}

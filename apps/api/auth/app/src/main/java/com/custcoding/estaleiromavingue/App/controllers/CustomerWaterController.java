@@ -1,6 +1,7 @@
 package com.custcoding.estaleiromavingue.App.controllers;
 
 import com.custcoding.estaleiromavingue.App.dtos.customer_water.CustomerWaterApprovalDTO;
+import com.custcoding.estaleiromavingue.App.dtos.customer_water.CustomerWaterActivationDTO;
 import com.custcoding.estaleiromavingue.App.dtos.customer_water.CustomerWaterCreateDTO;
 import com.custcoding.estaleiromavingue.App.dtos.customer_water.CustomerWaterResponseDTO;
 import com.custcoding.estaleiromavingue.App.services.CustomerWaterService;
@@ -57,16 +58,22 @@ public class CustomerWaterController {
         return customerWaterService.update(id, dto);
     }
 
+    @PatchMapping("/{id}/activar")
+    @PreAuthorize("@permissionService.hasPermission(authentication, 'water.customers.activate')")
+    public CustomerWaterResponseDTO activate(@PathVariable Long id, @Valid @org.springframework.web.bind.annotation.RequestBody CustomerWaterActivationDTO dto) {
+        return customerWaterService.activate(id, dto);
+    }
+
     @PatchMapping("/{id}/aprovar")
     @PreAuthorize("@permissionService.hasPermission(authentication, 'water.requests.review')")
     public CustomerWaterResponseDTO approve(@PathVariable Long id, @org.springframework.web.bind.annotation.RequestBody(required = false) CustomerWaterApprovalDTO dto) {
-        return customerWaterService.approve(id, dto == null ? new CustomerWaterApprovalDTO(null) : dto);
+        return customerWaterService.approve(id, dto == null ? new CustomerWaterApprovalDTO(null, null, null) : dto);
     }
 
     @PatchMapping("/{id}/rejeitar")
     @PreAuthorize("@permissionService.hasPermission(authentication, 'water.requests.review')")
     public CustomerWaterResponseDTO reject(@PathVariable Long id, @org.springframework.web.bind.annotation.RequestBody(required = false) CustomerWaterApprovalDTO dto) {
-        return customerWaterService.reject(id, dto == null ? new CustomerWaterApprovalDTO(null) : dto);
+        return customerWaterService.reject(id, dto == null ? new CustomerWaterApprovalDTO(null, null, null) : dto);
     }
 
     @DeleteMapping("/{id}")

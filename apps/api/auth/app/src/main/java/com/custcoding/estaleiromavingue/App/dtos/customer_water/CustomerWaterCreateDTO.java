@@ -1,6 +1,7 @@
 package com.custcoding.estaleiromavingue.App.dtos.customer_water;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonAlias;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -23,12 +24,15 @@ public record CustomerWaterCreateDTO(
         String email,
 
         @Size(max = 20, message = "Numero da casa excede o limite permitido")
+        @JsonAlias("houseNR")
         @JsonProperty("house_nr")
         String houseNR,
 
+        @JsonAlias("customerId")
         @JsonProperty("customer_id")
         Long customerId,
 
+        @JsonAlias("adressId")
         @JsonProperty("adress_id")
         Long adressId,
 

@@ -72,7 +72,7 @@ public class SecurityConfig {
                         // --------------------
                         .requestMatchers(HttpMethod.POST, "/api/products/**").hasAnyRole("ADMIN", "FUNCIONARIO")
                         .requestMatchers(HttpMethod.PUT, "/api/products/**").hasAnyRole("ADMIN", "FUNCIONARIO")
-                        .requestMatchers(HttpMethod.DELETE, "/api/products/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/products/**").hasAnyRole("ADMIN", "FUNCIONARIO")
                         // GET já está permitAll acima
 
                         // --------------------
@@ -99,8 +99,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/address/**").hasAnyRole("ADMIN", "FUNCIONARIO")
 
                         // Ferragem: escrever só admin (GET já é público)
-                        .requestMatchers(HttpMethod.POST, "/api/ferragem/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/ferragem/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/ferragem/**").hasAnyRole("ADMIN", "FUNCIONARIO")
+                        .requestMatchers(HttpMethod.DELETE, "/api/ferragem/**").hasAnyRole("ADMIN", "FUNCIONARIO")
 
                         // --------------------
                         // Default

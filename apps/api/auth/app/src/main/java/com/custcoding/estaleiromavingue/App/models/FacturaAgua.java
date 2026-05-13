@@ -35,6 +35,12 @@ public class FacturaAgua {
     @Column(name = "valor_total", nullable = false)
     private double valorTotal;
 
+    @Column(name = "percentual_multa")
+    private Double percentualMulta;
+
+    @Column(name = "multa_valor")
+    private Double multaValor;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "estado_pagamento", nullable = false)
     private EstadoPagamento estadoPagamento;
