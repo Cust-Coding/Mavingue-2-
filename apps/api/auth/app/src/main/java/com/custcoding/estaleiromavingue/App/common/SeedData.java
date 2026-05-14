@@ -70,7 +70,7 @@ public class SeedData implements CommandLineRunner {
                 .orElseThrow(() -> new RuntimeException("[SeedData] Nenhuma ferragem encontrada para associar às zonas"));
 
         List<String[]> zonas = List.of(
-                new String[]{"Phazamane",  "Phazamane"},
+                new String[]{"Phazimane",  "Phazimane"},
                 new String[]{"Marracuene", "Marracuene"}
         );
 
