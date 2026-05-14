@@ -1,5 +1,7 @@
 package com.custcoding.estaleiromavingue.App.common;
 
+import com.custcoding.estaleiromavingue.App.models.Adress;
+import com.custcoding.estaleiromavingue.App.repositories.AdressRepository;
 import com.custcoding.estaleiromavingue.App.users.AppPermission;
 import com.custcoding.estaleiromavingue.App.users.AppUser;
 import com.custcoding.estaleiromavingue.App.users.AppUserRepository;
@@ -11,6 +13,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.util.LinkedHashSet;
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -18,10 +21,12 @@ public class SeedData implements CommandLineRunner {
 
     private final AppUserRepository appUserRepository;
     private final PasswordEncoder encoder;
+    private final AdressRepository adressRepository;
 
     @Override
     public void run(String... args) {
         ensureAdmin();
+        ensureAdresses();
     }
 
     private void ensureAdmin() {
@@ -49,5 +54,27 @@ public class SeedData implements CommandLineRunner {
                         .permissions(new LinkedHashSet<>(AppPermission.defaultForRole(Role.ADMIN)))
                         .build())
         );
+    }
+
+    private void ensureAdresses() {
+        List<String[]> zonas = List.of(
+                new String[]{"Phazamane",  "Phazamane"},
+                new String[]{"Marracuene", "Marracuene"}
+        );
+
+        for (String[] zona : zonas) {
+            String nome = zona[0];
+            String bairro = zona[1];
+
+            boolean existe = adressRepository.findAll().stream()
+                    .anyMatch(a -> a.getName().equalsIgnoreCase(nome));
+
+            if (!existe) {
+                Adress adress = new Adress();
+                adress.setName(nome);
+                adress.setBairro(bairro);
+                adressRepository.save(adress);
+            }
+        }
     }
 }
