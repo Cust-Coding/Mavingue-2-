@@ -1,7 +1,9 @@
 package com.custcoding.estaleiromavingue.App.common;
 
 import com.custcoding.estaleiromavingue.App.models.Adress;
+import com.custcoding.estaleiromavingue.App.models.Ferragem;
 import com.custcoding.estaleiromavingue.App.repositories.AdressRepository;
+import com.custcoding.estaleiromavingue.App.repositories.FerragemRepository;
 import com.custcoding.estaleiromavingue.App.users.AppPermission;
 import com.custcoding.estaleiromavingue.App.users.AppUser;
 import com.custcoding.estaleiromavingue.App.users.AppUserRepository;
@@ -22,11 +24,17 @@ public class SeedData implements CommandLineRunner {
     private final AppUserRepository appUserRepository;
     private final PasswordEncoder encoder;
     private final AdressRepository adressRepository;
+    private final FerragemRepository ferragemRepository;
 
     @Override
     public void run(String... args) {
-        ensureAdmin();
-        ensureAdresses();
+        try {
+            ensureAdmin();
+            ensureAdresses();
+        } catch (Exception e) {
+            System.err.println("[SeedData] Erro ao executar seed: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     private void ensureAdmin() {
@@ -57,6 +65,10 @@ public class SeedData implements CommandLineRunner {
     }
 
     private void ensureAdresses() {
+        Ferragem ferragem = ferragemRepository.findAll().stream()
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("[SeedData] Nenhuma ferragem encontrada para associar às zonas"));
+
         List<String[]> zonas = List.of(
                 new String[]{"Phazamane",  "Phazamane"},
                 new String[]{"Marracuene", "Marracuene"}
@@ -73,6 +85,7 @@ public class SeedData implements CommandLineRunner {
                 Adress adress = new Adress();
                 adress.setName(nome);
                 adress.setBairro(bairro);
+                adress.setFerragem(ferragem);
                 adressRepository.save(adress);
             }
         }
